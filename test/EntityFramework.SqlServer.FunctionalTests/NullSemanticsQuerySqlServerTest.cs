@@ -32,7 +32,7 @@ WHERE [e].[NullableBoolA] = [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] = [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL))",
+WHERE ([e].[NullableBoolA] = [e].[NullableBoolB]) OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL)",
                 Sql);
         }
 
@@ -47,15 +47,15 @@ WHERE [e].[BoolA] <> [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[BoolA] <> [e].[NullableBoolB] AND [e].[NullableBoolB] IS NOT NULL)
+WHERE ([e].[BoolA] <> [e].[NullableBoolB]) AND [e].[NullableBoolB] IS NOT NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] <> [e].[BoolB] AND [e].[NullableBoolA] IS NOT NULL)
+WHERE ([e].[NullableBoolA] <> [e].[BoolB]) AND [e].[NullableBoolA] IS NOT NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (([e].[NullableBoolA] <> [e].[NullableBoolB] AND ([e].[NullableBoolA] IS NOT NULL AND [e].[NullableBoolB] IS NOT NULL)) OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL))",
+WHERE (([e].[NullableBoolA] <> [e].[NullableBoolB]) AND ([e].[NullableBoolA] IS NOT NULL AND [e].[NullableBoolB] IS NOT NULL)) OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL)",
                 Sql);
         }
 
@@ -70,15 +70,15 @@ WHERE [e].[BoolA] <> [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[BoolA] <> [e].[NullableBoolB] AND [e].[NullableBoolB] IS NOT NULL)
+WHERE [e].[BoolA] <> [e].[NullableBoolB] AND [e].[NullableBoolB] IS NOT NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] <> [e].[BoolB] AND [e].[NullableBoolA] IS NOT NULL)
+WHERE [e].[NullableBoolA] <> [e].[BoolB] AND [e].[NullableBoolA] IS NOT NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (([e].[NullableBoolA] <> [e].[NullableBoolB] AND ([e].[NullableBoolA] IS NOT NULL AND [e].[NullableBoolB] IS NOT NULL)) OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL))",
+WHERE ([e].[NullableBoolA] <> [e].[NullableBoolB] AND ([e].[NullableBoolA] IS NOT NULL AND [e].[NullableBoolB] IS NOT NULL)) OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL)",
                 Sql);
         }
 
@@ -93,15 +93,15 @@ WHERE [e].[BoolA] = [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[BoolA] = [e].[NullableBoolB] AND [e].[NullableBoolB] IS NOT NULL)
+WHERE [e].[BoolA] = [e].[NullableBoolB] AND [e].[NullableBoolB] IS NOT NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] = [e].[BoolB] AND [e].[NullableBoolA] IS NOT NULL)
+WHERE [e].[NullableBoolA] = [e].[BoolB] AND [e].[NullableBoolA] IS NOT NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (([e].[NullableBoolA] = [e].[NullableBoolB] AND ([e].[NullableBoolA] IS NOT NULL AND [e].[NullableBoolB] IS NOT NULL)) OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL))",
+WHERE ([e].[NullableBoolA] = [e].[NullableBoolB] AND ([e].[NullableBoolA] IS NOT NULL AND [e].[NullableBoolB] IS NOT NULL)) OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL)",
                 Sql);
         }
 
@@ -116,15 +116,15 @@ WHERE [e].[BoolA] <> [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[BoolA] <> [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL)
+WHERE [e].[BoolA] <> [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] <> [e].[BoolB] OR [e].[NullableBoolA] IS NULL)
+WHERE [e].[NullableBoolA] <> [e].[BoolB] OR [e].[NullableBoolA] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (([e].[NullableBoolA] <> [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL))",
+WHERE ([e].[NullableBoolA] <> [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL)",
                 Sql);
         }
 
@@ -139,15 +139,15 @@ WHERE [e].[BoolA] = [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[BoolA] = [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL)
+WHERE [e].[BoolA] = [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] = [e].[BoolB] OR [e].[NullableBoolA] IS NULL)
+WHERE [e].[NullableBoolA] = [e].[BoolB] OR [e].[NullableBoolA] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (([e].[NullableBoolA] = [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL))",
+WHERE ([e].[NullableBoolA] = [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL)",
                 Sql);
         }
 
@@ -162,15 +162,15 @@ WHERE [e].[BoolA] = [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[BoolA] = [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL)
+WHERE [e].[BoolA] = [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] = [e].[BoolB] OR [e].[NullableBoolA] IS NULL)
+WHERE [e].[NullableBoolA] = [e].[BoolB] OR [e].[NullableBoolA] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (([e].[NullableBoolA] = [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL))",
+WHERE ([e].[NullableBoolA] = [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL)",
                 Sql);
         }
 
@@ -185,15 +185,15 @@ WHERE [e].[BoolA] <> [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[BoolA] <> [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL)
+WHERE [e].[BoolA] <> [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] <> [e].[BoolB] OR [e].[NullableBoolA] IS NULL)
+WHERE [e].[NullableBoolA] <> [e].[BoolB] OR [e].[NullableBoolA] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (([e].[NullableBoolA] <> [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL))",
+WHERE ([e].[NullableBoolA] <> [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL)",
                 Sql);
         }
 
@@ -208,15 +208,15 @@ WHERE [e].[BoolA] <> [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[BoolA] <> [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL)
+WHERE [e].[BoolA] <> [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] <> [e].[BoolB] OR [e].[NullableBoolA] IS NULL)
+WHERE [e].[NullableBoolA] <> [e].[BoolB] OR [e].[NullableBoolA] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (([e].[NullableBoolA] <> [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL))",
+WHERE ([e].[NullableBoolA] <> [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL)",
                 Sql);
         }
 
@@ -231,15 +231,15 @@ WHERE [e].[BoolA] = [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[BoolA] = [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL)
+WHERE [e].[BoolA] = [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] = [e].[BoolB] OR [e].[NullableBoolA] IS NULL)
+WHERE [e].[NullableBoolA] = [e].[BoolB] OR [e].[NullableBoolA] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (([e].[NullableBoolA] = [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL))",
+WHERE ([e].[NullableBoolA] = [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL)",
                 Sql);
         }
 
@@ -254,15 +254,15 @@ WHERE [e].[BoolA] = [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[BoolA] = [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL)
+WHERE [e].[BoolA] = [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] = [e].[BoolB] OR [e].[NullableBoolA] IS NULL)
+WHERE [e].[NullableBoolA] = [e].[BoolB] OR [e].[NullableBoolA] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (([e].[NullableBoolA] = [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL))",
+WHERE ([e].[NullableBoolA] = [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL)",
                 Sql);
         }
 
@@ -277,15 +277,15 @@ WHERE [e].[BoolA] <> [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[BoolA] <> [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL)
+WHERE [e].[BoolA] <> [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] <> [e].[BoolB] OR [e].[NullableBoolA] IS NULL)
+WHERE [e].[NullableBoolA] <> [e].[BoolB] OR [e].[NullableBoolA] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (([e].[NullableBoolA] <> [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL))",
+WHERE ([e].[NullableBoolA] <> [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL)",
                 Sql);
         }
 
@@ -308,7 +308,7 @@ WHERE [e].[NullableBoolA] = [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] = [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL))",
+WHERE [e].[NullableBoolA] = [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL)",
                 Sql);
         }
 
@@ -323,15 +323,15 @@ WHERE [e].[BoolA] <> [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[BoolA] <> [e].[NullableBoolB] AND [e].[NullableBoolB] IS NOT NULL)
+WHERE ([e].[BoolA] <> [e].[NullableBoolB]) AND [e].[NullableBoolB] IS NOT NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] <> [e].[BoolB] AND [e].[NullableBoolA] IS NOT NULL)
+WHERE ([e].[NullableBoolA] <> [e].[BoolB]) AND [e].[NullableBoolA] IS NOT NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (([e].[NullableBoolA] <> [e].[NullableBoolB] AND ([e].[NullableBoolA] IS NOT NULL AND [e].[NullableBoolB] IS NOT NULL)) OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL))",
+WHERE (([e].[NullableBoolA] <> [e].[NullableBoolB]) AND ([e].[NullableBoolA] IS NOT NULL AND [e].[NullableBoolB] IS NOT NULL)) OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL)",
                 Sql);
         }
 
@@ -346,15 +346,15 @@ WHERE [e].[BoolA] <> [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[BoolA] <> [e].[NullableBoolB] AND [e].[NullableBoolB] IS NOT NULL)
+WHERE [e].[BoolA] <> [e].[NullableBoolB] AND [e].[NullableBoolB] IS NOT NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] <> [e].[BoolB] AND [e].[NullableBoolA] IS NOT NULL)
+WHERE [e].[NullableBoolA] <> [e].[BoolB] AND [e].[NullableBoolA] IS NOT NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (([e].[NullableBoolA] <> [e].[NullableBoolB] AND ([e].[NullableBoolA] IS NOT NULL AND [e].[NullableBoolB] IS NOT NULL)) OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL))",
+WHERE ([e].[NullableBoolA] <> [e].[NullableBoolB] AND ([e].[NullableBoolA] IS NOT NULL AND [e].[NullableBoolB] IS NOT NULL)) OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL)",
                 Sql);
         }
 
@@ -369,15 +369,15 @@ WHERE [e].[BoolA] = [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[BoolA] = [e].[NullableBoolB] AND [e].[NullableBoolB] IS NOT NULL)
+WHERE ([e].[BoolA] = [e].[NullableBoolB]) AND [e].[NullableBoolB] IS NOT NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] = [e].[BoolB] AND [e].[NullableBoolA] IS NOT NULL)
+WHERE ([e].[NullableBoolA] = [e].[BoolB]) AND [e].[NullableBoolA] IS NOT NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (([e].[NullableBoolA] = [e].[NullableBoolB] AND ([e].[NullableBoolA] IS NOT NULL AND [e].[NullableBoolB] IS NOT NULL)) OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL))",
+WHERE (([e].[NullableBoolA] = [e].[NullableBoolB]) AND ([e].[NullableBoolA] IS NOT NULL AND [e].[NullableBoolB] IS NOT NULL)) OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL)",
                 Sql);
         }
 
@@ -400,7 +400,7 @@ WHERE [e].[NullableBoolA] = [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] = [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL))",
+WHERE ([e].[NullableBoolA] = [e].[NullableBoolB]) OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL)",
                 Sql);
         }
 
@@ -415,15 +415,15 @@ WHERE [e].[BoolA] <> [e].[BoolB]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[BoolA] <> [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL)
+WHERE [e].[BoolA] <> [e].[NullableBoolB] OR [e].[NullableBoolB] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] <> [e].[BoolB] OR [e].[NullableBoolA] IS NULL)
+WHERE [e].[NullableBoolA] <> [e].[BoolB] OR [e].[NullableBoolA] IS NULL
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (([e].[NullableBoolA] <> [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL))",
+WHERE ([e].[NullableBoolA] <> [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL OR [e].[NullableBoolB] IS NULL)) AND ([e].[NullableBoolA] IS NOT NULL OR [e].[NullableBoolB] IS NOT NULL)",
                 Sql);
         }
 
@@ -727,7 +727,7 @@ INNER JOIN [NullSemanticsEntity2] AS [e2] ON [e1].[NullableIntA] = [e2].[Nullabl
             Assert.Equal(
                 @"SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableStringA] IN ('Foo') OR [e].[NullableStringA] IS NULL)",
+WHERE [e].[NullableStringA] IN ('Foo') OR [e].[NullableStringA] IS NULL",
                 Sql);
         }
 
@@ -738,7 +738,7 @@ WHERE ([e].[NullableStringA] IN ('Foo') OR [e].[NullableStringA] IS NULL)",
             Assert.Equal(
                 @"SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableStringA] NOT IN ('Foo') AND [e].[NullableStringA] IS NOT NULL)",
+WHERE [e].[NullableStringA] NOT IN ('Foo') AND [e].[NullableStringA] IS NOT NULL",
                 Sql);
         }
 
@@ -749,7 +749,7 @@ WHERE ([e].[NullableStringA] NOT IN ('Foo') AND [e].[NullableStringA] IS NOT NUL
             Assert.Equal(
                 @"SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableStringA] IN ('Foo') OR [e].[NullableStringA] IS NULL)",
+WHERE [e].[NullableStringA] IN ('Foo') OR [e].[NullableStringA] IS NULL",
                 Sql);
         }
 
@@ -760,7 +760,7 @@ WHERE ([e].[NullableStringA] IN ('Foo') OR [e].[NullableStringA] IS NULL)",
             Assert.Equal(
                 @"SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableStringA] IN ('Foo', 'Blah') OR [e].[NullableStringA] IS NULL)",
+WHERE [e].[NullableStringA] IN ('Foo', 'Blah') OR [e].[NullableStringA] IS NULL",
                 Sql);
         }
 
@@ -771,7 +771,7 @@ WHERE ([e].[NullableStringA] IN ('Foo', 'Blah') OR [e].[NullableStringA] IS NULL
             Assert.Equal(
                 @"SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableStringA] NOT IN ('Foo', 'Blah') AND [e].[NullableStringA] IS NOT NULL)",
+WHERE [e].[NullableStringA] NOT IN ('Foo', 'Blah') AND [e].[NullableStringA] IS NOT NULL",
                 Sql);
         }
 
@@ -782,7 +782,7 @@ WHERE ([e].[NullableStringA] NOT IN ('Foo', 'Blah') AND [e].[NullableStringA] IS
             Assert.Equal(
                 @"SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableStringA] IN ('Foo') OR [e].[NullableStringA] IS NULL)",
+WHERE [e].[NullableStringA] IN ('Foo') OR [e].[NullableStringA] IS NULL",
                 Sql);
         }
 
@@ -795,7 +795,7 @@ WHERE ([e].[NullableStringA] IN ('Foo') OR [e].[NullableStringA] IS NULL)",
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableStringA] NOT IN ('Foo', @__prm3_2) AND [e].[NullableStringA] IS NOT NULL)",
+WHERE [e].[NullableStringA] NOT IN ('Foo', @__prm3_2) AND [e].[NullableStringA] IS NOT NULL",
                 Sql);
         }
 
@@ -808,7 +808,7 @@ WHERE ([e].[NullableStringA] NOT IN ('Foo', @__prm3_2) AND [e].[NullableStringA]
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (((([e].[NullableStringB] IS NOT NULL AND ([e].[NullableStringA] <> 'Foo' OR [e].[NullableStringA] IS NULL)) AND [e].[NullableStringA] IS NOT NULL) AND [e].[NullableStringA] IS NOT NULL) AND ([e].[NullableStringA] <> @__prm3_2 OR [e].[NullableStringA] IS NULL))",
+WHERE ((([e].[NullableStringB] IS NOT NULL AND ([e].[NullableStringA] <> 'Foo' OR [e].[NullableStringA] IS NULL)) AND [e].[NullableStringA] IS NOT NULL) AND [e].[NullableStringA] IS NOT NULL) AND ([e].[NullableStringA] <> @__prm3_2 OR [e].[NullableStringA] IS NULL)",
                 Sql);
         }
 
@@ -841,7 +841,7 @@ WHERE [e].[NullableStringA] IS NOT NULL",
             Assert.Equal(
                 @"SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ((COALESCE([e].[NullableStringA], [e].[NullableStringB]) = [e].[NullableStringC]) OR (([e].[NullableStringA] IS NULL AND [e].[NullableStringB] IS NULL) AND [e].[NullableStringC] IS NULL))",
+WHERE (COALESCE([e].[NullableStringA], [e].[NullableStringB]) = [e].[NullableStringC]) OR (([e].[NullableStringA] IS NULL AND [e].[NullableStringB] IS NULL) AND [e].[NullableStringC] IS NULL)",
                 Sql);
         }
 
@@ -852,7 +852,7 @@ WHERE ((COALESCE([e].[NullableStringA], [e].[NullableStringB]) = [e].[NullableSt
             Assert.Equal(
                 @"SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (((COALESCE([e].[NullableStringA], [e].[NullableStringB]) <> [e].[NullableStringC]) OR (([e].[NullableStringA] IS NULL AND [e].[NullableStringB] IS NULL) OR [e].[NullableStringC] IS NULL)) AND (([e].[NullableStringA] IS NOT NULL OR [e].[NullableStringB] IS NOT NULL) OR [e].[NullableStringC] IS NOT NULL))",
+WHERE ((COALESCE([e].[NullableStringA], [e].[NullableStringB]) <> [e].[NullableStringC]) OR (([e].[NullableStringA] IS NULL AND [e].[NullableStringB] IS NULL) OR [e].[NullableStringC] IS NULL)) AND (([e].[NullableStringA] IS NOT NULL OR [e].[NullableStringB] IS NOT NULL) OR [e].[NullableStringC] IS NOT NULL)",
                 Sql);
         }
 
@@ -863,7 +863,7 @@ WHERE (((COALESCE([e].[NullableStringA], [e].[NullableStringB]) <> [e].[Nullable
             Assert.Equal(
                 @"SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (COALESCE([e].[NullableStringA], [e].[NullableStringB]) = COALESCE([e].[StringA], [e].[StringB]))",
+WHERE COALESCE([e].[NullableStringA], [e].[NullableStringB]) = COALESCE([e].[StringA], [e].[StringB])",
                 Sql);
         }
 
@@ -874,7 +874,7 @@ WHERE (COALESCE([e].[NullableStringA], [e].[NullableStringB]) = COALESCE([e].[St
             Assert.Equal(
                 @"SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE (((COALESCE([e].[NullableIntA], [e].[NullableIntB]) <> COALESCE([e].[NullableIntC], [e].[NullableIntB])) OR (([e].[NullableIntA] IS NULL AND [e].[NullableIntB] IS NULL) OR ([e].[NullableIntC] IS NULL AND [e].[NullableIntB] IS NULL))) AND (([e].[NullableIntA] IS NOT NULL OR [e].[NullableIntB] IS NOT NULL) OR ([e].[NullableIntC] IS NOT NULL OR [e].[NullableIntB] IS NOT NULL)))",
+WHERE ((COALESCE([e].[NullableIntA], [e].[NullableIntB]) <> COALESCE([e].[NullableIntC], [e].[NullableIntB])) OR (([e].[NullableIntA] IS NULL AND [e].[NullableIntB] IS NULL) OR ([e].[NullableIntC] IS NULL AND [e].[NullableIntB] IS NULL))) AND (([e].[NullableIntA] IS NOT NULL OR [e].[NullableIntB] IS NOT NULL) OR ([e].[NullableIntC] IS NOT NULL OR [e].[NullableIntB] IS NOT NULL))",
                 Sql);
         }
 
@@ -942,7 +942,7 @@ END) OR [e].[NullableStringC] IS NULL)",
             Assert.Equal(
                 @"SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableStringA] LIKE ('%' + [e].[NullableStringB] + '%') AND [e].[BoolA] = 1)",
+WHERE [e].[NullableStringA] LIKE ('%' + [e].[NullableStringB] + '%') AND [e].[BoolA] = 1",
                 Sql);
         }
 
@@ -977,7 +977,7 @@ WHERE [e].[NullableBoolA] IS NULL",
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] = [e].[NullableBoolB] OR @__prm_0 = 1)",
+WHERE ([e].[NullableBoolA] = [e].[NullableBoolB]) OR (@__prm_0 = 1)",
                 Sql);
         }
 
@@ -1012,7 +1012,7 @@ WHERE [e].[NullableBoolA] IS NOT NULL",
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] <> [e].[NullableBoolB] OR @__prm_0 = 1)",
+WHERE ([e].[NullableBoolA] <> [e].[NullableBoolB]) OR (@__prm_0 = 1)",
                 Sql);
         }
 
@@ -1023,7 +1023,7 @@ WHERE ([e].[NullableBoolA] <> [e].[NullableBoolB] OR @__prm_0 = 1)",
             Assert.Equal(
                 @"SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
-WHERE ([e].[NullableBoolA] = [e].[NullableBoolB] OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL))
+WHERE ([e].[NullableBoolA] = [e].[NullableBoolB]) OR ([e].[NullableBoolA] IS NULL AND [e].[NullableBoolB] IS NULL)
 
 SELECT [e].[Id]
 FROM [NullSemanticsEntity1] AS [e]
@@ -1031,10 +1031,7 @@ WHERE [e].[NullableBoolA] = [e].[NullableBoolB]",
                 Sql);
         }
 
-        private static string Sql
-        {
-            get { return TestSqlLoggerFactory.Sql; }
-        }
+        private static string Sql => TestSqlLoggerFactory.Sql;
     }
 }
 
