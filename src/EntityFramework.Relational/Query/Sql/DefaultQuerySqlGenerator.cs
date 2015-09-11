@@ -61,7 +61,7 @@ namespace Microsoft.Data.Entity.Query.Sql
 
         protected virtual ParameterNameGenerator ParameterNameGenerator => _parameterNameGenerator;
 
-        public virtual RelationalCommand GenerateSql([NotNull] IDictionary<string, object> parameterValues)
+        public virtual RelationalCommand GenerateSql(IDictionary<string, object> parameterValues)
         {
             Check.NotNull(parameterValues, nameof(parameterValues));
 
@@ -281,6 +281,7 @@ namespace Microsoft.Data.Entity.Query.Sql
                 }
 
                 _sql.AppendLines(
+                    // ReSharper disable once CoVariantArrayConversion
                     string.Format(rawSqlDerivedTableExpression.Sql, substitutions));
             }
 
@@ -691,17 +692,19 @@ namespace Microsoft.Data.Entity.Query.Sql
             }
             else
             {
-                var needParentheses
-                    = !binaryExpression.Left.IsSimpleExpression()
-                      || !binaryExpression.Right.IsSimpleExpression()
-                      || binaryExpression.IsLogicalOperation();
+                var needParens = binaryExpression.Left is BinaryExpression;
 
-                if (needParentheses)
+                if (needParens)
                 {
                     _sql.Append("(");
                 }
 
                 Visit(binaryExpression.Left);
+
+                if (needParens)
+                {
+                    _sql.Append(")");
+                }
 
                 if (binaryExpression.IsLogicalOperation()
                     && binaryExpression.Left.IsSimpleExpression())
@@ -716,8 +719,7 @@ namespace Microsoft.Data.Entity.Query.Sql
                     switch (binaryExpression.NodeType)
                     {
                         case ExpressionType.Add:
-                            op = (binaryExpression.Left.Type == typeof(string)
-                                  && binaryExpression.Right.Type == typeof(string))
+                            op = binaryExpression.Type == typeof(string)
                                 ? " " + ConcatOperator + " "
                                 : " + ";
                             break;
@@ -728,18 +730,25 @@ namespace Microsoft.Data.Entity.Query.Sql
 
                 _sql.Append(op);
 
+                needParens = binaryExpression.Right is BinaryExpression;
+
+                if (needParens)
+                {
+                    _sql.Append("(");
+                }
+
                 Visit(binaryExpression.Right);
+
+                if (needParens)
+                {
+                    _sql.Append(")");
+                }
 
                 if (binaryExpression.IsLogicalOperation()
                     && binaryExpression.Right.IsSimpleExpression())
                 {
                     _sql.Append(" = ");
                     _sql.Append(TrueLiteral);
-                }
-
-                if (needParentheses)
-                {
-                    _sql.Append(")");
                 }
             }
 
@@ -914,15 +923,10 @@ namespace Microsoft.Data.Entity.Query.Sql
             return parameterExpression;
         }
 
-        protected virtual bool TryGenerateBinaryOperator(ExpressionType op, [NotNull] out string result)
-        {
-            return _binaryOperatorMap.TryGetValue(op, out result);
-        }
+        protected virtual bool TryGenerateBinaryOperator(ExpressionType op, [NotNull] out string result) 
+            => _binaryOperatorMap.TryGetValue(op, out result);
 
-        protected virtual string GenerateBinaryOperator(ExpressionType op)
-        {
-            return _binaryOperatorMap[op];
-        }
+        protected virtual string GenerateBinaryOperator(ExpressionType op) => _binaryOperatorMap[op];
 
         protected override Exception CreateUnhandledItemException<T>(T unhandledItem, string visitMethod)
             => new NotImplementedException(visitMethod);

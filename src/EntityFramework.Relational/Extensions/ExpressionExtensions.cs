@@ -19,6 +19,21 @@ namespace System.Linq.Expressions
                    || expression.NodeType == ExpressionType.OrElse;
         }
 
+        public static bool IsArithmeticOperation([NotNull] this Expression expression)
+        {
+            Check.NotNull(expression, nameof(expression));
+
+            var binaryExpression = expression as BinaryExpression;
+
+            return binaryExpression != null
+                   && ((expression.NodeType == ExpressionType.Add
+                        && expression.Type != typeof(string))
+                       || expression.NodeType == ExpressionType.Subtract
+                       || expression.NodeType == ExpressionType.Multiply
+                       || expression.NodeType == ExpressionType.Divide
+                       || expression.NodeType == ExpressionType.Modulo);
+        }
+
         public static ColumnExpression TryGetColumnExpression([NotNull] this Expression expression)
             => (expression as AliasExpression)?.TryGetColumnExpression();
 
