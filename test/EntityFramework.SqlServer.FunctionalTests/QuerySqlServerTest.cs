@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Data.Entity.FunctionalTests;
 using Microsoft.Data.Entity.FunctionalTests.TestModels.Northwind;
@@ -17,10 +18,31 @@ namespace Microsoft.Data.Entity.SqlServer.FunctionalTests
 {
     public class QuerySqlServerTest : QueryTestBase<NorthwindQuerySqlServerFixture>
     {
+        private readonly ITestOutputHelper _testOutputHelper;
+
         public QuerySqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
             //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+
+            _testOutputHelper = testOutputHelper;
+        }
+
+        [Fact]
+        public void Materialize()
+        {
+            using (var context = CreateContext())
+            {
+                var stopwatch = Stopwatch.StartNew();
+
+                var orders = context.Orders.ToList();
+
+                stopwatch.Stop();
+
+                _testOutputHelper.WriteLine($"Materialize elapsed: {stopwatch.Elapsed}");
+
+                Assert.Equal(106240, orders.Count);
+            }
         }
 
         public override void Default_if_empty_top_level()

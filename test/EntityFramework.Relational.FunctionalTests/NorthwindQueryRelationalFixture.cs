@@ -16,7 +16,7 @@ namespace Microsoft.Data.Entity.FunctionalTests
             modelBuilder.Entity<Employee>().ToTable("Employees");
             modelBuilder.Entity<Product>().ToTable("Products");
             modelBuilder.Entity<Product>().Ignore(p => p.SupplierID);
-            modelBuilder.Entity<Order>().ToTable("Orders");
+            modelBuilder.Entity<Order>().ToTable("Orders2");
             modelBuilder.Entity<OrderDetail>().ToTable("Order Details");
         }
 
