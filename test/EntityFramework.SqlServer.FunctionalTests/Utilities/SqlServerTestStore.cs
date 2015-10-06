@@ -504,8 +504,8 @@ namespace Microsoft.Data.Entity.SqlServer.FunctionalTests
         {
             var connStrBuilder = new SqlConnectionStringBuilder
                 {
-                    //MultipleActiveResultSets = false,
-                    MultipleActiveResultSets = new Random().Next(0, 2) == 1,
+                    MultipleActiveResultSets = true,
+                    //MultipleActiveResultSets = new Random().Next(0, 2) == 1,
                     InitialCatalog = name
                 };
             return connStrBuilder.ApplyConfiguration().ConnectionString;

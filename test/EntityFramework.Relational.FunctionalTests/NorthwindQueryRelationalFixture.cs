@@ -12,11 +12,11 @@ namespace Microsoft.Data.Entity.FunctionalTests
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Customer>().ToTable("Customers");
+            modelBuilder.Entity<Customer>().ToTable("Customers2");
             modelBuilder.Entity<Employee>().ToTable("Employees");
             modelBuilder.Entity<Product>().ToTable("Products");
             modelBuilder.Entity<Product>().Ignore(p => p.SupplierID);
-            modelBuilder.Entity<Order>().ToTable("Orders2");
+            modelBuilder.Entity<Order>().ToTable("Orders");
             modelBuilder.Entity<OrderDetail>().ToTable("Order Details");
         }
 

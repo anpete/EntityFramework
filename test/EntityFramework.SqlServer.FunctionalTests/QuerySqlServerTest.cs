@@ -33,15 +33,28 @@ namespace Microsoft.Data.Entity.SqlServer.FunctionalTests
         {
             using (var context = CreateContext())
             {
+                var query = context.Customers.Take(100000);
+
                 var stopwatch = Stopwatch.StartNew();
 
-                var orders = context.Orders.ToList();
+                var warmup = query.ToList();
 
                 stopwatch.Stop();
 
-                _testOutputHelper.WriteLine($"Materialize elapsed: {stopwatch.Elapsed}");
+                _testOutputHelper.WriteLine($"Warm-up elapsed:     {stopwatch.Elapsed}");
+                
+                for (var i = 0; i < 10; i++)
+                {
+                    stopwatch.Restart();
 
-                Assert.Equal(106240, orders.Count);
+                    var orders = query.ToList();
+
+                    stopwatch.Stop();
+
+                    _testOutputHelper.WriteLine($"Materialize elapsed: {stopwatch.Elapsed}");
+                }
+
+                //Assert.Equal(372736, orders.Count);
             }
         }
 
