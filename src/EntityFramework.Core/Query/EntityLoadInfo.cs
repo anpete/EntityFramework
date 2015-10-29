@@ -13,16 +13,21 @@ namespace Microsoft.Data.Entity.Query
         private readonly Func<ValueBuffer, object> _materializer;
 
         public EntityLoadInfo(
-            ValueBuffer valueBuffer, [NotNull] Func<ValueBuffer, object> materializer)
+            ValueBuffer valueBuffer, 
+            [NotNull] Func<ValueBuffer, object> materializer, 
+            int valueBufferOffset = 0)
         {
             // hot path
             Debug.Assert(materializer != null);
 
             ValueBuffer = valueBuffer;
             _materializer = materializer;
+            ValueBufferOffset = valueBufferOffset;
         }
 
         public ValueBuffer ValueBuffer { get; }
+
+        public int ValueBufferOffset { get; }
 
         public object Materialize() => _materializer(ValueBuffer);
     }

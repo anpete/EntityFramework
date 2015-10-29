@@ -288,9 +288,9 @@ namespace Microsoft.Data.Entity.Query.ExpressionVisitors
             bool useQueryBuffer)
             where TEntity : class
         {
-            valueBuffer = valueBuffer.WithOffset(valueBufferOffset);
+            //valueBuffer = valueBuffer.WithOffset(valueBufferOffset);
 
-            var keyValue = keyValueFactory.Create(valueBuffer);
+            var keyValue = keyValueFactory.Create(valueBuffer, valueBufferOffset);
 
             TEntity entity = null;
 

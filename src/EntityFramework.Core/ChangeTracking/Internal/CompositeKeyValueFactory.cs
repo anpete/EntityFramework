@@ -22,8 +22,8 @@ namespace Microsoft.Data.Entity.ChangeTracking.Internal
             _indexes = key.Properties.Select(p => p.GetIndex()).ToArray();
         }
 
-        public override IKeyValue Create(ValueBuffer valueBuffer)
-            => Create(_indexes, i => valueBuffer[i]);
+        public override IKeyValue Create(ValueBuffer valueBuffer, int offset = 0)
+            => Create(_indexes, i => valueBuffer[offset + i]);
 
         public override IKeyValue Create(IReadOnlyList<IProperty> properties, ValueBuffer valueBuffer)
             => Create(properties, p => valueBuffer[p.GetIndex()]);

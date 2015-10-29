@@ -3,6 +3,8 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 using JetBrains.Annotations;
 
 namespace Microsoft.Data.Entity.Storage
@@ -18,6 +20,10 @@ namespace Microsoft.Data.Entity.Storage
     /// </summary>
     public struct ValueBuffer
     {
+        public static readonly MethodInfo IndexerGetMethod
+            = typeof(ValueBuffer).GetTypeInfo().DeclaredProperties
+                .Single(p => p.GetIndexParameters().Any()).GetMethod;
+
         /// <summary>
         ///     A buffer with no values in it.
         /// </summary>

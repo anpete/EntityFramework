@@ -14,10 +14,6 @@ namespace Microsoft.Data.Entity.Metadata.Internal
 {
     public class EntityMaterializerSource : IEntityMaterializerSource
     {
-        private static readonly MethodInfo _readValue
-            = typeof(ValueBuffer).GetTypeInfo().DeclaredProperties
-                .Single(p => p.GetIndexParameters().Any()).GetMethod;
-
         private readonly IMemberMapper _memberMapper;
 
         public EntityMaterializerSource([NotNull] IMemberMapper memberMapper)
@@ -29,7 +25,7 @@ namespace Microsoft.Data.Entity.Metadata.Internal
             => Expression.Convert(CreateReadValueCallExpression(valueBuffer, index), type);
 
         public virtual Expression CreateReadValueCallExpression(Expression valueBuffer, int index)
-            => Expression.Call(valueBuffer, _readValue, Expression.Constant(index));
+            => Expression.Call(valueBuffer, ValueBuffer.IndexerGetMethod, Expression.Constant(index));
 
         public virtual Expression CreateMaterializeExpression(
             IEntityType entityType,

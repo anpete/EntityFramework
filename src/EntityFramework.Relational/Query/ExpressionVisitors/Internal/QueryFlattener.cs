@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using JetBrains.Annotations;
+using Microsoft.Data.Entity.Storage;
 using Microsoft.Data.Entity.Utilities;
 
 namespace Microsoft.Data.Entity.Query.ExpressionVisitors.Internal
@@ -58,14 +59,21 @@ namespace Microsoft.Data.Entity.Query.ExpressionVisitors.Internal
 
                 if (innerShaper.Arguments.Count > 3)
                 {
-                    // CreateEntity shaper, adjust the valueBufferOffset and allowNullResult
+                    // CreateEntity shaper, adjust the ValueBuffer offsets and allowNullResult
 
                     var newArguments = innerShaper.Arguments.ToList();
 
                     var oldBufferOffset
                         = (int)((ConstantExpression)innerShaper.Arguments[2]).Value;
 
-                    newArguments[2] = Expression.Constant(oldBufferOffset + _readerOffset);
+                    var newBufferOffset = oldBufferOffset + _readerOffset;
+
+                    newArguments[2] = Expression.Constant(newBufferOffset);
+
+                    newArguments[7]
+                        = new OffsettingExpressionVisitor(newBufferOffset)
+                            .Visit(newArguments[7]);
+
                     newArguments[8] = Expression.Constant(true);
 
                     innerShaper = innerShaper.Update(innerShaper.Object, newArguments);
@@ -127,6 +135,33 @@ namespace Microsoft.Data.Entity.Query.ExpressionVisitors.Internal
             }
 
             return methodCallExpression;
+        }
+
+        private class OffsettingExpressionVisitor : ExpressionVisitor
+        {
+            private readonly int _offset;
+
+            public OffsettingExpressionVisitor(int offset)
+            {
+                _offset = offset;
+            }
+
+            protected override Expression VisitMethodCall(MethodCallExpression methodCallExpression)
+            {
+                if (methodCallExpression.Method == ValueBuffer.IndexerGetMethod)
+                {
+                    var index = (int)((ConstantExpression)methodCallExpression.Arguments[0]).Value;
+
+                    return methodCallExpression.Update(
+                        methodCallExpression.Object,
+                        new[]
+                        {
+                            Expression.Constant(_offset + index)
+                        });
+                }
+
+                return base.VisitMethodCall(methodCallExpression);
+            }
         }
     }
 }
