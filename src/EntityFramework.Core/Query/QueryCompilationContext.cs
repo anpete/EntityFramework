@@ -91,7 +91,7 @@ namespace Microsoft.Data.Entity.Query
             Check.NotNull(queryModel, nameof(queryModel));
 
             IsQueryBufferRequired
-                = IsTrackingQuery
+                = queryModel.
                   || QueryAnnotations.OfType<IncludeResultOperator>().Any()
                   || new ShadowAccessFindingExpressionVisitor().AnyShadowAccess(queryModel);
         }
