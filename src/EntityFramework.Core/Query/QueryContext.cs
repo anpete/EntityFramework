@@ -5,7 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using JetBrains.Annotations;
+using Microsoft.Data.Entity.ChangeTracking.Internal;
 using Microsoft.Data.Entity.Query.Internal;
+using Microsoft.Data.Entity.Storage;
 using Microsoft.Data.Entity.Utilities;
 
 namespace Microsoft.Data.Entity.Query
@@ -13,15 +15,21 @@ namespace Microsoft.Data.Entity.Query
     public class QueryContext
     {
         private readonly Func<IQueryBuffer> _queryBufferFactory;
+        private readonly IStateManager _stateManager;
+
         private readonly IDictionary<string, object> _parameterValues = new Dictionary<string, object>();
 
         private IQueryBuffer _queryBuffer;
 
-        public QueryContext([NotNull] Func<IQueryBuffer> queryBufferFactory)
+        public QueryContext(
+            [NotNull] Func<IQueryBuffer> queryBufferFactory,
+            [NotNull] IStateManager stateManager)
         {
             Check.NotNull(queryBufferFactory, nameof(queryBufferFactory));
+            Check.NotNull(stateManager, nameof(stateManager));
 
             _queryBufferFactory = queryBufferFactory;
+            _stateManager = stateManager;
         }
 
         public virtual IQueryBuffer QueryBuffer
@@ -37,6 +45,21 @@ namespace Microsoft.Data.Entity.Query
             Check.NotEmpty(name, nameof(name));
 
             _parameterValues.Add(name, value);
+        }
+
+        public virtual void BeginTrackingQuery()
+            => _stateManager.BeginTrackingQuery();
+
+        public virtual void StartTracking(object entity, EntityTrackingInfo entityTrackingInfo)
+        {
+            if (_queryBuffer != null)
+            {
+                _queryBuffer.StartTracking(entity, entityTrackingInfo);
+            }
+            else
+            {
+                entityTrackingInfo.StartTracking(_stateManager, entity, ValueBuffer.Empty);
+            }
         }
     }
 }

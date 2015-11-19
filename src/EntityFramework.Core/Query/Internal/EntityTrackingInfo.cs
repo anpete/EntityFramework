@@ -66,10 +66,7 @@ namespace Microsoft.Data.Entity.Query.Internal
             Check.NotNull(stateManager, nameof(stateManager));
             Check.NotNull(entity, nameof(entity));
 
-            stateManager.StartTracking(
-                _entityType,
-                entity,
-                valueBuffer);
+            stateManager.StartTracking(_entityType, entity, valueBuffer);
         }
 
         public struct IncludedEntity
