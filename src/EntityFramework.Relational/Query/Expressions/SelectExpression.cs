@@ -57,6 +57,11 @@ namespace Microsoft.Data.Entity.Query.Expressions
             ? _projection[0].Type
             : base.Type;
 
+        public IQuerySqlGeneratorFactory QuerySqlGeneratorFactory
+        {
+            get { return _querySqlGeneratorFactory; }
+        }
+
         public virtual SelectExpression Clone([NotNull] string alias)
         {
             Check.NotEmpty(alias, nameof(alias));

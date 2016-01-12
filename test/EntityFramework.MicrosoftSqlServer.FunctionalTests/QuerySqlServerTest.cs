@@ -27,10 +27,61 @@ namespace Microsoft.Data.Entity.SqlServer.FunctionalTests
         {
             base.Default_if_empty_top_level();
 
-            Assert.StartsWith(
+            Assert.Equal(
+                @"SELECT [t0].*
+FROM (
+    SELECT NULL AS [empty]
+) AS [empty]
+LEFT JOIN (
+    SELECT [c].[EmployeeID], [c].[City], [c].[Country], [c].[FirstName], [c].[ReportsTo], [c].[Title]
+    FROM [Employees] AS [c]
+    WHERE [c].[EmployeeID] = -1
+) AS [t0] ON 1 = 1",
+                Sql);
+        }
+
+        public override void Default_if_empty_top_level_positive()
+        {
+            base.Default_if_empty_top_level_positive();
+            
+            Assert.Equal(
+                @"SELECT [t0].*
+FROM (
+    SELECT NULL AS [empty]
+) AS [empty]
+LEFT JOIN (
+    SELECT [c].[EmployeeID], [c].[City], [c].[Country], [c].[FirstName], [c].[ReportsTo], [c].[Title]
+    FROM [Employees] AS [c]
+    WHERE [c].[EmployeeID] > 0
+) AS [t0] ON 1 = 1",
+                Sql);
+        }
+
+        public override void Default_if_empty_top_level_arg()
+        {
+            base.Default_if_empty_top_level_arg();
+            
+            Assert.Equal(
                 @"SELECT [c].[EmployeeID], [c].[City], [c].[Country], [c].[FirstName], [c].[ReportsTo], [c].[Title]
 FROM [Employees] AS [c]
 WHERE [c].[EmployeeID] = -1",
+                Sql);
+        }
+
+        public override void Default_if_empty_top_level_projection()
+        {
+            base.Default_if_empty_top_level_projection();
+
+            Assert.Equal(
+                @"SELECT [t0].*
+FROM (
+    SELECT NULL AS [empty]
+) AS [empty]
+LEFT JOIN (
+    SELECT [c].[EmployeeID], [c].[City], [c].[Country], [c].[FirstName], [c].[ReportsTo], [c].[Title]
+    FROM [Employees] AS [c]
+    WHERE [c].[EmployeeID] > 0
+) AS [t0] ON 1 = 1",
                 Sql);
         }
 

@@ -15,10 +15,5 @@ namespace Microsoft.Data.Entity.InMemory.FunctionalTests
             : base(fixture)
         {
         }
-
-        public override void Default_if_empty_top_level_arg()
-        {
-            base.Default_if_empty_top_level_arg();
-        }
     }
 }

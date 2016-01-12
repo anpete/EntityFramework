@@ -77,6 +77,7 @@ namespace Microsoft.Data.Entity.Query.Internal
                 { typeof(ContainsResultOperator), HandleContains },
                 { typeof(CountResultOperator), HandleCount },
                 { typeof(LongCountResultOperator), HandleLongCount },
+                { typeof(DefaultIfEmptyResultOperator), HandleDefaultIfEmpty },
                 { typeof(DistinctResultOperator), HandleDistinct },
                 { typeof(FirstResultOperator), HandleFirst },
                 { typeof(GroupResultOperator), HandleGroup },
@@ -225,65 +226,95 @@ namespace Microsoft.Data.Entity.Query.Internal
             return TransformClientExpression<int>(handlerContext);
         }
 
-        private static Expression HandleLongCount(HandlerContext handlerContext)
+        private static Expression HandleDefaultIfEmpty(HandlerContext handlerContext)
         {
-            handlerContext.SelectExpression
-                .SetProjectionExpression(new CountExpression(typeof(long)));
+            var defaultIfEmptyResultOperator = (DefaultIfEmptyResultOperator)handlerContext.ResultOperator;
 
-            handlerContext.SelectExpression.ClearOrderBy();
-
-            return TransformClientExpression<long>(handlerContext);
-        }
-
-        private static Expression HandleMin(HandlerContext handlerContext)
-        {
-            if (!handlerContext.QueryModelVisitor.RequiresClientProjection)
+            if (defaultIfEmptyResultOperator.OptionalDefaultValue != null)
             {
-                var minExpression
-                    = new MinExpression(handlerContext.SelectExpression.Projection.Single());
-
-                handlerContext.SelectExpression.SetProjectionExpression(minExpression);
-
-                return (Expression)_transformClientExpressionMethodInfo
-                    .MakeGenericMethod(minExpression.Type)
-                    .Invoke(null, new object[] { handlerContext });
+                return handlerContext.EvalOnClient();
             }
 
-            return handlerContext.EvalOnClient();
+            var selectExpression = handlerContext.SelectExpression;
+
+            selectExpression.PushDownSubquery();
+
+            var subquery = selectExpression.Tables.Single();
+
+            selectExpression.ClearTables();
+
+            var emptySelectExpression = new SelectExpression(selectExpression.QuerySqlGeneratorFactory, "empty");
+            emptySelectExpression.AddToProjection(new AliasExpression("empty", Expression.Constant(null)));
+
+            selectExpression.AddTable(emptySelectExpression);
+
+            var leftOuterJoinExpression = new LeftOuterJoinExpression(subquery);
+            var constant1 = Expression.Constant(1);
+
+            leftOuterJoinExpression.Predicate = Expression.Equal(constant1, constant1);
+
+            selectExpression.AddTable(leftOuterJoinExpression);
+
+            var shapedQueryMethod = (MethodCallExpression)handlerContext.QueryModelVisitor.Expression;
+            var shaper = (Shaper)((ConstantExpression)shapedQueryMethod.Arguments[2]).Value;
+
+            return Expression.Call(
+                shapedQueryMethod.Method,
+                shapedQueryMethod.Arguments[0],
+                shapedQueryMethod.Arguments[1],
+                Expression.Constant(
+                    _createDefaultIfEmptyShaperMethodInfo
+                        .MakeGenericMethod(shaper.Type)
+                        .Invoke(null, new object[] { shaper.QuerySource, shaper })));
         }
 
-        private static Expression HandleMax(HandlerContext handlerContext)
+        private static readonly MethodInfo _createDefaultIfEmptyShaperMethodInfo
+            = typeof(RelationalResultOperatorHandler).GetTypeInfo()
+                .GetDeclaredMethod(nameof(CreateDefaultIfEmptyShaper));
+
+        [UsedImplicitly]
+        private static DefaultIfEmptyShaper<TSource> CreateDefaultIfEmptyShaper<TSource>(
+            IQuerySource querySource,
+            IShaper<TSource> innerShaper)
+            => new DefaultIfEmptyShaper<TSource>(querySource, innerShaper);
+
+        private class DefaultIfEmptyShaper<TSource> : Shaper, IShaper<TSource>
         {
-            if (!handlerContext.QueryModelVisitor.RequiresClientProjection)
+            private readonly IShaper<TSource> _innerShaper;
+            private bool _checkedEmpty;
+
+            public DefaultIfEmptyShaper(IQuerySource querySource, IShaper<TSource> innerShaper)
+                : base(querySource)
             {
-                var maxExpression
-                    = new MaxExpression(handlerContext.SelectExpression.Projection.Single());
-
-                handlerContext.SelectExpression.SetProjectionExpression(maxExpression);
-
-                return (Expression)_transformClientExpressionMethodInfo
-                    .MakeGenericMethod(maxExpression.Type)
-                    .Invoke(null, new object[] { handlerContext });
+                _innerShaper = innerShaper;
             }
 
-            return handlerContext.EvalOnClient();
-        }
-
-        private static Expression HandleSum(HandlerContext handlerContext)
-        {
-            if (!handlerContext.QueryModelVisitor.RequiresClientProjection)
+            public TSource Shape(QueryContext queryContext, ValueBuffer valueBuffer)
             {
-                var sumExpression
-                    = new SumExpression(handlerContext.SelectExpression.Projection.Single());
+                if (!_checkedEmpty)
+                {
+                    var empty = true;
 
-                handlerContext.SelectExpression.SetProjectionExpression(sumExpression);
+                    for (var i = 0; i < valueBuffer.Count; i++)
+                    {
+                        empty &= valueBuffer[i] == null;
+                    }
 
-                return (Expression)_transformClientExpressionMethodInfo
-                    .MakeGenericMethod(sumExpression.Type)
-                    .Invoke(null, new object[] { handlerContext });
+                    if (empty)
+                    {
+                        return default(TSource);
+                    }
+
+                    _checkedEmpty = true;
+                }
+
+                return _innerShaper.Shape(queryContext, valueBuffer);
             }
 
-            return handlerContext.EvalOnClient();
+            public override Type Type => typeof(TSource);
+
+            public override bool IsShaperForQuerySource(IQuerySource querySource)
+                => _innerShaper.IsShaperForQuerySource(querySource);
         }
 
         private static Expression HandleDistinct(HandlerContext handlerContext)
@@ -381,6 +412,50 @@ namespace Microsoft.Data.Entity.Query.Internal
             }
 
             return handlerContext.EvalOnClient(requiresClientResultOperator: false);
+        }
+
+        private static Expression HandleLongCount(HandlerContext handlerContext)
+        {
+            handlerContext.SelectExpression
+                .SetProjectionExpression(new CountExpression(typeof(long)));
+
+            handlerContext.SelectExpression.ClearOrderBy();
+
+            return TransformClientExpression<long>(handlerContext);
+        }
+
+        private static Expression HandleMin(HandlerContext handlerContext)
+        {
+            if (!handlerContext.QueryModelVisitor.RequiresClientProjection)
+            {
+                var minExpression
+                    = new MinExpression(handlerContext.SelectExpression.Projection.Single());
+
+                handlerContext.SelectExpression.SetProjectionExpression(minExpression);
+
+                return (Expression)_transformClientExpressionMethodInfo
+                    .MakeGenericMethod(minExpression.Type)
+                    .Invoke(null, new object[] { handlerContext });
+            }
+
+            return handlerContext.EvalOnClient();
+        }
+
+        private static Expression HandleMax(HandlerContext handlerContext)
+        {
+            if (!handlerContext.QueryModelVisitor.RequiresClientProjection)
+            {
+                var maxExpression
+                    = new MaxExpression(handlerContext.SelectExpression.Projection.Single());
+
+                handlerContext.SelectExpression.SetProjectionExpression(maxExpression);
+
+                return (Expression)_transformClientExpressionMethodInfo
+                    .MakeGenericMethod(maxExpression.Type)
+                    .Invoke(null, new object[] { handlerContext });
+            }
+
+            return handlerContext.EvalOnClient();
         }
 
         private static Expression HandleOfType(HandlerContext handlerContext)
@@ -503,6 +578,23 @@ namespace Microsoft.Data.Entity.Query.Internal
             handlerContext.SelectExpression.Offset = skipResultOperator.Count;
 
             return handlerContext.EvalOnServer;
+        }
+
+        private static Expression HandleSum(HandlerContext handlerContext)
+        {
+            if (!handlerContext.QueryModelVisitor.RequiresClientProjection)
+            {
+                var sumExpression
+                    = new SumExpression(handlerContext.SelectExpression.Projection.Single());
+
+                handlerContext.SelectExpression.SetProjectionExpression(sumExpression);
+
+                return (Expression)_transformClientExpressionMethodInfo
+                    .MakeGenericMethod(sumExpression.Type)
+                    .Invoke(null, new object[] { handlerContext });
+            }
+
+            return handlerContext.EvalOnClient();
         }
 
         private static Expression HandleTake(HandlerContext handlerContext)

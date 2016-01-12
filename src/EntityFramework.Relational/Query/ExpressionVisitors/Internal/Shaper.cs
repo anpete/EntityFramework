@@ -26,6 +26,6 @@ namespace Microsoft.Data.Entity.Query.ExpressionVisitors.Internal
 
         public abstract Type Type { get; }
 
-        protected virtual IQuerySource QuerySource => _querySource;
+        public virtual IQuerySource QuerySource => _querySource;
     }
 }
