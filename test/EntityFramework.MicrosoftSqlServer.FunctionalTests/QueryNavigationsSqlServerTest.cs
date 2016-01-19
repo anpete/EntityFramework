@@ -239,6 +239,15 @@ FROM [Orders] AS [o]",
                 Sql);
         }
 
+        public override void SelectMany_collection_deep()
+        {
+            base.SelectMany_collection_deep();
+
+            Assert.Equal(
+                @"",
+                Sql);
+        }
+
         public override void Select_collection_navigation_multi_part()
         {
             base.Select_collection_navigation_multi_part();

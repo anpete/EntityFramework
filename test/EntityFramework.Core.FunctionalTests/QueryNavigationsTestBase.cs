@@ -7,6 +7,7 @@ using Microsoft.Data.Entity.FunctionalTests.TestModels.Northwind;
 using Microsoft.Data.Entity.FunctionalTests.TestUtilities.Xunit;
 using Xunit;
 // ReSharper disable UseCollectionCountProperty
+// ReSharper disable StringStartsWithIsCultureSpecific
 
 // ReSharper disable AccessToDisposedClosure
 // ReSharper disable PossibleUnintendedReferenceComparison
@@ -203,7 +204,7 @@ namespace Microsoft.Data.Entity.FunctionalTests
                         select new { A = o.Customer, B = o.Customer.City }).ToList();
 
                 Assert.Equal(14, orders.Count);
-                Assert.True(orders.All(o => (o.A != null) && (o.B != null)));
+                Assert.True(orders.All(o => o.A != null && o.B != null));
             }
         }
 
@@ -219,7 +220,7 @@ namespace Microsoft.Data.Entity.FunctionalTests
                        select new { A = o.Customer, B = o.Customer.City }).ToListAsync();
 
                 Assert.Equal(14, orders.Count);
-                Assert.True(orders.All(o => (o.A != null) && (o.B != null)));
+                Assert.True(orders.All(o => o.A != null && o.B != null));
             }
         }
 
@@ -230,8 +231,8 @@ namespace Microsoft.Data.Entity.FunctionalTests
             {
                 var orders
                     = (from o in context.Set<Order>()
-                        where (o.Customer.City == "Seattle")
-                              && (o.Customer.Phone != "555 555 5555")
+                        where o.Customer.City == "Seattle"
+                              && o.Customer.Phone != "555 555 5555"
                         select o).ToList();
 
                 Assert.Equal(14, orders.Count);
@@ -245,8 +246,8 @@ namespace Microsoft.Data.Entity.FunctionalTests
             {
                 var orders
                     = (from o in context.Set<Order>()
-                        where (o.Customer.City == "Seattle")
-                              && (o.Customer.Phone != "555 555 5555")
+                        where o.Customer.City == "Seattle"
+                              && o.Customer.Phone != "555 555 5555"
                         select o).ToList();
 
                 Assert.Equal(14, orders.Count);
@@ -277,7 +278,7 @@ namespace Microsoft.Data.Entity.FunctionalTests
                         select new { A = o.Customer, B = o.Customer }).ToList();
 
                 Assert.Equal(830, orders.Count);
-                Assert.True(orders.All(o => (o.A != null) && (o.B != null)));
+                Assert.True(orders.All(o => o.A != null && o.B != null));
             }
         }
 
@@ -293,7 +294,7 @@ namespace Microsoft.Data.Entity.FunctionalTests
                         select new { A = o.Customer, B = o.Customer }).ToList();
 
                 Assert.Equal(14, orders.Count);
-                Assert.True(orders.All(o => (o.A != null) && (o.B != null)));
+                Assert.True(orders.All(o => o.A != null && o.B != null));
             }
         }
 
@@ -304,12 +305,29 @@ namespace Microsoft.Data.Entity.FunctionalTests
             {
                 var query = from c in context.Customers
                             where c.CustomerID.StartsWith("A")
-                            select new { Orders = c.Orders };
+                            select new { c.Orders };
 
                 var results = query.ToList();
 
                 Assert.Equal(4, results.Count);
                 Assert.True(results.All(r => r.Orders.Count > 0));
+            }
+        }
+
+        [ConditionalFact]
+        public virtual void SelectMany_collection_deep()
+        {
+            using (var context = CreateContext())
+            {
+                var query = from c in context.Customers
+                            where c.CustomerID == "ALFKI"
+                            from o in c.Orders
+                            //from od in o.OrderDetails
+                            select o.ShipCity;
+
+                var results = query.ToList();
+
+                Assert.Equal(6, results.Count);
             }
         }
 
@@ -320,7 +338,7 @@ namespace Microsoft.Data.Entity.FunctionalTests
             {
                 var query = from o in context.Orders
                             where o.CustomerID == "ALFKI"
-                            select new { Orders = o.Customer.Orders };
+                            select new { o.Customer.Orders };
 
                 var results = query.ToList();
 
