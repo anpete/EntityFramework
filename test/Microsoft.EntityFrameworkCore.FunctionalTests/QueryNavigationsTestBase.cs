@@ -27,6 +27,15 @@ namespace Microsoft.EntityFrameworkCore.FunctionalTests
                         where o.Customer.City == "Seattle"
                         select o).ToList();
 
+//                var orders
+//                    = (from o in context.Set<Order>()
+//                       where (from c in context.Set<Customer>()
+//                              where c.CustomerID == o.CustomerID
+//                              select c
+//                           ).First()
+//                           .City == "Seattle"
+//                       select o).ToList();
+
                 Assert.Equal(14, orders.Count);
             }
         }
@@ -94,9 +103,17 @@ namespace Microsoft.EntityFrameworkCore.FunctionalTests
         {
             using (var context = CreateContext())
             {
+//                var orderDetails
+//                    = (from od in context.Set<OrderDetail>()
+//                        where od.Order.Customer.City == "Seattle"
+//                        select od).Take(1).ToList();
+
                 var orderDetails
                     = (from od in context.Set<OrderDetail>()
-                        where od.Order.Customer.City == "Seattle"
+                        where ((from o in context.Set<Order>()
+                                join c in context.Set<Customer>() on o.CustomerID equals c.CustomerID
+                                where o.OrderID == od.OrderID
+                                select c).First()).City == "Seattle"
                         select od).Take(1).ToList();
 
                 Assert.Equal(1, orderDetails.Count);
@@ -108,10 +125,18 @@ namespace Microsoft.EntityFrameworkCore.FunctionalTests
         {
             using (var context = CreateContext())
             {
+//                var employees
+//                    = (from e in context.Set<Employee>()
+//                        where e.Manager == null
+//                        select e).ToList();
+
                 var employees
                     = (from e in context.Set<Employee>()
-                        where e.Manager == null
-                        select e).ToList();
+                       where (from m in context.Set<Employee>()
+                              where m.EmployeeID == e.ReportsTo
+                              select e)
+                           .FirstOrDefault() == null
+                       select e).ToList();
 
                 Assert.Equal(1, employees.Count);
             }
@@ -165,10 +190,19 @@ namespace Microsoft.EntityFrameworkCore.FunctionalTests
         {
             using (var context = CreateContext())
             {
+//                var orders
+//                    = (from o in context.Set<Order>().Include(o => o.Customer)
+//                        where o.Customer.City == "Seattle"
+//                        select o).ToList();
+
                 var orders
                     = (from o in context.Set<Order>().Include(o => o.Customer)
-                        where o.Customer.City == "Seattle"
-                        select o).ToList();
+                       where (from c in context.Set<Customer>()
+                              where c.CustomerID == o.CustomerID
+                              select c
+                           ).First()
+                           .City == "Seattle"
+                       select o).ToList();
 
                 Assert.Equal(14, orders.Count);
                 Assert.True(orders.All(o => o.Customer != null));
@@ -228,11 +262,20 @@ namespace Microsoft.EntityFrameworkCore.FunctionalTests
         {
             using (var context = CreateContext())
             {
+//                var orders
+//                    = (from o in context.Set<Order>()
+//                        where (o.Customer.City == "Seattle")
+//                              && (o.Customer.Phone != "555 555 5555")
+
                 var orders
                     = (from o in context.Set<Order>()
-                        where (o.Customer.City == "Seattle")
-                              && (o.Customer.Phone != "555 555 5555")
-                        select o).ToList();
+                       where (from c in context.Set<Customer>()
+                              where c.CustomerID == o.CustomerID
+                              select c).First().City == "Seattle"
+                             && (from c in context.Set<Customer>()
+                                 where c.CustomerID == o.CustomerID
+                                 select c).First().Phone != "555 555 5555"
+                       select o).ToList();
 
                 Assert.Equal(14, orders.Count);
             }
@@ -258,9 +301,16 @@ namespace Microsoft.EntityFrameworkCore.FunctionalTests
         {
             using (var context = CreateContext())
             {
+//                var orders
+//                    = (from o in context.Set<Order>()
+//                        select o.Customer).ToList();
+
                 var orders
                     = (from o in context.Set<Order>()
-                        select o.Customer).ToList();
+                       select (from c in context.Set<Customer>()
+                               where c.CustomerID == o.CustomerID
+                               select c)
+                           .First()).ToList();
 
                 Assert.Equal(830, orders.Count);
                 Assert.True(orders.All(o => o != null));
@@ -302,11 +352,15 @@ namespace Microsoft.EntityFrameworkCore.FunctionalTests
         {
             using (var context = CreateContext())
             {
-                var query = from c in context.Customers
-                            where c.CustomerID.StartsWith("A")
-                            select new { Orders = c.Orders };
+//                var results = (from c in context.Customers
+//                               where c.CustomerID.StartsWith("A")
+//                               select new { Orders = c.Orders }).ToList();
 
-                var results = query.ToList();
+                var results = (from c in context.Customers
+                               where c.CustomerID.StartsWith("A")
+                               select new { Orders = (from o in context.Orders
+                                                      where o.CustomerID == c.CustomerID
+                                                      select o).ToList() }).ToList();
 
                 Assert.Equal(4, results.Count);
                 Assert.True(results.All(r => r.Orders.Count > 0));
@@ -670,10 +724,23 @@ namespace Microsoft.EntityFrameworkCore.FunctionalTests
         {
             using (var context = CreateContext())
             {
+//                var query = from o in context.Orders
+//                            // ReSharper disable once UseMethodAny.0
+//                            where (from od in context.OrderDetails
+//                                   where o.Customer.Country == od.Order.Customer.Country
+//                                   select od).Count() > 0
+//                            select o;
+
                 var query = from o in context.Orders
                             // ReSharper disable once UseMethodAny.0
                             where (from od in context.OrderDetails
-                                   where o.Customer.Country == od.Order.Customer.Country
+                                   where (from c in context.Set<Customer>()
+                                          where c.CustomerID == o.CustomerID
+                                          select c).First().Country
+                                         == (from o2 in context.Set<Order>()
+                                             join c in context.Set<Customer>() on o2.CustomerID equals c.CustomerID
+                                             where o2.OrderID == od.OrderID
+                                             select c).First().Country
                                    select od).Count() > 0
                             select o;
 

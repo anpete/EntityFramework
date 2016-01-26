@@ -19,6 +19,14 @@ FROM [Orders] AS [o]
 INNER JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[CustomerID]
 WHERE [o.Customer].[City] = 'Seattle'",
                 Sql);
+
+//SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
+//FROM [Orders] AS [o]
+//WHERE (
+//    SELECT TOP(1) [c].[City]
+//    FROM [Customers] AS [c]
+//    WHERE [c].[CustomerID] = [o].[CustomerID]
+//) = 'Seattle'
         }
 
         public override void Select_Where_Navigation_Deep()
@@ -34,6 +42,15 @@ INNER JOIN [Orders] AS [od.Order] ON [od].[OrderID] = [od.Order].[OrderID]
 INNER JOIN [Customers] AS [od.Order.Customer] ON [od.Order].[CustomerID] = [od.Order.Customer].[CustomerID]
 WHERE [od.Order.Customer].[City] = 'Seattle'",
                 Sql);
+
+//            SELECT TOP(@__p_0) [od].[OrderID], [od].[ProductID], [od].[Discount], [od].[Quantity], [od].[UnitPrice]
+//FROM [Order Details] AS [od]
+//WHERE (
+//    SELECT TOP(1) [c].[City]
+//    FROM [Orders] AS [o]
+//    INNER JOIN [Customers] AS [c] ON [o].[CustomerID] = [c].[CustomerID]
+//    WHERE [o].[OrderID] = [od].[OrderID]
+//) = 'Seattle'
         }
 
         public override void Select_Where_Navigation_Included()
@@ -47,6 +64,15 @@ INNER JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[Custo
 LEFT JOIN [Customers] AS [c] ON [o].[CustomerID] = [c].[CustomerID]
 WHERE [o.Customer].[City] = 'Seattle'",
                 Sql);
+
+//SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate], [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
+//FROM [Orders] AS [o]
+//LEFT JOIN [Customers] AS [c] ON [o].[CustomerID] = [c].[CustomerID]
+//WHERE (
+//    SELECT TOP(1) [c].[City]
+//    FROM [Customers] AS [c]
+//    WHERE [c].[CustomerID] = [o].[CustomerID]
+//) = 'Seattle'
         }
 
         public override void Select_Navigation()
@@ -58,6 +84,12 @@ WHERE [o.Customer].[City] = 'Seattle'",
 FROM [Orders] AS [o]
 INNER JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[CustomerID]",
                 Sql);
+
+//SELECT [o].[CustomerID]
+//FROM [Orders] AS [o]
+//
+//SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
+//FROM [Customers] AS [c]
         }
 
         public override void Select_Navigations()
@@ -81,6 +113,18 @@ FROM [Orders] AS [o]
 INNER JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[CustomerID]
 WHERE (([o.Customer].[City] = 'Seattle') AND [o.Customer].[City] IS NOT NULL) AND (([o.Customer].[Phone] <> '555 555 5555') OR [o.Customer].[Phone] IS NULL)",
                 Sql);
+
+//SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
+//FROM [Orders] AS [o]
+//WHERE ((
+//    SELECT TOP(1) [c].[City]
+//    FROM [Customers] AS [c]
+//    WHERE [c].[CustomerID] = [o].[CustomerID]
+//) = 'Seattle') AND ((
+//    SELECT TOP(1) [c].[Phone]
+//    FROM [Customers] AS [c]
+//    WHERE [c].[CustomerID] = [o].[CustomerID]
+//) <> '555 555 5555')
         }
 
         public override void Select_Where_Navigation_Multiple_Access()
