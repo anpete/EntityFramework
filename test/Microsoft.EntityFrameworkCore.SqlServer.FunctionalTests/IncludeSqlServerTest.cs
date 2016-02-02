@@ -14,7 +14,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public IncludeSqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
 
         public override void Include_list()
@@ -333,6 +333,25 @@ ORDER BY [c].[CustomerID]",
                 Sql);
         }
 
+        public override void Include_collection_with_client_filter()
+        {
+            base.Include_collection_with_client_filter();
+
+            Assert.Equal(
+                @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
+FROM [Customers] AS [c]
+ORDER BY [c].[CustomerID]
+
+SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
+FROM [Orders] AS [o]
+INNER JOIN (
+    SELECT DISTINCT [c].[CustomerID]
+    FROM [Customers] AS [c]
+) AS [c] ON [o].[CustomerID] = [c].[CustomerID]
+ORDER BY [c].[CustomerID]",
+                Sql);
+        }
+
         public override void Include_collection_with_filter_reordered()
         {
             base.Include_collection_with_filter_reordered();
@@ -502,26 +521,6 @@ ORDER BY [t0].[CustomerID], [t1].[CustomerID]
 SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
 INNER JOIN (
-    SELECT DISTINCT [t0].[CustomerID], [t1].[CustomerID] AS [CustomerID0]
-    FROM (
-        SELECT TOP(@__p_0) [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
-        FROM [Customers] AS [c]
-        ORDER BY [c].[CustomerID]
-    ) AS [t0]
-    CROSS JOIN (
-        SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
-        FROM [Customers] AS [c]
-        ORDER BY [c].[CustomerID]
-        OFFSET 2 ROWS FETCH NEXT 2 ROWS ONLY
-    ) AS [t1]
-) AS [t1] ON [o].[CustomerID] = [t1].[CustomerID0]
-ORDER BY [t1].[CustomerID], [t1].[CustomerID0]
-
-@__p_0: 2
-
-SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
-FROM [Orders] AS [o]
-INNER JOIN (
     SELECT DISTINCT [t0].[CustomerID]
     FROM (
         SELECT TOP(@__p_0) [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
@@ -535,7 +534,27 @@ INNER JOIN (
         OFFSET 2 ROWS FETCH NEXT 2 ROWS ONLY
     ) AS [t1]
 ) AS [t0] ON [o].[CustomerID] = [t0].[CustomerID]
-ORDER BY [t0].[CustomerID]",
+ORDER BY [t0].[CustomerID]
+
+@__p_0: 2
+
+SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
+FROM [Orders] AS [o]
+INNER JOIN (
+    SELECT DISTINCT [t0].[CustomerID], [t1].[CustomerID] AS [CustomerID0]
+    FROM (
+        SELECT TOP(@__p_0) [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
+        FROM [Customers] AS [c]
+        ORDER BY [c].[CustomerID]
+    ) AS [t0]
+    CROSS JOIN (
+        SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
+        FROM [Customers] AS [c]
+        ORDER BY [c].[CustomerID]
+        OFFSET 2 ROWS FETCH NEXT 2 ROWS ONLY
+    ) AS [t1]
+) AS [t1] ON [o].[CustomerID] = [t1].[CustomerID0]
+ORDER BY [t1].[CustomerID], [t1].[CustomerID0]",
                     Sql);
             }
         }
@@ -570,28 +589,6 @@ ORDER BY [t0].[CustomerID], [t1].[CustomerID]
 SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
 INNER JOIN (
-    SELECT DISTINCT TOP(@__p_1) [t0].[CustomerID], [t1].[CustomerID] AS [CustomerID0]
-    FROM (
-        SELECT TOP(@__p_0) [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
-        FROM [Customers] AS [c]
-        ORDER BY [c].[CustomerID]
-    ) AS [t0]
-    CROSS JOIN (
-        SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
-        FROM [Customers] AS [c]
-        ORDER BY [c].[CustomerID]
-        OFFSET 2 ROWS FETCH NEXT 2 ROWS ONLY
-    ) AS [t1]
-    ORDER BY [t0].[CustomerID], [t1].[CustomerID]
-) AS [t1] ON [o].[CustomerID] = [t1].[CustomerID0]
-ORDER BY [t1].[CustomerID], [t1].[CustomerID0]
-
-@__p_1: 1
-@__p_0: 2
-
-SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
-FROM [Orders] AS [o]
-INNER JOIN (
     SELECT DISTINCT TOP(@__p_1) [t0].[CustomerID]
     FROM (
         SELECT TOP(@__p_0) [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
@@ -606,7 +603,29 @@ INNER JOIN (
     ) AS [t1]
     ORDER BY [t0].[CustomerID]
 ) AS [t0] ON [o].[CustomerID] = [t0].[CustomerID]
-ORDER BY [t0].[CustomerID]",
+ORDER BY [t0].[CustomerID]
+
+@__p_1: 1
+@__p_0: 2
+
+SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
+FROM [Orders] AS [o]
+INNER JOIN (
+    SELECT DISTINCT TOP(@__p_1) [t0].[CustomerID], [t1].[CustomerID] AS [CustomerID0]
+    FROM (
+        SELECT TOP(@__p_0) [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
+        FROM [Customers] AS [c]
+        ORDER BY [c].[CustomerID]
+    ) AS [t0]
+    CROSS JOIN (
+        SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
+        FROM [Customers] AS [c]
+        ORDER BY [c].[CustomerID]
+        OFFSET 2 ROWS FETCH NEXT 2 ROWS ONLY
+    ) AS [t1]
+    ORDER BY [t0].[CustomerID], [t1].[CustomerID]
+) AS [t1] ON [o].[CustomerID] = [t1].[CustomerID0]
+ORDER BY [t1].[CustomerID], [t1].[CustomerID0]",
                     Sql);
             }
         }

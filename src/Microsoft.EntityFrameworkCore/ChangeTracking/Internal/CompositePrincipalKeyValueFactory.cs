@@ -23,9 +23,16 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
 
             var structuralTypeInfo = typeof(IStructuralEquatable).GetTypeInfo();
 
-            EqualityComparer = _properties.Any(p => structuralTypeInfo.IsAssignableFrom(p.ClrType.GetTypeInfo()))
-                ? (IEqualityComparer<object[]>)new StructuralCompositeComparer()
-                : new CompositeComparer();
+            if (_properties.Any(p => structuralTypeInfo.IsAssignableFrom(p.ClrType.GetTypeInfo())))
+            {
+                EqualityComparer = new StructuralCompositeEqualityComparer();
+                Comparer = new StructuralCompositeComparer();
+            }
+            else
+            {
+                EqualityComparer = new CompositeEqualityComparer();
+                Comparer = new CompositeComparer();
+            }
         }
 
         public virtual object CreateFromBuffer(ValueBuffer valueBuffer)
@@ -70,7 +77,9 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
 
         public virtual IEqualityComparer<object[]> EqualityComparer { get; }
 
-        private sealed class CompositeComparer : IEqualityComparer<object[]>
+        public virtual IComparer<object[]> Comparer { get; }
+
+        private sealed class CompositeEqualityComparer : IEqualityComparer<object[]>
         {
             public bool Equals(object[] x, object[] y)
             {
@@ -108,7 +117,37 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
             }
         }
 
-        private sealed class StructuralCompositeComparer : IEqualityComparer<object[]>
+        private sealed class CompositeComparer : IComparer<object[]>
+        {
+            private readonly IComparer _comparer = Comparer<object>.Default;
+
+            public int Compare(object[] x, object[] y)
+            {
+                if (ReferenceEquals(x, y))
+                {
+                    return 0;
+                }
+
+                if (x.Length != y.Length)
+                {
+                    return 1;
+                }
+
+                for (var i = 0; i < x.Length; i++)
+                {
+                    var result = _comparer.Compare(x[i], y[i]);
+
+                    if (result != 0)
+                    {
+                        return result;
+                    }
+                }
+
+                return 0;
+            }
+        }
+
+        private sealed class StructuralCompositeEqualityComparer : IEqualityComparer<object[]>
         {
             private readonly IEqualityComparer _structuralEqualityComparer
                 = StructuralComparisons.StructuralEqualityComparer;
@@ -146,6 +185,36 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
                 }
 
                 return hashCode;
+            }
+        }
+
+        private sealed class StructuralCompositeComparer : IComparer<object[]>
+        {
+            private readonly IComparer _structuralComparer = StructuralComparisons.StructuralComparer;
+
+            public int Compare(object[] x, object[] y)
+            {
+                if (ReferenceEquals(x, y))
+                {
+                    return 0;
+                }
+
+                if (x.Length != y.Length)
+                {
+                    return 1;
+                }
+
+                for (var i = 0; i < x.Length; i++)
+                {
+                    var result = _structuralComparer.Compare(x[i], y[i]);
+
+                    if (result != 0)
+                    {
+                        return result;
+                    }
+                }
+
+                return 0;
             }
         }
     }

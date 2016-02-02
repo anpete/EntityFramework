@@ -69,18 +69,17 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             Check.NotNull(accessorLambda, nameof(accessorLambda));
 
             var keyComparerParameter = Expression.Parameter(typeof(IIncludeKeyComparer), "keyComparer");
-            var navigationPath = includeSpecification.NavigationPath;
 
             Expression
                 = Expression.Call(
                     _includeMethodInfo.MakeGenericMethod(resultType),
                     QueryContextParameter,
                     Expression,
-                    Expression.Constant(navigationPath),
+                    Expression.Constant(includeSpecification.NavigationPath),
                     accessorLambda,
                     Expression.NewArrayInit(
                         typeof(RelatedEntitiesLoader),
-                        navigationPath.Select(
+                        includeSpecification.NavigationPath.Select(
                             n =>
                                 {
                                     var targetType = n.GetTargetType();

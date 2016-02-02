@@ -440,6 +440,26 @@ namespace Microsoft.EntityFrameworkCore.FunctionalTests
         }
 
         [Fact]
+        public virtual void Include_collection_with_client_filter()
+        {
+            using (var context = CreateContext())
+            {
+                var customers
+                    = context.Set<Customer>()
+                        .Include(c => c.Orders)
+                        .Where(c => c.IsLondon)
+                        .ToList();
+
+                Assert.Equal(6, customers.Count);
+                Assert.Equal(46, customers.SelectMany(c => c.Orders).Count());
+                Assert.True(customers.SelectMany(c => c.Orders).All(o => o.Customer != null));
+                Assert.Equal(13, customers.First().Orders.Count); // AROUT
+                Assert.Equal(9, customers.Last().Orders.Count); // SEVES
+                Assert.Equal(6 + 46, context.ChangeTracker.Entries().Count());
+            }
+        }
+
+        [Fact]
         public virtual void Include_collection_with_filter_reordered()
         {
             using (var context = CreateContext())

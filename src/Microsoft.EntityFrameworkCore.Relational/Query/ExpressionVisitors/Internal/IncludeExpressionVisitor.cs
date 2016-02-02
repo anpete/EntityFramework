@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -24,10 +23,10 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         private readonly IShaperCommandContextFactory _shaperCommandContextFactory;
         private readonly IRelationalAnnotationProvider _relationalAnnotationProvider;
         private readonly IQuerySqlGeneratorFactory _querySqlGeneratorFactory;
-        private readonly IQuerySource _querySource;
-        private readonly IReadOnlyList<INavigation> _navigationPath;
+        private readonly IncludeSpecification _includeSpecification;
         private readonly RelationalQueryCompilationContext _queryCompilationContext;
         private readonly IReadOnlyList<int> _queryIndexes;
+        private readonly LambdaExpression _accessorLambda;
         private readonly bool _querySourceRequiresTracking;
 
         public IncludeExpressionVisitor(
@@ -36,10 +35,10 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             [NotNull] IShaperCommandContextFactory shaperCommandContextFactory,
             [NotNull] IRelationalAnnotationProvider relationalAnnotationProvider,
             [NotNull] IQuerySqlGeneratorFactory querySqlGeneratorFactory,
-            [NotNull] IQuerySource querySource,
-            [NotNull] IReadOnlyList<INavigation> navigationPath,
+            [NotNull] IncludeSpecification includeSpecification,
             [NotNull] RelationalQueryCompilationContext queryCompilationContext,
             [NotNull] IReadOnlyList<int> queryIndexes,
+            [NotNull] LambdaExpression accessorLambda,
             bool querySourceRequiresTracking)
         {
             Check.NotNull(selectExpressionFactory, nameof(selectExpressionFactory));
@@ -47,88 +46,63 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             Check.NotNull(shaperCommandContextFactory, nameof(shaperCommandContextFactory));
             Check.NotNull(relationalAnnotationProvider, nameof(relationalAnnotationProvider));
             Check.NotNull(querySqlGeneratorFactory, nameof(querySqlGeneratorFactory));
-            Check.NotNull(querySource, nameof(querySource));
-            Check.NotNull(navigationPath, nameof(navigationPath));
+            Check.NotNull(includeSpecification, nameof(includeSpecification));
             Check.NotNull(queryCompilationContext, nameof(queryCompilationContext));
             Check.NotNull(queryIndexes, nameof(queryIndexes));
+            Check.NotNull(accessorLambda, nameof(accessorLambda));
 
             _selectExpressionFactory = selectExpressionFactory;
             _materializerFactory = materializerFactory;
             _shaperCommandContextFactory = shaperCommandContextFactory;
             _relationalAnnotationProvider = relationalAnnotationProvider;
             _querySqlGeneratorFactory = querySqlGeneratorFactory;
-            _querySource = querySource;
-            _navigationPath = navigationPath;
+            _includeSpecification = includeSpecification;
             _queryCompilationContext = queryCompilationContext;
             _queryIndexes = queryIndexes;
+            _accessorLambda = accessorLambda;
             _querySourceRequiresTracking = querySourceRequiresTracking;
         }
 
         [CallsMakeGenericMethod(nameof(QueryMethodProvider._Include), typeof(TypeArgumentCategory.EntityTypes), TargetType = typeof(QueryMethodProvider))]
         [CallsMakeGenericMethod(nameof(AsyncQueryMethodProvider._Include), typeof(TypeArgumentCategory.EntityTypes), TargetType = typeof(AsyncQueryMethodProvider))]
-        protected override Expression VisitMethodCall(MethodCallExpression node)
+        protected override Expression VisitMethodCall(MethodCallExpression methodCallExpression)
         {
-            Check.NotNull(node, nameof(node));
+            var resultType = methodCallExpression.Type.TryGetSequenceType();
 
-            if (node.Method.MethodIsClosedFormOf(
-                _queryCompilationContext.QueryMethodProvider.ShapedQueryMethod))
+            if (resultType != null
+                && methodCallExpression.Method.Name != "_ToSequence")
             {
-                var entityShaper
-                    = ((ConstantExpression)node.Arguments[2]).Value
-                        as Shaper;
-
-                if (entityShaper != null
-                    && entityShaper.IsShaperForQuerySource(_querySource))
-                {
-                    var resultType = node.Method.GetGenericArguments()[0];
-
-                    var memberExpression
-                        = _queryCompilationContext.QuerySourceMapping
-                            .GetExpression(_querySource) as MemberExpression;
-
-                    var entityAccessor
-                        = memberExpression == null
-                            ? (Expression)
-                                Expression
-                                    .Default(typeof(Func<,>)
-                                        .MakeGenericType(resultType, typeof(object)))
-                            : Expression
-                                .Lambda(
-                                    memberExpression,
-                                    memberExpression.GetRootExpression<ParameterExpression>());
-
-                    return
-                        Expression.Call(
-                            _queryCompilationContext.QueryMethodProvider.IncludeMethod
-                                .MakeGenericMethod(resultType),
-                            Expression.Convert(node.Arguments[0], typeof(RelationalQueryContext)),
-                            node,
-                            entityAccessor,
-                            Expression.Constant(_navigationPath),
-                            Expression.NewArrayInit(
-                                _queryCompilationContext.QueryMethodProvider.IncludeRelatedValuesFactoryType,
-                                CreateIncludeRelatedValuesStrategyFactories(_querySource, _navigationPath)),
-                            Expression.Constant(_querySourceRequiresTracking));
-                }
+                return
+                    Expression.Call(
+                        _queryCompilationContext.QueryMethodProvider.IncludeMethod
+                            .MakeGenericMethod(resultType),
+                        Expression.Convert(
+                            EntityQueryModelVisitor.QueryContextParameter,
+                            typeof(RelationalQueryContext)),
+                        methodCallExpression,
+                        Expression.Constant(_includeSpecification.NavigationPath),
+                        _accessorLambda,
+                        Expression.NewArrayInit(
+                            _queryCompilationContext.QueryMethodProvider.IncludeRelatedValuesFactoryType,
+                            CreateIncludeRelatedValuesStrategyFactories(_includeSpecification)),
+                        Expression.Constant(_querySourceRequiresTracking));
             }
 
-            return base.VisitMethodCall(node);
+            return base.VisitMethodCall(methodCallExpression);
         }
 
-        private IEnumerable<Expression> CreateIncludeRelatedValuesStrategyFactories(
-            IQuerySource querySource,
-            IEnumerable<INavigation> navigationPath)
+        private IEnumerable<Expression> CreateIncludeRelatedValuesStrategyFactories(IncludeSpecification includeSpecification)
         {
             var selectExpression
-                = _queryCompilationContext.FindSelectExpression(querySource);
+                = _queryCompilationContext.FindSelectExpression(includeSpecification.QuerySource);
 
             var targetTableExpression
-                = selectExpression.GetTableForQuerySource(querySource);
+                = selectExpression.GetTableForQuerySource(includeSpecification.QuerySource);
 
             var canProduceInnerJoin = true;
             var navigationCount = 0;
 
-            foreach (var navigation in navigationPath)
+            foreach (var navigation in includeSpecification.NavigationPath)
             {
                 var queryIndex = _queryIndexes[navigationCount];
                 navigationCount++;
@@ -144,7 +118,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                             targetTableName,
                             _relationalAnnotationProvider.For(targetEntityType).Schema,
                             targetTableAlias,
-                            querySource);
+                            includeSpecification.QuerySource);
 
                     var valueBufferOffset = selectExpression.Projection.Count;
 
@@ -188,7 +162,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                             navigation,
                             navigation.IsDependentToPrincipal() ? targetTableExpression : joinExpression,
                             navigation.IsDependentToPrincipal() ? joinExpression : targetTableExpression,
-                            querySource);
+                            includeSpecification.QuerySource);
 
                     targetTableExpression = joinedTableExpression;
 
@@ -207,11 +181,12 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 else
                 {
                     var principalTable
-                        = (selectExpression.Tables.Count == 1)
-                            && selectExpression.Tables.OfType<SelectExpression>().Any(s => s.Tables.Any(t => t.QuerySource == querySource))
+                        = selectExpression.Tables.Count == 1
+                          && selectExpression.Tables.OfType<SelectExpression>()
+                            .Any(s => s.Tables.Any(t => t.QuerySource == includeSpecification.QuerySource))
                             // true when select is wrapped e.g. when RowNumber paging is enabled
                             ? selectExpression.Tables[0]
-                            : selectExpression.Tables.Last(t => t.QuerySource == querySource);
+                            : selectExpression.Tables.Last(t => t.QuerySource == includeSpecification.QuerySource);
 
                     foreach (var property in navigation.ForeignKey.PrincipalKey.Properties)
                     {
@@ -230,7 +205,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                             targetTableName,
                             _relationalAnnotationProvider.For(targetEntityType).Schema,
                             targetTableAlias,
-                            querySource);
+                            includeSpecification.QuerySource);
 
                     targetSelectExpression.AddTable(targetTableExpression);
 
@@ -242,7 +217,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                                 (p, se) => se.AddToProjection(
                                     _relationalAnnotationProvider.For(p).ColumnName,
                                     p,
-                                    querySource),
+                                    includeSpecification.QuerySource),
                                 querySource: null);
 
                     var innerJoinSelectExpression
@@ -265,7 +240,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                             navigation,
                             targetTableExpression,
                             innerJoinExpression,
-                            querySource);
+                            includeSpecification.QuerySource);
 
                     selectExpression = targetSelectExpression;
 

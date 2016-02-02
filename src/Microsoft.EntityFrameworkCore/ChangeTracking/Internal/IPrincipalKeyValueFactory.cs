@@ -14,5 +14,6 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
         TKey CreateFromOriginalValues([NotNull] InternalEntityEntry entry);
         TKey CreateFromRelationshipSnapshot([NotNull] InternalEntityEntry entry);
         IEqualityComparer<TKey> EqualityComparer { get; }
+        IComparer<TKey> Comparer { get; }
     }
 }

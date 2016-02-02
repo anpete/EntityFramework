@@ -18,9 +18,17 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
         public SimplePrincipalKeyValueFactory([NotNull] PropertyAccessors propertyAccessors)
         {
             _propertyAccessors = propertyAccessors;
-            EqualityComparer = typeof(IStructuralEquatable).GetTypeInfo().IsAssignableFrom(typeof(TKey).GetTypeInfo())
-                ? (IEqualityComparer<TKey>)new NoNullsStructuralEqualityComparer()
-                : new NoNullsEqualityComparer();
+
+            if (typeof(IStructuralEquatable).GetTypeInfo().IsAssignableFrom(typeof(TKey).GetTypeInfo()))
+            {
+                EqualityComparer = new NoNullsStructuralEqualityComparer();
+                Comparer = new NoNullsStructuralComparer();
+            }
+            else
+            {
+                EqualityComparer = new NoNullsEqualityComparer();
+                Comparer = new NoNullsComparer();
+            }
         }
 
         public virtual object CreateFromBuffer(ValueBuffer valueBuffer)
@@ -37,11 +45,19 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
 
         public virtual IEqualityComparer<TKey> EqualityComparer { get; }
 
+        public virtual IComparer<TKey> Comparer { get; }
+
         private sealed class NoNullsEqualityComparer : IEqualityComparer<TKey>
         {
             public bool Equals(TKey x, TKey y) => x.Equals(y);
-
             public int GetHashCode(TKey obj) => obj.GetHashCode();
+        }
+
+        private sealed class NoNullsComparer : IComparer<TKey>
+        {
+            private readonly Comparer<TKey> _comparer = Comparer<TKey>.Default;
+
+            public int Compare(TKey x, TKey y) => _comparer.Compare(x, y);
         }
 
         private sealed class NoNullsStructuralEqualityComparer : IEqualityComparer<TKey>
@@ -52,6 +68,13 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
             public bool Equals(TKey x, TKey y) => _structuralEqualityComparer.Equals(x, y);
 
             public int GetHashCode(TKey obj) => _structuralEqualityComparer.GetHashCode(obj);
+        }
+
+        private sealed class NoNullsStructuralComparer : IComparer<TKey>
+        {
+            private readonly IComparer _structuralComparer = StructuralComparisons.StructuralComparer;
+
+            public int Compare(TKey x, TKey y) => _structuralComparer.Compare(x, y);
         }
     }
 }

@@ -237,10 +237,10 @@ namespace Microsoft.EntityFrameworkCore.Query
             Expression
                 = _includeExpressionVisitorFactory
                     .Create(
-                        includeSpecification.QuerySource,
-                        includeSpecification.NavigationPath,
+                        includeSpecification,
                         QueryCompilationContext,
                         _navigationIndexMap[includeSpecification],
+                        accessorLambda,
                         querySourceRequiresTracking)
                     .Visit(Expression);
         }

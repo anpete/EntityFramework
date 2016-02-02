@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
@@ -12,7 +13,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
     {
         private readonly TKey _principalKeyValue;
         private readonly IDependentKeyValueFactory<TKey> _dependentKeyValueFactory;
-        private readonly IEqualityComparer<TKey> _equalityComparer;
+        private readonly IComparer<TKey> _comparer;
 
         public PrincipalToDependentIncludeComparer(
             [NotNull] TKey principalKeyValue,
@@ -21,14 +22,23 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         {
             _principalKeyValue = principalKeyValue;
             _dependentKeyValueFactory = dependentKeyValueFactory;
-            _equalityComparer = principalKeyValueFactory.EqualityComparer;
+            _comparer = principalKeyValueFactory.Comparer;
         }
 
         public virtual bool ShouldInclude(ValueBuffer valueBuffer)
         {
-            TKey key;
-            return _dependentKeyValueFactory.TryCreateFromBuffer(valueBuffer, out key)
-                   && _equalityComparer.Equals(key, _principalKeyValue);
+            throw new NotImplementedException();
+        }
+
+        public virtual int Compare(ValueBuffer valueBuffer)
+        {
+            TKey dependentKey;
+            if (!_dependentKeyValueFactory.TryCreateFromBuffer(valueBuffer, out dependentKey))
+            {
+                return 1;
+            }
+
+            return _comparer.Compare(dependentKey, _principalKeyValue);
         }
     }
 }

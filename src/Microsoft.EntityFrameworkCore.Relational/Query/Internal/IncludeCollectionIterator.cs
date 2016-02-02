@@ -20,8 +20,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             _relatedValuesEnumerator = relatedValuesEnumerator;
         }
 
-        public virtual IEnumerable<ValueBuffer> GetRelatedValues(
-            [NotNull] IIncludeKeyComparer keyComparer)
+        public virtual IEnumerable<ValueBuffer> GetRelatedValues([NotNull] IIncludeKeyComparer keyComparer)
         {
             if (!_initialized)
             {
@@ -29,8 +28,15 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 _initialized = true;
             }
 
+            // Skip any "dead" rows - Rows whose parents were eliminated during client eval.
             while (_hasRemainingRows
-                   && keyComparer.ShouldInclude(_relatedValuesEnumerator.Current))
+                   && keyComparer.Compare(_relatedValuesEnumerator.Current) < 0)
+            {
+                _hasRemainingRows = _relatedValuesEnumerator.MoveNext();
+            }
+
+            while (_hasRemainingRows
+                   && keyComparer.Compare(_relatedValuesEnumerator.Current) == 0)
             {
                 yield return _relatedValuesEnumerator.Current;
 

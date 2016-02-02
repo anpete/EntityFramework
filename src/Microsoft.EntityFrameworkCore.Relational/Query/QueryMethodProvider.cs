@@ -245,8 +245,8 @@ namespace Microsoft.EntityFrameworkCore.Query
         internal static IEnumerable<T> _Include<T>(
             RelationalQueryContext queryContext,
             IEnumerable<T> innerResults,
-            Func<T, object> entityAccessor,
             IReadOnlyList<INavigation> navigationPath,
+            Func<T, object> entityAccessor,
             IReadOnlyList<Func<IIncludeRelatedValuesStrategy>> includeRelatedValuesStrategyFactories,
             bool querySourceRequiresTracking)
         {

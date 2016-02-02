@@ -8,5 +8,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
     public interface IIncludeKeyComparer
     {
         bool ShouldInclude(ValueBuffer valueBuffer);
+
+        int Compare(ValueBuffer valueBuffer);
     }
 }

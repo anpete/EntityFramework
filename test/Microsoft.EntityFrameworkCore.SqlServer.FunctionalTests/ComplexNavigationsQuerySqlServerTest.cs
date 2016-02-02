@@ -4,14 +4,17 @@
 using System.Linq;
 using Microsoft.EntityFrameworkCore.FunctionalTests;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
 {
     public class ComplexNavigationsQuerySqlServerTest : ComplexNavigationsQueryTestBase<SqlServerTestStore, ComplexNavigationsQuerySqlServerFixture>
     {
-        public ComplexNavigationsQuerySqlServerTest(ComplexNavigationsQuerySqlServerFixture fixture)
+        public ComplexNavigationsQuerySqlServerTest(
+            ComplexNavigationsQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
+            TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
 
         protected override void ClearLog() => TestSqlLoggerFactory.Reset();

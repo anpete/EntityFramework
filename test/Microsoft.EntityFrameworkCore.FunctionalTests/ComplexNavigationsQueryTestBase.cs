@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore.FunctionalTests.TestModels.ComplexNavigation
 using Microsoft.EntityFrameworkCore.FunctionalTests.TestUtilities.Xunit;
 using Xunit;
 using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore.Query;
+
 // ReSharper disable MergeConditionalExpression
 // ReSharper disable ReplaceWithSingleCallToSingle
 // ReSharper disable ReturnValueOfPureMethodIsNotUsed
@@ -597,6 +599,7 @@ namespace Microsoft.EntityFrameworkCore.FunctionalTests
         {
             List<Level1> levelOnes;
             List<Level2> levelTwos;
+
             using (var context = CreateContext())
             {
                 levelOnes = context.LevelOne
@@ -612,25 +615,27 @@ namespace Microsoft.EntityFrameworkCore.FunctionalTests
 
             using (var context = CreateContext())
             {
-                var query = context.LevelOne
+                var results = context.LevelOne
                     .Include(e => e.OneToOne_Optional_FK)
-                        .ThenInclude(e => e.OneToMany_Optional)
+                    .ThenInclude(e => e.OneToMany_Optional)
                     .Include(e => e.OneToMany_Optional)
-                        .ThenInclude(e => e.OneToOne_Optional_FK);
+                    .ThenInclude(e => e.OneToOne_Optional_FK).ToList();
 
-                var result = query.ToList();
+                Assert.Equal(levelOnes.Count, results.Count);
 
-                Assert.Equal(levelOnes.Count, result.Count);
-                foreach (var resultItem in result)
+                foreach (var resultItem in results)
                 {
                     var expectedLevel1 = levelOnes.Where(e => e.Id == resultItem.Id).Single();
+
                     Assert.Equal(expectedLevel1.OneToOne_Optional_FK?.Id, resultItem.OneToOne_Optional_FK?.Id);
                     Assert.Equal(expectedLevel1.OneToMany_Optional?.Count, resultItem.OneToMany_Optional?.Count);
 
                     var oneToOne_Optional_FK = resultItem.OneToOne_Optional_FK;
+
                     if (oneToOne_Optional_FK != null)
                     {
                         var expectedReferenceLevel2 = levelTwos.Where(e => e.Id == oneToOne_Optional_FK.Id).Single();
+
                         Assert.Equal(expectedReferenceLevel2.OneToMany_Optional?.Count, oneToOne_Optional_FK.OneToMany_Optional?.Count);
                     }
                 }
