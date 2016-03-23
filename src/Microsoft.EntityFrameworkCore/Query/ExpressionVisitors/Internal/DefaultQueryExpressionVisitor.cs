@@ -41,11 +41,10 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
         protected override Expression VisitParameter(ParameterExpression node)
         {
-            if (node.Name
-                .StartsWith(CompiledQueryCache.CompiledQueryParameterPrefix, StringComparison.Ordinal))
+            if (node.Name.StartsWith(CompiledQueryCache.CompiledQueryParameterPrefix, StringComparison.Ordinal))
             {
                 return Expression.Call(
-                    _getParameterValueMethodInfo.MakeGenericMethod(node.Type),
+                    GetParameterValueMethodInfo.MakeGenericMethod(node.Type),
                     EntityQueryModelVisitor.QueryContextParameter,
                     Expression.Constant(node.Name));
             }
@@ -53,7 +52,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             return node;
         }
 
-        private static readonly MethodInfo _getParameterValueMethodInfo
+        public static readonly MethodInfo GetParameterValueMethodInfo
             = typeof(DefaultQueryExpressionVisitor)
                 .GetTypeInfo().GetDeclaredMethod(nameof(GetParameterValue));
 

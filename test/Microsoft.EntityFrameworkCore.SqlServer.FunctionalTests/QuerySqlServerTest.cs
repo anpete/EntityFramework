@@ -24,6 +24,28 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
             //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
 
+        public override void Entity_equality_self()
+        {
+            base.Entity_equality_self();
+
+            Assert.Equal(
+                @"SELECT [c].[CustomerID]
+FROM [Customers] AS [c]
+WHERE [c].[CustomerID] = [c].[CustomerID]",
+                Sql);
+        }
+
+        public override void Entity_equality_local()
+        {
+            base.Entity_equality_local();
+
+            Assert.Equal(
+                @"SELECT [c].[CustomerID]
+FROM [Customers] AS [c]
+WHERE [c].[CustomerID] = @p",
+                Sql);
+        }
+
         public override void Default_if_empty_top_level()
         {
             base.Default_if_empty_top_level();

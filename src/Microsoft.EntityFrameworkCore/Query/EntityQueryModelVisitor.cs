@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors;
+using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Query.ResultOperators.Internal;
 using Microsoft.EntityFrameworkCore.Utilities;
@@ -234,6 +235,11 @@ namespace Microsoft.EntityFrameworkCore.Query
             Check.NotNull(queryModel, nameof(queryModel));
 
             _queryOptimizer.Optimize(QueryCompilationContext.QueryAnnotations, queryModel);
+
+            var entityEqualityRewritingExpressionVisitor 
+                = new EntityEqualityRewritingExpressionVisitor(QueryCompilationContext.Model);
+
+            entityEqualityRewritingExpressionVisitor.Rewrite(queryModel);
 
             _navigationRewritingExpressionVisitorFactory.Create(this).Rewrite(queryModel);
 

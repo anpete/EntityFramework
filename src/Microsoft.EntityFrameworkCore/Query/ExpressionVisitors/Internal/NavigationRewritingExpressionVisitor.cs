@@ -48,18 +48,16 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 INavigation navigation,
                 JoinClause joinClause,
                 IEnumerable<IBodyClause> additionalBodyClauses,
-                bool optionalNavigationInChain,
                 bool dependentToPrincipal,
                 QuerySourceReferenceExpression querySourceReferenceExpression)
                 : this(
-                    querySource,
-                    navigation,
-                    joinClause,
-                    null,
-                    additionalBodyClauses,
-                    optionalNavigationInChain,
-                    dependentToPrincipal,
-                    querySourceReferenceExpression)
+                      querySource, 
+                      navigation, 
+                      joinClause, 
+                      null, 
+                      additionalBodyClauses, 
+                      dependentToPrincipal,
+                      querySourceReferenceExpression)
             {
             }
 
@@ -68,18 +66,16 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 INavigation navigation,
                 GroupJoinClause groupJoinClause,
                 IEnumerable<IBodyClause> additionalBodyClauses,
-                bool optionalNavigationInChain,
                 bool dependentToPrincipal,
                 QuerySourceReferenceExpression querySourceReferenceExpression)
                 : this(
-                    querySource,
-                    navigation,
-                    null,
-                    groupJoinClause,
-                    additionalBodyClauses,
-                    optionalNavigationInChain,
-                    dependentToPrincipal,
-                    querySourceReferenceExpression)
+                      querySource, 
+                      navigation, 
+                      null, 
+                      groupJoinClause, 
+                      additionalBodyClauses, 
+                      dependentToPrincipal,
+                      querySourceReferenceExpression)
             {
             }
 
@@ -89,7 +85,6 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 JoinClause joinClause,
                 GroupJoinClause groupJoinClause,
                 IEnumerable<IBodyClause> additionalBodyClauses,
-                bool optionalNavigationInChain,
                 bool dependentToPrincipal,
                 QuerySourceReferenceExpression querySourceReferenceExpression)
             {
@@ -98,7 +93,6 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 JoinClause = joinClause;
                 GroupJoinClause = groupJoinClause;
                 AdditionalBodyClauses = additionalBodyClauses;
-                OptionalNavigationInChain = optionalNavigationInChain;
                 DependentToPrincipal = dependentToPrincipal;
                 QuerySourceReferenceExpression = querySourceReferenceExpression;
             }
@@ -108,7 +102,6 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             public JoinClause JoinClause { get; }
             public GroupJoinClause GroupJoinClause { get; }
             public IEnumerable<IBodyClause> AdditionalBodyClauses { get; }
-            public bool OptionalNavigationInChain { get; }
             public bool DependentToPrincipal { get; }
             public QuerySourceReferenceExpression QuerySourceReferenceExpression { get; }
             public readonly List<NavigationJoin> NavigationJoins = new List<NavigationJoin>();
@@ -177,8 +170,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 insertionIndex = _queryModel.BodyClauses.IndexOf(bodyClause) + 1;
             }
 
-            if (_queryModel.MainFromClause == navigationJoin.QuerySource
-                || insertionIndex > 0
+            if (_queryModel.MainFromClause == navigationJoin.QuerySource 
+                || insertionIndex > 0 
                 || _parentvisitor == null)
             {
                 foreach (var nj in navigationJoin.Iterate())
@@ -241,8 +234,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             var leftJoin = leftNavigationJoin?.JoinClause ?? leftNavigationJoin?.GroupJoinClause?.JoinClause;
             var rightJoin = rightNavigationJoin?.JoinClause ?? rightNavigationJoin?.GroupJoinClause?.JoinClause;
 
-            if ((leftNavigationJoin != null)
-                && (rightNavigationJoin != null))
+            if (leftNavigationJoin != null
+                && rightNavigationJoin != null)
             {
                 if (leftNavigationJoin.DependentToPrincipal
                     && rightNavigationJoin.DependentToPrincipal)
@@ -260,8 +253,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 {
                     var constantExpression = newRight as ConstantExpression;
 
-                    if ((constantExpression != null)
-                        && (constantExpression.Value == null))
+                    if (constantExpression != null
+                        && constantExpression.Value == null)
                     {
                         if (leftNavigationJoin.DependentToPrincipal)
                         {
@@ -286,8 +279,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 {
                     var constantExpression = newLeft as ConstantExpression;
 
-                    if ((constantExpression != null)
-                        && (constantExpression.Value == null))
+                    if (constantExpression != null
+                        && constantExpression.Value == null)
                     {
                         if (rightNavigationJoin.DependentToPrincipal)
                         {
@@ -309,7 +302,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 }
             }
 
-            if (node.NodeType != ExpressionType.ArrayIndex
+            if (node.NodeType != ExpressionType.ArrayIndex 
                 && newLeft != null
                 && newRight != null
                 && newLeft.Type != newRight.Type)
@@ -359,7 +352,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                             {
                                 var outerQuerySourceReferenceExpression = new QuerySourceReferenceExpression(qs);
 
-                                if (_navigationRewritingQueryModelVisitor.AdditionalFromClauseBeingProcessed != null
+                                if (_navigationRewritingQueryModelVisitor.AdditionalFromClauseBeingProcessed != null 
                                     && navigations.Last().IsCollection())
                                 {
                                     return RewriteSelectManyNavigationsIntoJoins(
@@ -368,7 +361,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                                         _navigationRewritingQueryModelVisitor.AdditionalFromClauseBeingProcessed);
                                 }
 
-                                if ((navigations.Count == 1)
+                                if (navigations.Count == 1
                                     && navigations[0].IsDependentToPrincipal())
                                 {
                                     var foreignKeyMemberAccess = CreateForeignKeyMemberAccess(node, navigations[0]);
@@ -406,7 +399,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 Debug.Assert(navigation.ForeignKey.Properties.Count == 1);
 
                 var principalKeyProperty = principalKey.Properties[0];
-                if (principalKeyProperty.Name == memberExpression.Member.Name
+                if (principalKeyProperty.Name == memberExpression.Member.Name 
                     && principalKeyProperty.ClrType == navigation.ForeignKey.Properties[0].ClrType)
                 {
                     var declaringExpression = ((MemberExpression)memberExpression.Expression).Expression;
@@ -547,8 +540,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 var navigationJoin
                     = navigationJoins
                         .FirstOrDefault(nj =>
-                            (nj.QuerySource == querySourceReferenceExpression.ReferencedQuerySource)
-                            && (nj.Navigation == navigation));
+                            nj.QuerySource == querySourceReferenceExpression.ReferencedQuerySource
+                            && nj.Navigation == navigation);
 
                 if (navigationJoin == null)
                 {
@@ -591,7 +584,6 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                                     navigation,
                                     groupJoinClause,
                                     additionalBodyClauses,
-                                    optionalNavigationInChain,
                                     navigation.IsDependentToPrincipal(),
                                     new QuerySourceReferenceExpression(defaultIfEmptyAdditionalFromClause)));
                     }
@@ -604,7 +596,6 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                                     navigation,
                                     joinClause,
                                     additionalBodyClauses,
-                                    optionalNavigationInChain,
                                     navigation.IsDependentToPrincipal(),
                                     innerQuerySourceReferenceExpression));
                     }
@@ -632,14 +623,14 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                     : Expression.Constant(null, member.PropertyType.MakeNullable());
 
                 return Expression.Condition(
-                    Expression.NotEqual(
-                        querySourceReferenceExpression,
-                        Expression.Constant(null, querySourceReferenceExpression.Type)),
-                    memberAccessExpression,
-                    constantNullExpression);
+                        Expression.NotEqual(
+                            querySourceReferenceExpression,
+                            Expression.Constant(null, querySourceReferenceExpression.Type)),
+                        memberAccessExpression,
+                        constantNullExpression);
             }
-            return Expression.MakeMemberAccess(querySourceReferenceExpression, member);
-        }
+                return Expression.MakeMemberAccess(querySourceReferenceExpression, member);
+            }
 
         private Expression RewriteSelectManyNavigationsIntoJoins(
             QuerySourceReferenceExpression outerQuerySourceReferenceExpression,
@@ -668,6 +659,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             }
 
             _queryModel.BodyClauses.RemoveAt(additionalJoinIndex);
+
             for (var i = 0; i < joinClauses.Count; i++)
             {
                 _queryModel.BodyClauses.Insert(additionalJoinIndex + i, joinClauses[i]);
@@ -688,7 +680,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             private readonly QuerySourceReferenceExpression _targetQuerySourceReferenceExpression;
 
             public QuerySourceReplacingExpressionVisitor(
-                IQuerySource querySourceToReplace,
+                IQuerySource querySourceToReplace, 
                 QuerySourceReferenceExpression targetQuerySourceReferenceExpression)
             {
                 _querySourceToReplace = querySourceToReplace;
@@ -719,7 +711,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                     navigation.IsDependentToPrincipal()
                         ? navigation.ForeignKey.Properties
                         : navigation.ForeignKey.PrincipalKey.Properties,
-                    addNullCheck: addNullCheckToOuterKeySelector);
+                        addNullCheck: addNullCheckToOuterKeySelector);
 
             var joinClause
                 = new JoinClause(
@@ -775,11 +767,11 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                             .ToArray()));
         }
 
-        private static readonly MethodInfo PropertyMethodInfo
+        private static readonly MethodInfo PropertyMethodInfo 
             = typeof(EF).GetTypeInfo().GetDeclaredMethod(nameof(Property));
 
         private static Expression CreatePropertyExpression(Expression target, IProperty property, bool addNullCheck)
-        {
+        { 
             var propertyExpression = (Expression)Expression.Call(
                 null,
                 PropertyMethodInfo.MakeGenericMethod(property.ClrType),
@@ -924,8 +916,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                     _queryModelVisitor = queryModelVisitor;
                 }
 
-                protected override Expression VisitSubQuery(SubQueryExpression expression) 
-                    => expression;
+                protected override Expression VisitSubQuery(SubQueryExpression expression) => expression;
 
                 protected override Expression VisitMember(MemberExpression node)
                 {
@@ -935,18 +926,18 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                         _queryModelVisitor.BindNavigationPathMemberExpression(
                             node,
                             (properties, querySource) =>
-                                {
-                                    var navigations = properties.OfType<INavigation>().ToList();
-                                    var collectionNavigation = navigations.SingleOrDefault(n => n.IsCollection());
+                            {
+                                var navigations = properties.OfType<INavigation>().ToList();
+                                var collectionNavigation = navigations.SingleOrDefault(n => n.IsCollection());
 
-                                    return collectionNavigation != null
-                                        ? InjectSubquery(node, collectionNavigation)
-                                        : default(Expression);
-                                })
+                                return collectionNavigation != null
+                                    ? InjectSubquery(node, collectionNavigation)
+                                    : default(Expression);
+                            })
                         ?? base.VisitMember(node);
                 }
 
-                private Expression InjectSubquery(Expression expression, INavigation collectionNavigation)
+                private static Expression InjectSubquery(Expression expression, INavigation collectionNavigation)
                 {
                     var targetType = collectionNavigation.GetTargetType().ClrType;
                     var mainFromClause = new MainFromClause(targetType.Name.Substring(0, 1).ToLower(), targetType, expression);
@@ -961,7 +952,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                         _materializeCollectionNavigationMethodInfo.MakeGenericMethod(targetType),
                         Expression.Constant(collectionNavigation), subqueryExpression);
 
-                    return resultCollectionType.GetTypeInfo().IsGenericType && resultCollectionType.GetGenericTypeDefinition() == typeof(ICollection<>)
+                    return resultCollectionType.GetTypeInfo().IsGenericType 
+                        && resultCollectionType.GetGenericTypeDefinition() == typeof(ICollection<>)
                         ? (Expression)result
                         : Expression.Convert(result, resultCollectionType);
                 }
