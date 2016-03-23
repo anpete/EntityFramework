@@ -550,7 +550,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
 
                         if (memberItem != null)
                         {
-                            var aliasExpression = (AliasExpression)VisitMember(memberItem);
+                            var aliasExpression = VisitMember(memberItem) as AliasExpression;
 
                             return aliasExpression != null
                                 ? new InExpression(aliasExpression, new[] { fromExpression })
