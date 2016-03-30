@@ -377,8 +377,7 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
                 if (parameterValues == null)
                 {
                     throw new InvalidOperationException(
-                        RelationalStrings.MissingParameterValue(
-                            Parameters[0].InvariantName));
+                        RelationalStrings.MissingParameterValue(Parameters[0].InvariantName));
                 }
 
                 foreach (var parameter in Parameters)

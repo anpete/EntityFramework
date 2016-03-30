@@ -52,6 +52,7 @@ namespace Microsoft.EntityFrameworkCore.Storage
             Check.NotNull(command, nameof(command));
 
             var parameter = command.CreateParameter();
+
             parameter.Direction = ParameterDirection.Input;
             parameter.ParameterName = name;
             parameter.Value = value ?? DBNull.Value;

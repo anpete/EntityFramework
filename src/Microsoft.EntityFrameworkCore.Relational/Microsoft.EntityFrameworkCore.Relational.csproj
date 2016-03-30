@@ -272,6 +272,7 @@
     <Compile Include="Query\Internal\ShaperCommandContext.cs" />
     <Compile Include="Query\Internal\ShaperCommandContextFactory.cs" />
     <Compile Include="Query\IQueryMethodProvider.cs" />
+    <Compile Include="Query\Expressions\PropertyParameterExpression.cs" />
     <Compile Include="Query\QueryMethodProvider.cs" />
     <Compile Include="Query\RelationalQueryCompilationContext.cs" />
     <Compile Include="Query\RelationalQueryCompilationContextFactory.cs" />
@@ -307,6 +308,7 @@
     <Compile Include="Storage\Internal\RelationalParameterBuilder.cs" />
     <Compile Include="Storage\Internal\RemappingUntypedRelationalValueBufferFactory.cs" />
     <Compile Include="Storage\Internal\TypedRelationalValueBufferFactory.cs" />
+    <Compile Include="Storage\Internal\TypeMappedPropertyRelationalParameter.cs" />
     <Compile Include="Storage\Internal\TypeMappedRelationalParameter.cs" />
     <Compile Include="Storage\Internal\UntypedRelationalValueBufferFactory.cs" />
     <Compile Include="Storage\IParameterNameGeneratorFactory.cs" />

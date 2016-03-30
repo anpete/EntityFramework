@@ -27,6 +27,11 @@ namespace Microsoft.EntityFrameworkCore.Storage
             [NotNull] string name,
             [NotNull] IProperty property);
 
+        void AddPropertyParameter(
+            [NotNull] string invariantName,
+            [NotNull] string name,
+            [NotNull] IProperty property);
+
         void AddCompositeParameter(
             [NotNull] string invariantName,
             [NotNull] Action<IRelationalParameterBuilder> buildAction);

@@ -60,6 +60,23 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
         }
 
         public virtual void AddCompositeParameter(string invariantName, Action<IRelationalParameterBuilder> buildAction)
+        public virtual void AddPropertyParameter(string invariantName, string name, IProperty property)
+        {
+            Check.NotEmpty(invariantName, nameof(invariantName));
+            Check.NotEmpty(name, nameof(name));
+            Check.NotNull(property, nameof(property));
+
+            _parameters.Add(
+                new TypeMappedPropertyRelationalParameter(
+                    invariantName,
+                    name,
+                    TypeMapper.GetMapping(property),
+                    property));
+        }
+
+        public virtual void AddCompositeParameter(
+            string invariantName,
+            Action<IRelationalParameterBuilder> buildAction)
         {
             Check.NotEmpty(invariantName, nameof(invariantName));
             Check.NotNull(buildAction, nameof(buildAction));

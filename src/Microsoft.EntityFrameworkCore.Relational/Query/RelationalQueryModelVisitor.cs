@@ -897,6 +897,23 @@ namespace Microsoft.EntityFrameworkCore.Query
             return BindMethodCallExpression(methodCallExpression, null, memberBinder, bindSubQueries);
         }
 
+        public virtual PropertyParameterExpression BindParameterMemberExpression(
+            [NotNull] MethodCallExpression methodCallExpression)
+        {
+            Check.NotNull(methodCallExpression, nameof(methodCallExpression));
+
+            return base.BindMethodCallExpression(methodCallExpression, null,
+                (property, qs) =>
+                    {
+                        var parameterExpression 
+                            = methodCallExpression.Arguments[0] as ParameterExpression;
+
+                        return parameterExpression != null
+                            ? new PropertyParameterExpression(parameterExpression.Name, property)
+                            : null;
+                    });
+        }
+        
         private TResult BindMethodCallExpression<TResult>(
             MethodCallExpression methodCallExpression,
             IQuerySource querySource,

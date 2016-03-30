@@ -52,9 +52,7 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
 
                 substitutions[i] = _sqlGenerationHelper.GenerateParameterName(parameterName);
 
-                relationalCommandBuilder.AddParameter(
-                    parameterName,
-                    substitutions[i]);
+                relationalCommandBuilder.AddParameter(parameterName, substitutions[i]);
 
                 parameterValues.Add(parameterName, parameters[i]);
             }

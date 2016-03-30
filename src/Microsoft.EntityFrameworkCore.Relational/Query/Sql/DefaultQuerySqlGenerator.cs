@@ -221,8 +221,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
         private Expression ApplyNullSemantics(Expression expression)
         {
             var newExpression
-                = new NullComparisonTransformingVisitor(_parametersValues)
-                    .Visit(expression);
+                        = new NullComparisonTransformingVisitor(_parametersValues)
+                            .Visit(expression);
 
             var relationalNullsOptimizedExpandingVisitor = new RelationalNullsOptimizedExpandingVisitor();
             var optimizedExpression = relationalNullsOptimizedExpandingVisitor.Visit(newExpression);
@@ -342,25 +342,22 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
                     if (parameters.TryGetValue(parameterExpression.Name, out parameterValue))
                     {
                         var argumentValues = (object[])parameterValue;
-                        var relationalParameters = new IRelationalParameter[argumentValues.Length];
 
                         substitutions = new string[argumentValues.Length];
 
                         _relationalCommandBuilder.AddCompositeParameter(
                             parameterExpression.Name,
                             builder =>
+                            {
+                                for (var i = 0; i < argumentValues.Length; i++)
                                 {
-                                    for (var i = 0; i < argumentValues.Length; i++)
-                                    {
-                                        var parameterName = _parameterNameGenerator.GenerateNext();
+                                    var parameterName = _parameterNameGenerator.GenerateNext();
 
-                                        substitutions[i] = SqlGenerator.GenerateParameterName(parameterName);
+                                    substitutions[i] = SqlGenerator.GenerateParameterName(parameterName);
 
-                                        builder.AddParameter(
-                                            parameterName,
-                                            substitutions[i]);
-                                    }
-                                });
+                                    builder.AddParameter(parameterName, substitutions[i]);
+                                }
+                            });
                     }
 
                     break;
@@ -408,9 +405,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
                                 {
                                     substitutions[i] = _sqlGenerationHelper.GenerateParameterName(parameter.Name);
 
-                                    _relationalCommandBuilder.AddParameter(
-                                        parameter.Name,
-                                        substitutions[i]);
+                                    _relationalCommandBuilder.AddParameter(parameter.Name, substitutions[i]);
                                 }
 
                                 break;
@@ -1103,9 +1098,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
                     }
 
                     if (!(expression.Operand is ColumnExpression
-                            || expression.Operand is ParameterExpression
-                            || expression.Operand.IsAliasWithColumnExpression()
-                            || expression.Operand is SelectExpression))
+                          || expression.Operand is ParameterExpression
+                          || expression.Operand.IsAliasWithColumnExpression()
+                          || expression.Operand is SelectExpression))
                     {
                         _relationalCommandBuilder.Append("NOT (");
 
@@ -1145,13 +1140,14 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
             return expression;
         }
 
-        protected override Expression VisitParameter(ParameterExpression expression)
+        protected override Expression VisitParameter(ParameterExpression parameterExpression)
         {
-            Check.NotNull(expression, nameof(expression));
+            Check.NotNull(parameterExpression, nameof(parameterExpression));
 
-            var name = _sqlGenerationHelper.GenerateParameterName(expression.Name);
+            var parameterName = _sqlGenerationHelper.GenerateParameterName(parameterExpression.Name);
 
-            if (_relationalCommandBuilder.ParameterBuilder.Parameters.All(p => p.InvariantName != expression.Name))
+            if (_relationalCommandBuilder.ParameterBuilder.Parameters
+                .All(p => p.InvariantName != parameterExpression.Name))
             {
                 _relationalCommandBuilder.AddParameter(
                     expression.Name,
@@ -1160,9 +1156,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
                     unicode: _isUnicode);
             }
 
-            _relationalCommandBuilder.Append(name);
+            _relationalCommandBuilder.Append(parameterName);
 
-            return expression;
+            return parameterExpression;
         }
 
         protected virtual bool? InferUnicodeFromColumn([NotNull] Expression expression)
@@ -1175,6 +1171,26 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
             }
 
             return null;
+        }
+
+        public Expression VisitPropertyParameter(PropertyParameterExpression propertyParameterExpression)
+        {
+            var parameterName 
+                = _sqlGenerationHelper.GenerateParameterName(
+                    propertyParameterExpression.PropertyParameterName);
+
+            if (_relationalCommandBuilder.ParameterBuilder.Parameters
+                .All(p => p.InvariantName != propertyParameterExpression.PropertyParameterName))
+            {
+                _relationalCommandBuilder.AddPropertyParameter(
+                    propertyParameterExpression.Name,
+                    parameterName,
+                    propertyParameterExpression.Property);
+            }
+
+            _relationalCommandBuilder.Append(parameterName);
+
+            return propertyParameterExpression;
         }
 
         protected virtual bool TryGenerateBinaryOperator(ExpressionType op, [NotNull] out string result)

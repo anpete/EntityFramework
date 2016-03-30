@@ -194,7 +194,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
             return null;
         }
 
-        private Expression TryRemoveNullCheck(ConditionalExpression node)
+        private static Expression TryRemoveNullCheck(ConditionalExpression node)
         {
             var binaryTest = node.Test as BinaryExpression;
             if (binaryTest == null
@@ -321,32 +321,31 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
             return null;
         }
 
-        protected override Expression VisitMethodCall(MethodCallExpression expression)
+        protected override Expression VisitMethodCall(MethodCallExpression methodCallExpression)
         {
-            Check.NotNull(expression, nameof(expression));
+            Check.NotNull(methodCallExpression, nameof(methodCallExpression));
 
-            var operand = Visit(expression.Object);
+            var operand = Visit(methodCallExpression.Object);
 
             if (operand != null
-                || expression.Object == null)
+                || methodCallExpression.Object == null)
             {
                 var arguments
-                    = expression.Arguments
+                    = methodCallExpression.Arguments
                         .Where(e => !(e is QuerySourceReferenceExpression)
                                     && !(e is SubQueryExpression))
                         .Select(Visit)
                         .Where(e => e != null)
                         .ToArray();
 
-                if (arguments.Length == expression.Arguments.Count)
+                if (arguments.Length == methodCallExpression.Arguments.Count)
                 {
                     var boundExpression
                         = operand != null
-                            ? Expression.Call(operand, expression.Method, arguments)
-                            : Expression.Call(expression.Method, arguments);
+                            ? Expression.Call(operand, methodCallExpression.Method, arguments)
+                            : Expression.Call(methodCallExpression.Method, arguments);
 
-                    var translatedExpression =
-                        _methodCallTranslator.Translate(boundExpression);
+                    var translatedExpression = _methodCallTranslator.Translate(boundExpression);
 
                     if (translatedExpression != null)
                     {
@@ -355,19 +354,20 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                 }
             }
 
-            var aliasExpression
+            var expression
                 = _queryModelVisitor
-                    .BindMethodCallExpression(expression, CreateAliasedColumnExpression);
+                    .BindMethodCallExpression(methodCallExpression, CreateAliasedColumnExpression)
+                  ?? (Expression)_queryModelVisitor.BindParameterMemberExpression(methodCallExpression);
 
-            if (aliasExpression == null
+            if (expression == null
                 && _bindParentQueries)
             {
-                aliasExpression
+                expression
                     = _queryModelVisitor?.ParentQueryModelVisitor
-                        .BindMethodCallExpression(expression, CreateAliasedColumnExpressionCore);
+                        .BindMethodCallExpression(methodCallExpression, CreateAliasedColumnExpressionCore);
             }
 
-            return aliasExpression;
+            return expression;
         }
 
         protected override Expression VisitMember(MemberExpression expression)

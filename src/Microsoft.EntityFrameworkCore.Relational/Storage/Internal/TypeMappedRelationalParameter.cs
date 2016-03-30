@@ -22,16 +22,16 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
             InvariantName = invariantName;
             Name = name;
             RelationalTypeMapping = relationalTypeMapping;
-            Nullable = nullable;
+            IsNullable = nullable;
         }
 
         public virtual string InvariantName { get; }
 
         public virtual string Name { get; }
 
-        public virtual RelationalTypeMapping RelationalTypeMapping { get; }
+        internal RelationalTypeMapping RelationalTypeMapping { get; }
 
-        public virtual bool? Nullable { get; }
+        internal bool? IsNullable { get; }
 
         public virtual void AddDbParameter(DbCommand command, object value)
         {
@@ -39,7 +39,7 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
 
             command.Parameters
                 .Add(RelationalTypeMapping
-                    .CreateParameter(command, Name, value, Nullable));
+                    .CreateParameter(command, Name, value, IsNullable));
         }
     }
 }

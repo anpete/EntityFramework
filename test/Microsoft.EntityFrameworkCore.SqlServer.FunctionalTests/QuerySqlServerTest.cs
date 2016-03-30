@@ -40,9 +40,11 @@ WHERE [c].[CustomerID] = [c].[CustomerID]",
             base.Entity_equality_local();
 
             Assert.Equal(
-                @"SELECT [c].[CustomerID]
+                @"@__local_0_CustomerID: ANATR
+
+SELECT [c].[CustomerID]
 FROM [Customers] AS [c]
-WHERE [c].[CustomerID] = @p",
+WHERE [c].[CustomerID] = @__local_0_CustomerID",
                 Sql);
         }
 
