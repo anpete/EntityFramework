@@ -1923,6 +1923,7 @@ namespace Microsoft.EntityFrameworkCore.FunctionalTests
             AssertQuery<Employee>(
                 es =>
                     from e1 in es
+                    // ReSharper disable once PossibleUnintendedReferenceComparison
                     where es.SingleOrDefault(e2 => e2.EmployeeID == e1.ReportsTo) == new Employee()
                     select e1);
         }

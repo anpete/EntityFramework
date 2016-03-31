@@ -124,7 +124,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         private static Expression CreatePropertyExpression(Expression target, IProperty property)
             => Expression.Call(
                 null,
-                _efPropertyMethod.MakeGenericMethod(property.ClrType),
+                _efPropertyMethod.MakeGenericMethod(property.ClrType.MakeNullable()),
                 target,
                 Expression.Constant(property.Name));
 

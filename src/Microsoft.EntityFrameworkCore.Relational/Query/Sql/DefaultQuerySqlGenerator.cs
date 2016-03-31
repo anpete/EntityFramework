@@ -1150,9 +1150,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
                 .All(p => p.InvariantName != parameterExpression.Name))
             {
                 _relationalCommandBuilder.AddParameter(
-                    expression.Name,
-                    name,
-                    expression.Type,
+                    parameterExpression.Name,
+                    parameterName,
+                    parameterExpression.Type,
                     unicode: _isUnicode);
             }
 

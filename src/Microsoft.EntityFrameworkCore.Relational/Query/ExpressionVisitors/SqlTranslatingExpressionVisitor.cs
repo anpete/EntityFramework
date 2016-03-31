@@ -288,8 +288,18 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
             var nullExpression
                 = TransformNullComparison(leftExpression, rightExpression, binaryExpression.NodeType);
 
-            return nullExpression
-                   ?? Expression.MakeBinary(binaryExpression.NodeType, leftExpression, rightExpression);
+            if (nullExpression != null)
+            {
+                return nullExpression;
+            }
+
+            if (leftExpression.Type != rightExpression.Type)
+            {
+                return null;
+            }
+
+            return Expression.MakeBinary(binaryExpression.NodeType, leftExpression, rightExpression);
+            
         }
 
         private static Expression TransformNullComparison(

@@ -7,6 +7,11 @@ namespace Microsoft.EntityFrameworkCore.InMemory.FunctionalTests
 {
     public class QueryNavigationsInMemoryTest : QueryNavigationsTestBase<NorthwindQueryInMemoryFixture>
     {
+        public override void Select_Where_Navigation_Null()
+        {
+            base.Select_Where_Navigation_Null();
+        }
+
         public QueryNavigationsInMemoryTest(NorthwindQueryInMemoryFixture fixture)
             : base(fixture)
         {
