@@ -2123,13 +2123,25 @@ namespace Microsoft.EntityFrameworkCore
         ///     A task that represents the asynchronous operation.
         ///     The task result contains a <see cref="List{T}" /> that contains elements from the input sequence.
         /// </returns>
-        public static Task<List<TSource>> ToListAsync<TSource>(
+        public static async Task<List<TSource>> ToListAsync<TSource>(
             [NotNull] this IQueryable<TSource> source,
             CancellationToken cancellationToken = default(CancellationToken))
         {
             Check.NotNull(source, nameof(source));
 
-            return source.AsAsyncEnumerable().ToList(cancellationToken);
+           // return source.AsAsyncEnumerable().ToList(cancellationToken);
+
+            var list = new List<TSource>();
+
+            using (var asyncEnumerator = source.AsAsyncEnumerable().GetEnumerator())
+            {
+                while (await asyncEnumerator.MoveNext(cancellationToken))
+                {
+                    list.Add(asyncEnumerator.Current);
+                }
+            }
+
+            return list;
         }
 
         /// <summary>

@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.FunctionalTests;
@@ -15,6 +16,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
 {
     public class AsyncQuerySqlServerTest : AsyncQueryTestBase<NorthwindQuerySqlServerFixture>
     {
+        private readonly ITestOutputHelper _testOutputHelper;
         // TODO: Complex projection translation.
 
         public override async Task Projection_when_arithmetic_expressions()
@@ -31,6 +33,45 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         {
             //base.Projection_when_arithmetic_mixed_subqueries();
         }
+
+        [Fact]
+        public async Task Profile()
+        {
+            //var stopwatch = new Stopwatch();
+
+            using (var context = CreateContext())
+            {
+                // ReSharper disable once ReturnValueOfPureMethodIsNotUsed
+                //context.Orders.AsNoTracking().ToList();
+                //await context.Orders.AsNoTracking().ToListAsync();
+
+//                stopwatch.Start();
+//
+//                for (var i = 0; i < 100; i++)
+//                {
+//                    var results = context.Orders.AsNoTracking().ToList();
+//
+//                    Assert.Equal(830, results.Count);
+//                }
+//
+//                stopwatch.Stop();
+//
+//                _testOutputHelper.WriteLine($"Sync: Elapsed: {stopwatch.ElapsedMilliseconds}ms");
+//
+//                stopwatch.Start();
+
+                for (var i = 0; i < 100; i++)
+                {
+                    var results = await context.Orders.AsNoTracking().ToListAsync();
+
+                    Assert.Equal(830, results.Count);
+                }
+
+//                stopwatch.Stop();
+//
+//                _testOutputHelper.WriteLine($"Async: Elapsed: {stopwatch.ElapsedMilliseconds}ms");
+            }
+        }    
 
         public override async Task String_Contains_Literal()
         {
@@ -80,6 +121,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public AsyncQuerySqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
+            _testOutputHelper = testOutputHelper;
             // TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
     }
