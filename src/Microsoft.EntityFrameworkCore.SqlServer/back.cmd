@@ -1,0 +1,1 @@
+copy "C:\Users\Andrew\.nuget\packages\Microsoft.EntityFrameworkCore\1.0.0-rc3-20652\lib\netstandard1.3\Microsoft.EntityFrameworkCore.dll.old" "C:\Users\Andrew\.nuget\packages\Microsoft.EntityFrameworkCore\1.0.0-rc3-20652\lib\netstandard1.3\Microsoft.EntityFrameworkCore.dll"

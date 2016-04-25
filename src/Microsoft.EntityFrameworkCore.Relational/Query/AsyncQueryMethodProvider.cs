@@ -30,11 +30,12 @@ namespace Microsoft.EntityFrameworkCore.Query
             QueryContext queryContext,
             ShaperCommandContext shaperCommandContext,
             IShaper<T> shaper)
-            => new AsyncQueryingEnumerable(
+            => AsyncLinqOperatorProvider._Select( 
+            new AsyncQueryingEnumerable(
                 (RelationalQueryContext)queryContext,
                 shaperCommandContext,
-                queryIndex: null)
-                .Select(vb => shaper.Shape(queryContext, vb)); // TODO: Pass shaper to underlying enumerable
+                queryIndex: null),
+                vb => shaper.Shape(queryContext, vb)); // TODO: Pass shaper to underlying enumerable
 
         public virtual MethodInfo DefaultIfEmptyShapedQueryMethod => _defaultIfEmptyShapedQueryMethodInfo;
 

@@ -1,0 +1,2 @@
+dotnet build -c Release
+copy "C:\Dev\github\aspnet\EntityFramework\src\Microsoft.EntityFrameworkCore.SqlServer\bin\Release\netstandard1.3\Microsoft.EntityFrameworkCore.dll" "C:\Users\Andrew\.nuget\packages\Microsoft.EntityFrameworkCore\1.0.0-rc3-20652\lib\netstandard1.3\Microsoft.EntityFrameworkCore.dll"

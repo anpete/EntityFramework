@@ -375,9 +375,47 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
         [UsedImplicitly]
         // ReSharper disable once InconsistentNaming
-        private static IAsyncEnumerable<TResult> _Select<TSource, TResult>(
+        public static IAsyncEnumerable<TResult> _Select<TSource, TResult>(
             IAsyncEnumerable<TSource> source, Func<TSource, TResult> selector)
-            => source.Select(selector);
+            //=> source.Select(selector);
+            => new SelectAsyncEnumerable<TSource, TResult>(source, selector);
+
+        private struct SelectAsyncEnumerable<TSource, TResult> : IAsyncEnumerable<TResult>
+        {
+            private readonly IAsyncEnumerable<TSource> _source;
+            private readonly Func<TSource, TResult> _selector;
+
+            public SelectAsyncEnumerable(
+                IAsyncEnumerable<TSource> source, Func<TSource, TResult> selector)
+            {
+                _source = source;
+                _selector = selector;
+            }
+
+            public IAsyncEnumerator<TResult> GetEnumerator() 
+                => new SelectAsyncEnumerator(_source.GetEnumerator(), _selector);
+
+            private struct SelectAsyncEnumerator : IAsyncEnumerator<TResult>
+            {
+                private readonly IAsyncEnumerator<TSource> _source;
+                private readonly Func<TSource, TResult> _selector;
+
+                public SelectAsyncEnumerator(
+                    IAsyncEnumerator<TSource> asyncEnumerator, 
+                    Func<TSource, TResult> selector)
+                {
+                    _source = asyncEnumerator;
+                    _selector = selector;
+                }
+
+                public void Dispose() => _source.Dispose();
+
+                public Task<bool> MoveNext(CancellationToken cancellationToken) 
+                    => _source.MoveNext(cancellationToken);
+
+                public TResult Current => _selector(_source.Current);
+            }
+        }
 
         public virtual MethodInfo Select => _select;
 

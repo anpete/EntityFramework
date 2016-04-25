@@ -2,7 +2,11 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Microbenchmarks.Core;
 using Microsoft.EntityFrameworkCore.Microbenchmarks.Models.Orders;
 using Xunit;
@@ -10,50 +14,74 @@ using Xunit;
 namespace Microsoft.EntityFrameworkCore.Microbenchmarks.Query
 {
     // Test class for manual profiling work.
-    public class Profile : IDisposable
+    public class Profile
     {
-        private readonly OrdersContext _context;
-        //private readonly IQueryable<object> _query;
+        private const int OperationsPerThread = 100;
 
-        public Profile()
+        private static readonly string _connectionString
+            = $@"{BenchmarkConfig.Instance.BenchmarkDatabase}Database=Perf_Query_Simple;";
+
+        [Fact]
+        public async Task Run()
         {
-            var connectionString
-                = $@"{BenchmarkConfig.Instance.BenchmarkDatabase}Database=Perf_Query_Simple;";
+            SqlConnection.ClearAllPools();
 
-            _context = new OrdersContext(connectionString);
+            var createTasks = new List<Task>();
+            var completeTasks = new List<Task>();
 
-            //_query = _context.Products.AsNoTracking().Where(p => p.Retail < 15);
+            for (var i = 0; i < 10; i++)
+            {
+                var queue = new ConcurrentQueue<Task>();
 
-            var product
-                = (from p in _context.Products
-                   from p2 in _context.Products
-                   select new { p, p2 })
-                    .Select(a => a.p.Name)
-                    .OrderBy(n => n)
-                    .AsNoTracking()
-                    .First();
+                createTasks.Add(CreateWork(queue));
+                completeTasks.Add(CompleteWork(queue));
+            }
 
-            //_query.Load();
+            await Task.WhenAll(completeTasks);
         }
 
-        //[Fact]
-        public void Run()
+        private static Task CreateWork(ConcurrentQueue<Task> queue)
         {
-            for (var i = 0; i < 1; i++)
-            {
-                var product
-                    = (from p in _context.Products
-                       from p2 in _context.Products
-                       select new { p, p2 })
-                        .Select(a => a.p.Name)
-                        .OrderBy(n => n)
-                        .AsNoTracking()
-                        .First();
+            return Task.Run((Action)(() =>
+                {
+                    while (true)
+                    {
+                        if (queue.Count < 5)
+                        {
+                            queue.Enqueue(DoWork());
+                        }
+                    }
+                }));
+        }
 
-                Assert.NotNull(product);
+        private static async Task CompleteWork(ConcurrentQueue<Task> queue)
+        {
+            var count = 0;
+
+            while (true)
+            {
+                Task task;
+                if (queue.TryDequeue(out task))
+                {
+                    await task;
+
+                    if (++count == OperationsPerThread)
+                        break;
+                }
             }
         }
 
-        public void Dispose() => _context.Dispose();
+        private static async Task DoWork()
+        {
+            using (var context = new OrdersContext(_connectionString))
+            {
+                for (var j = 0; j < 1; j++)
+                {
+                    var products = await context.Products.Select(p => p.ProductId).ToListAsync();
+
+                    Assert.Equal(1000, products.Count);
+                }
+            }
+        }
     }
 }
