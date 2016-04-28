@@ -222,11 +222,15 @@ namespace Microsoft.EntityFrameworkCore.Query
                 {
                     var comparer = EqualityComparer<TKey>.Default;
                     var hasNext = sourceEnumerator.MoveNext();
+                    var nextOuter = default(TOuter);
 
                     while (hasNext)
                     {
-                        var outer = outerShaper.Shape(queryContext, sourceEnumerator.Current);
-
+                        var outer 
+                            = Equals(nextOuter, default(TOuter)) 
+                                ? outerShaper.Shape(queryContext, sourceEnumerator.Current)
+                                : nextOuter;
+                        
                         outerGroupJoinInclude?.Include(outer);
 
                         var inner = innerShaper.Shape(queryContext, sourceEnumerator.Current);
@@ -254,6 +258,15 @@ namespace Microsoft.EntityFrameworkCore.Query
                                 {
                                     break;
                                 }
+                                
+                                nextOuter = outerShaper.Shape(queryContext, sourceEnumerator.Current);
+
+                                if (!Equals(outer, nextOuter))
+                                {
+                                    break;
+                                }
+
+                                nextOuter = default(TOuter);
 
                                 inner = innerShaper.Shape(queryContext, sourceEnumerator.Current);
 
