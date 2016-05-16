@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -21,6 +22,7 @@ namespace Microsoft.EntityFrameworkCore.Internal
         private ILoggerFactory _loggerFactory;
         private IMemoryCache _memoryCache;
         private bool _isSensitiveDataLoggingEnabled;
+        private IReadOnlyCollection<CoreLoggingEventId> _errorEventIds;
 
         /// <summary>
         ///     <para>
@@ -47,6 +49,7 @@ namespace Microsoft.EntityFrameworkCore.Internal
             _loggerFactory = copyFrom.LoggerFactory;
             _memoryCache = copyFrom.MemoryCache;
             _isSensitiveDataLoggingEnabled = copyFrom.IsSensitiveDataLoggingEnabled;
+            _errorEventIds = copyFrom.ErrorEventIds;
         }
 
         /// <summary>
@@ -93,6 +96,12 @@ namespace Microsoft.EntityFrameworkCore.Internal
         {
             get { return _internalServiceProvider; }
             [param: CanBeNull] set { _internalServiceProvider = value; }
+        }
+
+        public virtual IReadOnlyCollection<CoreLoggingEventId> ErrorEventIds
+        {
+            get { return _errorEventIds; }
+            [param: CanBeNull] set { _errorEventIds = value; }
         }
 
         /// <summary>

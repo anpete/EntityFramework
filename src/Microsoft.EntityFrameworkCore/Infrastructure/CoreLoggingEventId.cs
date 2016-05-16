@@ -38,8 +38,7 @@ namespace Microsoft.EntityFrameworkCore.Infrastructure
         /// <summary>
         ///     A query specified an Include operation that was ignored because the included navigation was not reachable in the final query result.
         /// </summary>
-        IncludeIgnored
-        QueryPlan,
+        IncludeIgnored,
 
         /// <summary>
         ///     A warning that sensitive data logging is enabled.

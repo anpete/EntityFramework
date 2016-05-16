@@ -128,6 +128,9 @@ namespace Microsoft.EntityFrameworkCore
         public virtual DbContextOptionsBuilder EnableSensitiveDataLogging()
             => SetOption(e => e.IsSensitiveDataLoggingEnabled = true);
 
+        public virtual DbContextOptionsBuilder SetWarningsAsErrors(params CoreLoggingEventId[] eventIds)
+            => SetOption(e => e.SetWarningsAsErrors(eventIds));
+        
         /// <summary>
         ///     <para>
         ///         Adds the given extension to the options. If an existing extension of the same type already exists, it will be replaced.
