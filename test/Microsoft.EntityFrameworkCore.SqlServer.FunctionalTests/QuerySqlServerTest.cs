@@ -3,6 +3,9 @@
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Specification.Tests;
 using Microsoft.EntityFrameworkCore.Specification.Tests.TestModels.Northwind;
 using Microsoft.EntityFrameworkCore.Specification.Tests.TestUtilities.Xunit;
@@ -22,7 +25,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public QuerySqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
 
         public override void Local_array()
@@ -36,6 +39,111 @@ SELECT TOP(2) [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c
 FROM [Customers] AS [c]
 WHERE [c].[CustomerID] = @__get_Item_0",
                 Sql);
+        }
+
+
+            public class Address
+    {
+        public int Id { get; set; }
+        public string Street { get; set; }
+        public int PersonId { get; set; }
+        public Person Person { get; set; }
+    }
+            public class Person
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public int? AddressOneId { get; set; }
+        public Address AddressOne { get; set; }
+        public int? AddressTwoId { get; set; }
+        public Address AddressTwo { get; set; }
+    }
+
+         public class PersonMap
+    {
+        public PersonMap(EntityTypeBuilder<Person> entityBuilder)
+        {
+            entityBuilder.HasKey(p => p.Id);
+
+            entityBuilder.Property(p => p.Name)
+                .IsRequired(true);
+
+            entityBuilder.HasOne(p => p.AddressOne)
+                .WithMany()
+                .HasForeignKey(p => p.AddressOneId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entityBuilder.Property(p => p.AddressOneId);
+
+            entityBuilder.HasOne(p => p.AddressTwo)
+                .WithMany()
+                .HasForeignKey(p => p.AddressTwoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entityBuilder.Property(p => p.AddressTwoId);
+        }
+    }
+
+        public class AddressMap
+    {
+        public AddressMap(EntityTypeBuilder<Address> entityBuilder)
+        {
+            entityBuilder.HasKey(a => a.Id);
+
+            entityBuilder.Property(a => a.Street)
+                .IsRequired(true);
+
+            entityBuilder.HasOne(a => a.Person)
+                .WithMany()
+                .HasForeignKey(a => a.PersonId)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
+    }
+
+        public class SampleContext : DbContext
+    {
+            protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+            {
+                 optionsBuilder
+                    .UseLoggerFactory(new TestSqlLoggerFactory())
+                    .UseSqlServer(
+                     "Server=(localdb)\\MSSQLLocalDB;Database=Db5481;Trusted_Connection=True;MultipleActiveResultSets=true");
+            }
+
+            public DbSet<Person> Persons { get; set; }
+        public DbSet<Address> Addresses { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            new PersonMap(modelBuilder.Entity<Person>());
+            new AddressMap(modelBuilder.Entity<Address>());
+        }
+    }
+
+         private IQueryable<Person> GetPersonQueryable(SampleContext _context, string street)
+        {
+            var peopleQuery = _context.Persons
+                    .Where(p => (p.AddressOne != null && p.AddressOne.Street.Contains(street))
+                            || (p.AddressTwo != null && p.AddressTwo.Street.Contains(street)));
+            return peopleQuery;
+        }
+
+        public async Task<int> GetPersonCountAsync(SampleContext _context, string street)
+        {
+//            var count1 = await _context.Persons.CountAsync(); //this works well
+            var peopleQuery = GetPersonQueryable(_context, street);
+//            var count2 = peopleQuery.Count(); //this works well
+            var count3 = await peopleQuery.CountAsync(); //this DOES NOT work. No exception, just deadlock
+            return count3; //this never executes
+        }
+
+        [Fact]
+        public async Task Repro()
+        {
+            var sampleFilter = "Low Street";
+            var result = await GetPersonCountAsync(new SampleContext(), sampleFilter);
         }
 
         public override void Entity_equality_self()
