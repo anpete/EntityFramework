@@ -9,10 +9,18 @@ using Remotion.Linq.Clauses;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
+    /// <summary>
+    ///     Represents a discriminator predicate.
+    /// </summary>
     public class DiscriminatorPredicateExpression : Expression
     {
         private readonly Expression _predicate;
 
+        /// <summary>
+        ///     Creates a new instance of a DiscriminatorPredicateExpression..
+        /// </summary>
+        /// <param name="predicate"> The predicate. </param>
+        /// <param name="querySource"> The query source. </param>
         public DiscriminatorPredicateExpression(
             [NotNull] Expression predicate, [CanBeNull] IQuerySource querySource)
         {
@@ -23,6 +31,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             QuerySource = querySource;
         }
 
+        /// <summary>
+        ///     Gets the query source.
+        /// </summary>
+        /// <value>
+        ///     The query source.
+        /// </value>
         public virtual IQuerySource QuerySource { get; }
 
         public override ExpressionType NodeType => ExpressionType.Extension;

@@ -9,13 +9,23 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
+    /// <summary>
+    ///     Represents a SQL COUNT expression.
+    /// </summary>
     public class CountExpression : Expression
     {
+        /// <summary>
+        ///     Creates a new instance of a CountExpression.
+        /// </summary>
         public CountExpression()
             : this(typeof(int))
         {
         }
 
+        /// <summary>
+        ///     Creates a new instance of a CountExpression.
+        /// </summary>
+        /// <param name="type"> The type. </param>
         public CountExpression([NotNull] Type type)
         {
             Type = type;

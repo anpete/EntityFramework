@@ -989,7 +989,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
         {
             Check.NotNull(aliasExpression, nameof(aliasExpression));
 
-            if (!aliasExpression.Projected)
+            if (!aliasExpression.IsProjected)
             {
                 Visit(aliasExpression.Expression);
 

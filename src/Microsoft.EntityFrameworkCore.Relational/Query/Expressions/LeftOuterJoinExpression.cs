@@ -8,8 +8,15 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
+    /// <summary>
+    ///     Represents a SQL LEFT OUTER JOIN expression.
+    /// </summary>
     public class LeftOuterJoinExpression : JoinExpressionBase
     {
+        /// <summary>
+        ///     Creates a new instance of LeftOuterJoinExpression.
+        /// </summary>
+        /// <param name="tableExpression"></param>
         public LeftOuterJoinExpression([NotNull] TableExpressionBase tableExpression)
             : base(Check.NotNull(tableExpression, nameof(tableExpression)))
         {

@@ -10,11 +10,20 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
+    /// <summary>
+    ///     A column expression.
+    /// </summary>
     public class ColumnExpression : Expression
     {
         private readonly IProperty _property;
         private readonly TableExpressionBase _tableExpression;
 
+        /// <summary>
+        ///     Creates a new instance of a ColumnExpression.
+        /// </summary>
+        /// <param name="name"> The column name. </param>
+        /// <param name="property"> The corresponding property. </param>
+        /// <param name="tableExpression"> The target table expression. </param>
         public ColumnExpression(
             [NotNull] string name,
             [NotNull] IProperty property,
@@ -24,6 +33,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             _property = property;
         }
 
+        /// <summary>
+        ///     Creates a new instance of a ColumnExpression.
+        /// </summary>
+        /// <param name="name"> The column name. </param>
+        /// <param name="type"> The column type. </param>
+        /// <param name="tableExpression"> The target table expression. </param>
         public ColumnExpression(
             [NotNull] string name,
             [NotNull] Type type,
@@ -38,14 +53,30 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             _tableExpression = tableExpression;
         }
 
+        /// <summary>
+        ///     The target table.
+        /// </summary>
         public virtual TableExpressionBase Table => _tableExpression;
 
+        /// <summary>
+        ///     The target table alias.
+        /// </summary>
         public virtual string TableAlias => _tableExpression.Alias;
 
 #pragma warning disable 108
+
+        /// <summary>
+        ///     The corresponding property.
+        /// </summary>
         public virtual IProperty Property => _property;
 #pragma warning restore 108
 
+        /// <summary>
+        ///     Gets the column name.
+        /// </summary>
+        /// <value>
+        ///     The column name.
+        /// </value>
         public virtual string Name { get; }
 
         public override ExpressionType NodeType => ExpressionType.Extension;
@@ -65,8 +96,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
 
         protected override Expression VisitChildren(ExpressionVisitor visitor) => this;
 
-        protected virtual bool Equals([NotNull] ColumnExpression other)
-            => ((_property == null && other._property == null) || (_property != null && _property.Equals(other._property)))
+        private bool Equals([NotNull] ColumnExpression other)
+            => ((_property == null && other._property == null)
+                || (_property != null && _property.Equals(other._property)))
                && Type == other.Type
                && _tableExpression.Equals(other._tableExpression);
 

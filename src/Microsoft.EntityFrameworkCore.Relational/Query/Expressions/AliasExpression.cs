@@ -10,6 +10,9 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
+    /// <summary>
+    ///     An alias expression.
+    /// </summary>
     public class AliasExpression : Expression
     {
         private readonly Expression _expression;
@@ -18,6 +21,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
 
         private Expression _sourceExpression;
 
+        /// <summary>
+        ///     Creates a new instance of an AliasExpression.
+        /// </summary>
+        /// <param name="expression"> The expression being aliased. </param>
         public AliasExpression([NotNull] Expression expression)
         {
             Check.NotNull(expression, nameof(expression));
@@ -26,6 +33,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
         }
 
         // TODO: Revisit the design here, "alias" should really be required.
+
+        /// <summary>
+        ///     Creates a new instance of an AliasExpression.
+        /// </summary>
+        /// <param name="alias"> The alias. </param>
+        /// <param name="expression"> The expression being aliased.  </param>
         public AliasExpression([CanBeNull] string alias, [NotNull] Expression expression)
         {
             Check.NotNull(expression, nameof(expression));
@@ -34,6 +47,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             _expression = expression;
         }
 
+        /// <summary>
+        ///     Gets or sets the alias.
+        /// </summary>
+        /// <value>
+        ///     The alias.
+        /// </value>
         public virtual string Alias
         {
             get { return _alias; }
@@ -47,14 +66,30 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             }
         }
 
+        /// <summary>
+        ///     The expression being aliased.
+        /// </summary>
         public virtual Expression Expression => _expression;
 
         // TODO: Revisit why we need this. Try and remove
-        public virtual bool Projected { get; set; } = false;
+
+        /// <summary>
+        ///     Gets or sets a value indicating whether the expression is being projected.
+        /// </summary>
+        /// <value>
+        ///     true if projected, false if not.
+        /// </value>
+        public virtual bool IsProjected { get; set; } = false;
 
         public override ExpressionType NodeType => ExpressionType.Extension;
         public override Type Type => _expression.Type;
 
+        /// <summary>
+        ///     Gets or sets the source expression.
+        /// </summary>
+        /// <value>
+        ///     The source expression.
+        /// </value>
         public virtual Expression SourceExpression
         {
             get { return _sourceExpression; }
@@ -67,6 +102,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             }
         }
 
+        /// <summary>
+        ///     Gets or sets the source member.
+        /// </summary>
+        /// <value>
+        ///     The source member.
+        /// </value>
         public virtual MemberInfo SourceMember { get; [param: CanBeNull] set; }
 
         protected override Expression Accept(ExpressionVisitor visitor)

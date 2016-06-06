@@ -8,10 +8,17 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
+    /// <summary>
+    ///     Represents a SQL LATERAL JOIN expression.
+    /// </summary>
     public class LateralJoinExpression : TableExpressionBase
     {
         private readonly TableExpressionBase _tableExpression;
 
+        /// <summary>
+        ///     Creates a new instance of LateralJoinExpression.
+        /// </summary>
+        /// <param name="tableExpression"> The target table expression. </param>
         public LateralJoinExpression([NotNull] TableExpressionBase tableExpression)
             : base(
                 Check.NotNull(tableExpression, nameof(tableExpression)).QuerySource,
@@ -20,6 +27,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             _tableExpression = tableExpression;
         }
 
+        /// <summary>
+        ///     The target table expression.
+        /// </summary>
         public virtual TableExpressionBase TableExpression => _tableExpression;
 
         protected override Expression Accept(ExpressionVisitor visitor)

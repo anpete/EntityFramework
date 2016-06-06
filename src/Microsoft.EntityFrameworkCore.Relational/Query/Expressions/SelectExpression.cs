@@ -411,7 +411,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
                             if (orderByAliasExpression.Expression.ToString() == expression.ToString())
                             {
                                 orderByAliasExpression.Alias = alias;
-                                orderByAliasExpression.Projected = true;
+                                orderByAliasExpression.IsProjected = true;
                             }
                         }
                     }

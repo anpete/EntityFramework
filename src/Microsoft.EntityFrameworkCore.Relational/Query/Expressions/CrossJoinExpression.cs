@@ -8,10 +8,17 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
+    /// <summary>
+    ///     Represents a SQL CROSS JOIN expression.
+    /// </summary>
     public class CrossJoinExpression : TableExpressionBase
     {
         private readonly TableExpressionBase _tableExpression;
 
+        /// <summary>
+        ///     Creates a new instance of a CrossJoinExpression.
+        /// </summary>
+        /// <param name="tableExpression"> The table expression. </param>
         public CrossJoinExpression([NotNull] TableExpressionBase tableExpression)
             : base(
                 Check.NotNull(tableExpression, nameof(tableExpression)).QuerySource,
@@ -20,6 +27,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             _tableExpression = tableExpression;
         }
 
+        /// <summary>
+        ///     The table expression.
+        /// </summary>
         public virtual TableExpressionBase TableExpression => _tableExpression;
 
         protected override Expression Accept(ExpressionVisitor visitor)

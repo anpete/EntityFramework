@@ -9,10 +9,18 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
+    /// <summary>
+    ///     Represents a SQL CAST expression.
+    /// </summary>
     public class ExplicitCastExpression : Expression
     {
         private readonly Type _type;
 
+        /// <summary>
+        ///     Creates a new instance of a ExplicitCastExpression..
+        /// </summary>
+        /// <param name="operand"> The operand. </param>
+        /// <param name="type"> The target type. </param>
         public ExplicitCastExpression([NotNull] Expression operand, [NotNull] Type type)
         {
             Check.NotNull(operand, nameof(operand));
@@ -22,6 +30,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             _type = type;
         }
 
+        /// <summary>
+        ///     Gets the operand.
+        /// </summary>
+        /// <value>
+        ///     The operand.
+        /// </value>
         public virtual Expression Operand { get; }
 
         public override ExpressionType NodeType => ExpressionType.Extension;

@@ -10,8 +10,16 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
+    /// <summary>
+    ///     An expression that represents accessing a property on a query parameter.
+    /// </summary>
     public class PropertyParameterExpression : Expression
     {
+        /// <summary>
+        ///     Creates a new instance of a PropertyParameterExpression.
+        /// </summary>
+        /// <param name="name"> The parameter name. </param>
+        /// <param name="property"> The property to access. </param>
         public PropertyParameterExpression([NotNull] string name, [NotNull] IProperty property)
         {
             Check.NotEmpty(name, nameof(name));
@@ -21,12 +29,28 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             Property = property;
         }
 
+        /// <summary>
+        ///     Gets the parameter name.
+        /// </summary>
+        /// <value>
+        ///     The parameter name.
+        /// </value>
         public virtual string Name { get; }
 
 #pragma warning disable 108
+
+        /// <summary>
+        ///     Gets the property.
+        /// </summary>
+        /// <value>
+        ///     The property.
+        /// </value>
         public virtual IProperty Property { get; }
 #pragma warning restore 108
 
+        /// <summary>
+        ///     Name of the property parameter when used in DbCommands.
+        /// </summary>
         public virtual string PropertyParameterName => $"{Name}_{Property.Name}";
 
         public override ExpressionType NodeType => ExpressionType.Extension;

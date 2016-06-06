@@ -9,8 +9,16 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
+    /// <summary>
+    ///     Represents a SQL LIKE expression.
+    /// </summary>
     public class LikeExpression : Expression
     {
+        /// <summary>
+        ///     Creates a new instance of LikeExpression.
+        /// </summary>
+        /// <param name="match"> The expression to match. </param>
+        /// <param name="pattern"> The pattern to match. </param>
         public LikeExpression([NotNull] Expression match, [NotNull] Expression pattern)
         {
             Check.NotNull(match, nameof(match));
@@ -20,8 +28,20 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             Pattern = pattern;
         }
 
+        /// <summary>
+        ///     Gets the match expression.
+        /// </summary>
+        /// <value>
+        ///     The match expression.
+        /// </value>
         public virtual Expression Match { get; }
 
+        /// <summary>
+        ///     Gets the pattern to match.
+        /// </summary>
+        /// <value>
+        ///     The pattern to match.
+        /// </value>
         public virtual Expression Pattern { get; }
 
         public override ExpressionType NodeType => ExpressionType.Extension;

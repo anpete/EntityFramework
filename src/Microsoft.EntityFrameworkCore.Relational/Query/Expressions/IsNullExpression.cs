@@ -9,15 +9,25 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
+    /// <summary>
+    ///     Represents a SQL IS NULL expression.
+    /// </summary>
     public class IsNullExpression : Expression
     {
         private readonly Expression _operand;
 
+        /// <summary>
+        ///     Creates a new instance of IsNullExpression.
+        /// </summary>
+        /// <param name="operand"> The operand. </param>
         public IsNullExpression([NotNull] Expression operand)
         {
             _operand = operand;
         }
 
+        /// <summary>
+        ///     The operand.
+        /// </summary>
         public virtual Expression Operand => _operand;
 
         public override ExpressionType NodeType => ExpressionType.Extension;

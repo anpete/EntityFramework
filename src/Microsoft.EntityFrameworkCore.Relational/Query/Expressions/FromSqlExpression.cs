@@ -9,8 +9,18 @@ using Remotion.Linq.Clauses;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
+    /// <summary>
+    ///     Represents a FromSql expression.
+    /// </summary>
     public class FromSqlExpression : TableExpressionBase
     {
+        /// <summary>
+        ///     Creates a new instance of a FromSqlExpression.
+        /// </summary>
+        /// <param name="sql"> The SQL. </param>
+        /// <param name="arguments"> The arguments. </param>
+        /// <param name="alias"> The alias. </param>
+        /// <param name="querySource"> The query source. </param>
         public FromSqlExpression(
             [NotNull] string sql,
             [NotNull] Expression arguments,
@@ -27,7 +37,20 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             Arguments = arguments;
         }
 
+        /// <summary>
+        ///     Gets the SQL.
+        /// </summary>
+        /// <value>
+        ///     The SQL.
+        /// </value>
         public virtual string Sql { get; }
+
+        /// <summary>
+        ///     Gets the arguments.
+        /// </summary>
+        /// <value>
+        ///     The arguments.
+        /// </value>
         public virtual Expression Arguments { get; }
 
         protected override Expression Accept(ExpressionVisitor visitor)

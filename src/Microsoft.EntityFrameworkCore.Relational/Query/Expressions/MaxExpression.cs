@@ -8,8 +8,15 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
+    /// <summary>
+    ///     Represents a SQL MAX aggregate expression.
+    /// </summary>
     public class MaxExpression : AggregateExpression
     {
+        /// <summary>
+        ///     Creates a new instance of MaxExpression.
+        /// </summary>
+        /// <param name="expression"> The expression. </param>
         public MaxExpression([NotNull] Expression expression)
             : base(Check.NotNull(expression, nameof(expression)))
         {

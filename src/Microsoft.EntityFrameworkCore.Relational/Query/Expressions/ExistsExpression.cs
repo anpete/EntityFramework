@@ -9,8 +9,15 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
+    /// <summary>
+    ///     Represents a SQL EXISTS expression.
+    /// </summary>
     public class ExistsExpression : Expression
     {
+        /// <summary>
+        ///     Creates a new instance of a ExistsExpression..
+        /// </summary>
+        /// <param name="expression"> The subquery operand of the EXISTS expression. </param>
         public ExistsExpression([NotNull] Expression expression)
         {
             Check.NotNull(expression, nameof(expression));
@@ -18,6 +25,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             Expression = expression;
         }
 
+        /// <summary>
+        ///     Gets the subquery operand of the EXISTS expression.
+        /// </summary>
+        /// <value>
+        ///     The subquery operand of the EXISTS expression.
+        /// </value>
         public virtual Expression Expression { get; }
 
         public override ExpressionType NodeType => ExpressionType.Extension;

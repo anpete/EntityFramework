@@ -7,15 +7,25 @@ using JetBrains.Annotations;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
+    /// <summary>
+    ///     Base class for aggregate expressions.
+    /// </summary>
     public abstract class AggregateExpression : Expression
     {
         private readonly Expression _expression;
 
+        /// <summary>
+        ///     Specialised constructor for use only by derived class.
+        /// </summary>
+        /// <param name="expression"> The expression to aggregate. </param>
         protected AggregateExpression([NotNull] Expression expression)
         {
             _expression = expression;
         }
 
+        /// <summary>
+        ///     The expression to aggregate.
+        /// </summary>
         public virtual Expression Expression => _expression;
 
         public override ExpressionType NodeType => ExpressionType.Extension;

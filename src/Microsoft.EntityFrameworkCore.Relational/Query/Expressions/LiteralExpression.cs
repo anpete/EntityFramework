@@ -9,13 +9,26 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
+    /// <summary>
+    ///     Represents a SQL literal expression
+    /// </summary>
     public class LiteralExpression : Expression
     {
+        /// <summary>
+        ///     Creates a new instance of LiteralExpression.
+        /// </summary>
+        /// <param name="literal"> The literal. </param>
         public LiteralExpression([NotNull] string literal)
         {
             Literal = literal;
         }
 
+        /// <summary>
+        ///     Gets the literal.
+        /// </summary>
+        /// <value>
+        ///     The literal.
+        /// </value>
         public virtual string Literal { get; }
 
         protected override Expression Accept(ExpressionVisitor visitor)
