@@ -38,7 +38,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
         ///     Creates a new instance of an AliasExpression.
         /// </summary>
         /// <param name="alias"> The alias. </param>
-        /// <param name="expression"> The expression being aliased.  </param>
+        /// <param name="expression"> The expression being aliased. </param>
         public AliasExpression([CanBeNull] string alias, [NotNull] Expression expression)
         {
             Check.NotNull(expression, nameof(expression));
@@ -81,7 +81,16 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
         /// </value>
         public virtual bool IsProjected { get; set; } = false;
 
+        /// <summary>
+        ///     Returns the node type of this <see cref="Expression" />. (Inherited from <see cref="Expression" />.)
+        /// </summary>
+        /// <returns> The <see cref="ExpressionType" /> that represents this expression. </returns>
         public override ExpressionType NodeType => ExpressionType.Extension;
+
+        /// <summary>
+        ///     Gets the static type of the expression that this <see cref="Expression" /> represents. (Inherited from <see cref="Expression" />.)
+        /// </summary>
+        /// <returns> The <see cref="Type" /> that represents the static type of the expression. </returns>
         public override Type Type => _expression.Type;
 
         /// <summary>
@@ -117,17 +126,30 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             var specificVisitor = visitor as ISqlExpressionVisitor;
 
             return specificVisitor != null
-                ? specificVisitor.VisitAlias(this)
-                : base.Accept(visitor);
+                       ? specificVisitor.VisitAlias(this)
+                       : base.Accept(visitor);
         }
 
+        /// <summary>
+        ///     Reduces the node and then calls the <see cref="ExpressionVisitor.Visit(System.Linq.Expressions.Expression)" /> method passing the
+        ///     reduced expression.
+        ///     Throws an exception if the node isn't reducible.
+        /// </summary>
+        /// <param name="visitor"> An instance of <see cref="ExpressionVisitor" />. </param>
+        /// <returns> The expression being visited, or an expression which should replace it in the tree. </returns>
+        /// <remarks>
+        ///     Override this method to provide logic to walk the node's children.
+        ///     A typical implementation will call visitor.Visit on each of its
+        ///     children, and if any of them change, should return a new copy of
+        ///     itself with the modified children.
+        /// </remarks>
         protected override Expression VisitChildren(ExpressionVisitor visitor)
         {
             var newInnerExpression = visitor.Visit(_expression);
 
             return newInnerExpression != _expression
-                ? new AliasExpression(Alias, newInnerExpression)
-                : this;
+                       ? new AliasExpression(Alias, newInnerExpression)
+                       : this;
         }
 
         public override string ToString()

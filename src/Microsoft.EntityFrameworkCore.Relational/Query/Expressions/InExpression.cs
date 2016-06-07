@@ -71,8 +71,16 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
         /// </value>
         public virtual SelectExpression SubQuery { get; }
 
+        /// <summary>
+        /// Returns the node type of this <see cref="Expression" />. (Inherited from <see cref="Expression" />.)
+        /// </summary>
+        /// <returns>The <see cref="ExpressionType"/> that represents this expression.</returns>
         public override ExpressionType NodeType => ExpressionType.Extension;
-
+        
+        /// <summary>
+        /// Gets the static type of the expression that this <see cref="Expression" /> represents. (Inherited from <see cref="Expression"/>.)
+        /// </summary>
+        /// <returns>The <see cref="Type"/> that represents the static type of the expression.</returns>
         public override Type Type => typeof(bool);
 
         protected override Expression Accept(ExpressionVisitor visitor)
