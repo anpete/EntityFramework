@@ -50,6 +50,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
         /// <returns>The <see cref="Type"/> that represents the static type of the expression.</returns>
         public override Type Type => _type;
 
+        /// <summary>
+        /// Dispatches to the specific visit method for this node type.
+        /// </summary>
         protected override Expression Accept(ExpressionVisitor visitor)
         {
             Check.NotNull(visitor, nameof(visitor));
@@ -61,6 +64,19 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
                 : base.Accept(visitor);
         }
 
+        /// <summary>
+        ///     Reduces the node and then calls the <see cref="ExpressionVisitor.Visit(System.Linq.Expressions.Expression)" /> method passing the
+        ///     reduced expression.
+        ///     Throws an exception if the node isn't reducible.
+        /// </summary>
+        /// <param name="visitor"> An instance of <see cref="ExpressionVisitor" />. </param>
+        /// <returns> The expression being visited, or an expression which should replace it in the tree. </returns>
+        /// <remarks>
+        ///     Override this method to provide logic to walk the node's children.
+        ///     A typical implementation will call visitor.Visit on each of its
+        ///     children, and if any of them change, should return a new copy of
+        ///     itself with the modified children.
+        /// </remarks>
         protected override Expression VisitChildren(ExpressionVisitor visitor)
         {
             var newOperand = visitor.Visit(Operand);
@@ -70,6 +86,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
                 : this;
         }
 
+        /// <summary>
+        /// Creates a <see cref="String"/> representation of the Expression.
+        /// </summary>
+        /// <returns>A <see cref="String"/> representation of the Expression.</returns>
         public override string ToString() => "CAST(" + Operand + " AS " + _type.Name + ")";
     }
 }

@@ -31,6 +31,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
         /// </value>
         public virtual string Literal { get; }
 
+        /// <summary>
+        /// Dispatches to the specific visit method for this node type.
+        /// </summary>
         protected override Expression Accept(ExpressionVisitor visitor)
         {
             Check.NotNull(visitor, nameof(visitor));
@@ -68,6 +71,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
         /// </remarks>
         protected override Expression VisitChildren(ExpressionVisitor visitor) => this;
 
+        /// <summary>
+        /// Creates a <see cref="string"/> representation of the Expression.
+        /// </summary>
+        /// <returns>A <see cref="string"/> representation of the Expression.</returns>
         public override string ToString() => Literal;
     }
 }

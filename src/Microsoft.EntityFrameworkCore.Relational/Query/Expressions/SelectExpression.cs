@@ -988,6 +988,19 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
                 : base.Accept(visitor);
         }
 
+        /// <summary>
+        ///     Reduces the node and then calls the <see cref="ExpressionVisitor.Visit(System.Linq.Expressions.Expression)" /> method passing the
+        ///     reduced expression.
+        ///     Throws an exception if the node isn't reducible.
+        /// </summary>
+        /// <param name="visitor"> An instance of <see cref="ExpressionVisitor" />. </param>
+        /// <returns> The expression being visited, or an expression which should replace it in the tree. </returns>
+        /// <remarks>
+        ///     Override this method to provide logic to walk the node's children.
+        ///     A typical implementation will call visitor.Visit on each of its
+        ///     children, and if any of them change, should return a new copy of
+        ///     itself with the modified children.
+        /// </remarks>
         protected override Expression VisitChildren(ExpressionVisitor visitor)
         {
             foreach (var expression in Projection)
@@ -1010,9 +1023,23 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             return this;
         }
 
+        /// <summary>
+        ///     Creates the default query SQL generator.
+        /// </summary>
+        /// <returns>
+        ///     The new default query SQL generator.
+        /// </returns>
         public virtual IQuerySqlGenerator CreateDefaultQuerySqlGenerator()
             => _querySqlGeneratorFactory.CreateDefault(this);
 
+        /// <summary>
+        ///     Creates the FromSql query SQL generator.
+        /// </summary>
+        /// <param name="sql"> The SQL. </param>
+        /// <param name="arguments"> The arguments. </param>
+        /// <returns>
+        ///     The new FromSql query SQL generator.
+        /// </returns>
         public virtual IQuerySqlGenerator CreateFromSqlQuerySqlGenerator(
             [NotNull] string sql,
             [NotNull] Expression arguments)

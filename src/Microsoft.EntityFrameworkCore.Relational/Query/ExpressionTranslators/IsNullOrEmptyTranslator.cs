@@ -8,11 +8,21 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Query.ExpressionTranslators
 {
+    /// <summary>
+    ///     A translator for <see cref="string.IsNullOrEmpty"/>.
+    /// </summary>
     public class IsNullOrEmptyTranslator : IMethodCallTranslator
     {
         private static readonly MethodInfo _methodInfo
             = typeof(string).GetRuntimeMethod(nameof(string.IsNullOrEmpty), new[] { typeof(string) });
 
+        /// <summary>
+        ///     Translates the given method call expression.
+        /// </summary>
+        /// <param name="methodCallExpression"> The method call expression. </param>
+        /// <returns>
+        ///     An Expression.
+        /// </returns>
         public virtual Expression Translate(MethodCallExpression methodCallExpression)
         {
             Check.NotNull(methodCallExpression, nameof(methodCallExpression));

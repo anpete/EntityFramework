@@ -32,6 +32,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
         /// </summary>
         public virtual TableExpressionBase TableExpression => _tableExpression;
 
+        /// <summary>
+        /// Dispatches to the specific visit method for this node type.
+        /// </summary>
         protected override Expression Accept(ExpressionVisitor visitor)
         {
             Check.NotNull(visitor, nameof(visitor));
@@ -43,6 +46,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
                 : base.Accept(visitor);
         }
 
+        /// <summary>
+        /// Creates a <see cref="string"/> representation of the Expression.
+        /// </summary>
+        /// <returns>A <see cref="string"/> representation of the Expression.</returns>
         public override string ToString() => "CROSS JOIN " + _tableExpression;
 
         /// <summary>

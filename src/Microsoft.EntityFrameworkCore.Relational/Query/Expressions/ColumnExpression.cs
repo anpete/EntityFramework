@@ -91,6 +91,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
         /// <returns> The <see cref="Type" /> that represents the static type of the expression. </returns>
         public override Type Type { get; }
 
+        /// <summary>
+        /// Dispatches to the specific visit method for this node type.
+        /// </summary>
         protected override Expression Accept(ExpressionVisitor visitor)
         {
             Check.NotNull(visitor, nameof(visitor));
@@ -123,6 +126,13 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
                && Type == other.Type
                && _tableExpression.Equals(other._tableExpression);
 
+        /// <summary>
+        ///     Tests if this object is considered equal to another.
+        /// </summary>
+        /// <param name="obj"> The object to compare with the current object. </param>
+        /// <returns>
+        ///     true if the objects are considered equal, false if they are not.
+        /// </returns>
         public override bool Equals([CanBeNull] object obj)
         {
             if (ReferenceEquals(null, obj))
@@ -139,6 +149,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
                    && Equals((ColumnExpression)obj);
         }
 
+        /// <summary>
+        ///     Returns a hash code for this object.
+        /// </summary>
+        /// <returns>
+        ///     A hash code for this object.
+        /// </returns>
         public override int GetHashCode()
         {
             unchecked
@@ -148,6 +164,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             }
         }
 
+        /// <summary>
+        /// Creates a <see cref="String"/> representation of the Expression.
+        /// </summary>
+        /// <returns>A <see cref="String"/> representation of the Expression.</returns>
         public override string ToString() => _tableExpression.Alias + "." + Name;
     }
 }

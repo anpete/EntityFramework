@@ -119,12 +119,15 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
         /// </value>
         public virtual MemberInfo SourceMember { get; [param: CanBeNull] set; }
 
+        /// <summary>
+        /// Dispatches to the specific visit method for this node type.
+        /// </summary>
         protected override Expression Accept(ExpressionVisitor visitor)
         {
             Check.NotNull(visitor, nameof(visitor));
 
             var specificVisitor = visitor as ISqlExpressionVisitor;
-
+            
             return specificVisitor != null
                        ? specificVisitor.VisitAlias(this)
                        : base.Accept(visitor);
@@ -152,9 +155,20 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
                        : this;
         }
 
+        /// <summary>
+        /// Creates a <see cref="String"/> representation of the Expression.
+        /// </summary>
+        /// <returns>A <see cref="String"/> representation of the Expression.</returns>
         public override string ToString()
             => Alias != null ? "(" + _expression + ") AS " + Alias : _expression.ToString();
 
+        /// <summary>
+        ///     Tests if this object is considered equal to another.
+        /// </summary>
+        /// <param name="obj"> The object to compare with the current object. </param>
+        /// <returns>
+        ///     true if the objects are considered equal, false if they are not.
+        /// </returns>
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj))
@@ -175,6 +189,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             => Equals(_expression, other._expression)
                && string.Equals(_alias, other._alias);
 
+        /// <summary>
+        ///     Returns a hash code for this object.
+        /// </summary>
+        /// <returns>
+        ///     A hash code for this object.
+        /// </returns>
         public override int GetHashCode()
         {
             unchecked
