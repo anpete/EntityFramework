@@ -103,7 +103,7 @@ namespace Microsoft.EntityFrameworkCore.Query
         /// <value>
         ///     true if the default is to track query results, false if not.
         /// </value>
-        public virtual bool TrackQueryResults { get; }
+        public virtual bool TrackQueryResults { get; set; }
 
         /// <summary>
         ///     Gets the query source mapping.

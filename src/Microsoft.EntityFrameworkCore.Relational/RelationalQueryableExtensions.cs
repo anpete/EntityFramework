@@ -66,5 +66,8 @@ namespace Microsoft.EntityFrameworkCore
                     Expression.Constant(sql),
                     Expression.Constant(parameters)));
         }
+
+        public static DbView<TView> View<TView>([NotNull] this DbContext context) 
+            => new DbView<TView>(Check.NotNull(context, nameof(context)));
     }
 }

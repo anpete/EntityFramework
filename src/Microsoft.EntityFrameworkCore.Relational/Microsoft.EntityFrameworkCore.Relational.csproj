@@ -64,6 +64,7 @@
     <Compile Include="..\Shared\StringBuilderExtensions.cs">
       <Link>StringBuilderExtensions.cs</Link>
     </Compile>
+    <Compile Include="DbView.cs" />
     <Compile Include="Extensions\DbCommandLogData.cs" />
     <Compile Include="Extensions\DbParameterLogData.cs" />
     <Compile Include="Extensions\RelationalExpressionExtensions.cs" />

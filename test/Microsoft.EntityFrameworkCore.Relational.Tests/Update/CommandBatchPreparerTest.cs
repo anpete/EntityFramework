@@ -347,7 +347,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
                 .UseModel(model);
             optionsBuilder.UseInMemoryDatabase();
 
-            return new DbContext(optionsBuilder.Options).GetInfrastructure();
+            return new DbContext(optionsBuilder.Options).GetInfrastructure<IServiceProvider>();
         }
 
         private static ICommandBatchPreparer CreateCommandBatchPreparer(IModificationCommandBatchFactory modificationCommandBatchFactory = null)

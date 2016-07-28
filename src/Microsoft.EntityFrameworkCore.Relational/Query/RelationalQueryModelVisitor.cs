@@ -276,6 +276,47 @@ namespace Microsoft.EntityFrameworkCore.Query
                 : QueriesBySource.Values.SingleOrDefault(se => se.HandlesQuerySource(querySource));
         }
 
+        protected override void OptimizeQueryModel(QueryModel queryModel)
+        {
+            var dynamicEntityVisitor = new DynamicEntityVisitor(this);
+
+            queryModel.TransformExpressions(dynamicEntityVisitor.Visit);
+
+            if (!dynamicEntityVisitor.HasMappedEntities)
+            {
+                QueryCompilationContext.TrackQueryResults = false;
+            }
+
+            base.OptimizeQueryModel(queryModel);
+        }
+
+        private class DynamicEntityVisitor : EntityQueryableExpressionVisitor
+        {
+            public DynamicEntityVisitor(EntityQueryModelVisitor entityQueryModelVisitor)
+                : base(entityQueryModelVisitor)
+            {
+            }
+
+            public bool HasMappedEntities { get; private set; }
+
+            protected override Expression VisitEntityQueryable(Type elementType)
+            {
+                var model = QueryModelVisitor.QueryCompilationContext.Model;
+
+                if (model.FindEntityType(elementType) == null)
+                {
+                    model.AsModel().AddEntityType(elementType, ConfigurationSource.Convention);
+                }
+                else
+                {
+                    HasMappedEntities = true;
+                }
+
+
+                return null;
+            }
+        }
+
         /// <summary>
         ///     High-level method called to perform Include compilation.
         /// </summary>

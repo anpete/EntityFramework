@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
@@ -24,7 +25,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
                 .UseModel(model);
             optionsBuilder.UseInMemoryDatabase();
 
-            var contextServices = new DbContext(optionsBuilder.Options).GetInfrastructure();
+            var contextServices = new DbContext(optionsBuilder.Options).GetInfrastructure<IServiceProvider>();
             var stateManager = contextServices.GetRequiredService<IStateManager>();
 
             var key = entityType.AddProperty("Id", typeof(int));

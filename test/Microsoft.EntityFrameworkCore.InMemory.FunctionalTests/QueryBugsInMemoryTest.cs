@@ -510,7 +510,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.FunctionalTests
                     {
                         using (var context = new Context3595())
                         {
-                            context.GetInfrastructure().GetRequiredService<IInMemoryStoreSource>().GetGlobalStore().Clear();
+                            context.GetInfrastructure<IServiceProvider>().GetRequiredService<IInMemoryStoreSource>().GetGlobalStore().Clear();
                         }
                     });
     }

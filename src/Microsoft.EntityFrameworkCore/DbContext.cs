@@ -44,7 +44,7 @@ namespace Microsoft.EntityFrameworkCore
     ///         is discovered by convention, you can override the <see cref="OnModelCreating(ModelBuilder)" /> method.
     ///     </para>
     /// </remarks>
-    public class DbContext : IDisposable, IInfrastructure<IServiceProvider>
+    public class DbContext : IDisposable, IInfrastructure<IServiceProvider>, IInfrastructure<IAsyncQueryProvider>
     {
         private readonly DbContextOptions _options;
 
@@ -105,7 +105,7 @@ namespace Microsoft.EntityFrameworkCore
             => _stateManager
                ?? (_stateManager = InternalServiceProvider.GetRequiredService<IStateManager>());
 
-        internal IAsyncQueryProvider QueryProvider
+        IAsyncQueryProvider IInfrastructure<IAsyncQueryProvider>.Instance 
             => _queryProvider ?? (_queryProvider = this.GetService<IAsyncQueryProvider>());
 
         private IServiceProvider InternalServiceProvider

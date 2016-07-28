@@ -21,6 +21,7 @@ namespace Microsoft.EntityFrameworkCore
         /// <param name="model"> The model to find the entity type in. </param>
         /// <param name="type"> The type of the entity class to find the type for. </param>
         /// <returns> The entity type, or null if none if found. </returns>
+        [CanBeNull]
         public static IEntityType FindEntityType([NotNull] this IModel model, [NotNull] Type type)
             => Check.NotNull(model, nameof(model)).AsModel().FindEntityType(Check.NotNull(type, nameof(type)));
 

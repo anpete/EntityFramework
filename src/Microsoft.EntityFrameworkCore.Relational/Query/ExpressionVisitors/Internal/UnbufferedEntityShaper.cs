@@ -42,7 +42,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         /// </summary>
         public virtual TEntity Shape(QueryContext queryContext, ValueBuffer valueBuffer)
         {
-            if (IsTrackingQuery)
+            if (IsTrackingQuery && Key != null)
             {
                 var entry = queryContext.StateManager.Value.TryGetEntry(Key, valueBuffer, !AllowNullResult);
 
