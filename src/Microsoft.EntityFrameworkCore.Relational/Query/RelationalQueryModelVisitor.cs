@@ -278,7 +278,7 @@ namespace Microsoft.EntityFrameworkCore.Query
 
         protected override void OptimizeQueryModel(QueryModel queryModel)
         {
-            var dynamicEntityVisitor = new DynamicEntityVisitor(this);
+            var dynamicEntityVisitor = new DynamicEntityVisitor(QueryCompilationContext.Model);
 
             queryModel.TransformExpressions(dynamicEntityVisitor.Visit);
 
@@ -290,30 +290,42 @@ namespace Microsoft.EntityFrameworkCore.Query
             base.OptimizeQueryModel(queryModel);
         }
 
-        private class DynamicEntityVisitor : EntityQueryableExpressionVisitor
+        private class DynamicEntityVisitor : ExpressionVisitorBase
         {
-            public DynamicEntityVisitor(EntityQueryModelVisitor entityQueryModelVisitor)
-                : base(entityQueryModelVisitor)
+            private readonly IModel _model;
+
+            public DynamicEntityVisitor(IModel model)
             {
+                _model = model;
             }
 
             public bool HasMappedEntities { get; private set; }
 
-            protected override Expression VisitEntityQueryable(Type elementType)
+            protected override Expression VisitConstant(ConstantExpression constantExpression)
             {
-                var model = QueryModelVisitor.QueryCompilationContext.Model;
-
-                if (model.FindEntityType(elementType) == null)
+                if (constantExpression.Type.GetTypeInfo().IsGenericType
+                    && constantExpression.Type.GetGenericTypeDefinition() == typeof(EntityQueryable<>))
                 {
-                    model.AsModel().AddEntityType(elementType, ConfigurationSource.Convention);
-                }
-                else
-                {
-                    HasMappedEntities = true;
+                    var elementType = ((IQueryable)constantExpression.Value).ElementType;
+
+                    if (_model.FindEntityType(elementType) == null)
+                    {
+                        _model.AsModel().AddEntityType(elementType, ConfigurationSource.Convention);
+                    }
+                    else
+                    {
+                        HasMappedEntities = true;
+                    }
                 }
 
+                return constantExpression;
+            }
 
-                return null;
+            protected override Expression VisitSubQuery(SubQueryExpression expression)
+            {
+                expression.QueryModel.TransformExpressions(Visit);
+
+                return expression;
             }
         }
 

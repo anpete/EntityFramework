@@ -22,10 +22,51 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
                 var results = context.View<CustomerViewModel>().ToList();
 
                 Assert.Equal(91, results.Count);
+
+                Assert.Null(context.Model.FindEntityType(typeof(CustomerViewModel)));
             }
         }
 
-        // AsTracked throws
+        [Fact]
+        public virtual void Simple_from_sql_query()
+        {
+            using (var context = CreateContext())
+            {
+                var results
+                    = context.View<CustomerViewModel>()
+                        .FromSql("select * from customers")
+                        .ToList();
+
+                Assert.Equal(91, results.Count);
+            }
+        }
+
+        [Fact]
+        public virtual void Composed_from_sql_query()
+        {
+            using (var context = CreateContext())
+            {
+                var results
+                    = context.View<CustomerViewModel>()
+                        .FromSql("select * from customers")
+                        .Where(c => c.CustomerId == "ALFKI")
+                        .ToList();
+
+                Assert.Equal(1, results.Count);
+            }
+        }
+
+        [Fact]
+        public virtual void AsTracked_query()
+        {
+            using (var context = CreateContext())
+            {
+                var results = context.View<CustomerViewModel>().AsTracking().ToList();
+
+                Assert.Equal(91, results.Count);
+            }
+        }
+
         // AsNoTracking is no-op
         // OfType
         // Composition

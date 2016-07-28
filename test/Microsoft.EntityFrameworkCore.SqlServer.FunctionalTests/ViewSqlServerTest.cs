@@ -20,6 +20,28 @@ FROM [Customers] AS [c]",
                 Sql);
         }
 
+        public override void Simple_from_sql_query()
+        {
+            base.Simple_from_sql_query();
+
+            Assert.Equal(
+                @"select * from customers",
+                Sql);
+        }
+
+        public override void Composed_from_sql_query()
+        {
+            base.Composed_from_sql_query();
+
+            Assert.Equal(
+                @"SELECT [c].[CustomerId]
+FROM (
+    select * from customers
+) AS [c]
+WHERE [c].[CustomerId] = N'ALFKI'",
+                Sql);
+        }
+
         public ViewSqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {

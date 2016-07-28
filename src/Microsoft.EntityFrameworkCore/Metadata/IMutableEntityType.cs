@@ -16,13 +16,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata
     ///         Once the model is built, <see cref="IEntityType" /> represents a ready-only view of the same metadata.
     ///     </para>
     /// </summary>
-    public interface IMutableEntityType : IEntityType, IMutableAnnotatable
+    public interface IMutableEntityType : IEntityType, IMutableStructuralType
     {
-        /// <summary>
-        ///     Gets the model this entity belongs to.
-        /// </summary>
-        new IMutableModel Model { get; }
-
         /// <summary>
         ///     Gets or sets the base type of the entity. Returns null if this is not a derived type in an inheritance hierarchy.
         /// </summary>
@@ -158,46 +153,12 @@ namespace Microsoft.EntityFrameworkCore.Metadata
         IMutableIndex RemoveIndex([NotNull] IReadOnlyList<IProperty> properties);
 
         /// <summary>
-        ///     Adds a property to this entity.
+        ///     Adds a property to this structural type.
         /// </summary>
         /// <param name="name"> The name of the property to add. </param>
         /// <param name="propertyType"> The type of value the property will hold. </param>
         /// <param name="shadow"> Whether the property is in shadow-state. </param>
         /// <returns> The newly created property. </returns>
         IMutableProperty AddProperty([NotNull] string name, [NotNull] Type propertyType, bool shadow);
-
-        /// <summary>
-        ///     <para>
-        ///         Gets the property with a given name. Returns null if no property with the given name is defined.
-        ///     </para>
-        ///     <para>
-        ///         This API only finds scalar properties and does not find navigation properties. Use
-        ///         <see cref="MutableEntityTypeExtensions.FindNavigation(IMutableEntityType, string)" /> to find
-        ///         a navigation property.
-        ///     </para>
-        /// </summary>
-        /// <param name="name"> The name of the property. </param>
-        /// <returns> The property, or null if none is found. </returns>
-        new IMutableProperty FindProperty([NotNull] string name);
-
-        /// <summary>
-        ///     <para>
-        ///         Gets the properties defined on this entity.
-        ///     </para>
-        ///     <para>
-        ///         This API only returns scalar properties and does not return navigation properties. Use
-        ///         <see cref="MutableEntityTypeExtensions.GetNavigations(IMutableEntityType)" /> to get navigation
-        ///         properties.
-        ///     </para>
-        /// </summary>
-        /// <returns> The properties defined on this entity. </returns>
-        new IEnumerable<IMutableProperty> GetProperties();
-
-        /// <summary>
-        ///     Removes a property from this entity.
-        /// </summary>
-        /// <param name="name"> The name of the property to remove. </param>
-        /// <returns> The property that was removed. </returns>
-        IMutableProperty RemoveProperty([NotNull] string name);
     }
 }
