@@ -308,9 +308,9 @@ namespace Microsoft.EntityFrameworkCore.Query
                 {
                     var elementType = ((IQueryable)constantExpression.Value).ElementType;
 
-                    if (_model.FindEntityType(elementType) == null)
+                    if (_model.FindViewType(elementType) == null)
                     {
-                        _model.AsModel().AddEntityType(elementType, ConfigurationSource.Convention);
+                        _model.AsModel().AddViewType(elementType);
                     }
                     else
                     {

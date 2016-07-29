@@ -1702,9 +1702,9 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
         #region Explicit interface implementations
 
-        IModel IStructuralType.Model => Model;
-        IMutableModel IMutableStructuralType.Model => Model;
-        Type IStructuralType.ClrType => ClrType;
+        IModel IEntityType.Model => Model;
+        IMutableModel IMutableEntityType.Model => Model;
+        Type IEntityType.ClrType => ClrType;
         IEntityType IEntityType.BaseType => _baseType;
 
         IMutableEntityType IMutableEntityType.BaseType
@@ -1757,13 +1757,12 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         IMutableIndex IMutableEntityType.RemoveIndex(IReadOnlyList<IProperty> properties)
             => RemoveIndex(properties);
 
-        IMutableProperty IMutableStructuralType.AddProperty(string name, Type propertyType) => AddProperty(name, propertyType, shadow: false);
         IMutableProperty IMutableEntityType.AddProperty(string name, Type propertyType, bool shadow) => AddProperty(name, propertyType, shadow);
-        IProperty IStructuralType.FindProperty(string name) => FindProperty(name);
-        IMutableProperty IMutableStructuralType.FindProperty(string name) => FindProperty(name);
-        IEnumerable<IProperty> IStructuralType.GetProperties() => GetProperties();
-        IEnumerable<IMutableProperty> IMutableStructuralType.GetProperties() => GetProperties();
-        IMutableProperty IMutableStructuralType.RemoveProperty(string name) => RemoveProperty(name);
+        IProperty IEntityType.FindProperty(string name) => FindProperty(name);
+        IMutableProperty IMutableEntityType.FindProperty(string name) => FindProperty(name);
+        IEnumerable<IProperty> IEntityType.GetProperties() => GetProperties();
+        IEnumerable<IMutableProperty> IMutableEntityType.GetProperties() => GetProperties();
+        IMutableProperty IMutableEntityType.RemoveProperty(string name) => RemoveProperty(name);
 
         #endregion
 

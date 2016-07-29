@@ -26,6 +26,16 @@ namespace Microsoft.EntityFrameworkCore
             => Check.NotNull(model, nameof(model)).AsModel().FindEntityType(Check.NotNull(type, nameof(type)));
 
         /// <summary>
+        ///     Gets the entity that maps the given entity class. Returns null if no entity type with the given name is found.
+        /// </summary>
+        /// <param name="model"> The model to find the entity type in. </param>
+        /// <param name="type"> The type of the entity class to find the type for. </param>
+        /// <returns> The entity type, or null if none if found. </returns>
+        [CanBeNull]
+        public static IViewType FindViewType([NotNull] this IModel model, [NotNull] Type type)
+            => Check.NotNull(model, nameof(model)).AsModel().FindViewType(Check.NotNull(type, nameof(type)));
+
+        /// <summary>
         ///     Gets the default change tracking strategy being used for entities in the model. This strategy indicates how the
         ///     context detects changes to properties for an instance of an entity type.
         /// </summary>

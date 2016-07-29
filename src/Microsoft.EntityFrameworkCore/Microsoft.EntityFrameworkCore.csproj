@@ -166,6 +166,10 @@
     <Compile Include="Extensions\MutablePropertyExtensions.cs" />
     <Compile Include="Extensions\NavigationExtensions.cs" />
     <Compile Include="Extensions\PropertyExtensions.cs" />
+    <Compile Include="Metadata\Internal\InternalViewTypeBuilder.cs" />
+    <Compile Include="Metadata\Internal\ViewTypeExtensions.cs" />
+    <Compile Include="Metadata\Internal\ViewType.cs" />
+    <Compile Include="Metadata\IViewType.cs" />
     <Compile Include="Infrastructure\AccessorExtensions.cs" />
     <Compile Include="Infrastructure\Annotatable.cs" />
     <Compile Include="Infrastructure\AnnotatableExtensions.cs" />
