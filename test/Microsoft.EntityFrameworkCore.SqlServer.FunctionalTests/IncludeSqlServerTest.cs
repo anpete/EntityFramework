@@ -16,7 +16,38 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public IncludeSqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+        }
+
+        public override void Include_collection_on_group_join_clause_with_filter()
+        {
+            base.Include_collection_on_group_join_clause_with_filter();
+
+            Assert.Equal(
+                @"SELECT [t].[CustomerID], [t].[Address], [t].[City], [t].[CompanyName], [t].[ContactName], [t].[ContactTitle], [t].[Country], [t].[Fax], [t].[Phone], [t].[PostalCode], [t].[Region], [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate], [t].[__rowid]
+FROM (
+    SELECT [c].*, ROW_NUMBER() OVER(ORDER BY (SELECT 1)) AS [__rowid]
+    FROM [Customers] AS [c]
+) AS [t]
+LEFT JOIN [Orders] AS [o] ON [t].[CustomerID] = [o].[CustomerID]
+WHERE [t].[CustomerID] = N'ALFKI'
+ORDER BY [t].[__rowid], [t].[CustomerID]
+  
+Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT [o0].[OrderID], [o0].[CustomerID], [o0].[EmployeeID], [o0].[OrderDate], [c0].[CustomerID], [c0].[Address], [c0].[City], [c0].[CompanyName], [c0].[ContactName], [c0].[ContactTitle], [c0].[Country], [c0].[Fax], [c0].[Phone], [c0].[PostalCode], [c0].[Region]
+FROM [Orders] AS [o0]
+INNER JOIN (
+    SELECT DISTINCT [t].[__rowid], [t].[CustomerID]
+    FROM (
+        SELECT [c].*, ROW_NUMBER() OVER(ORDER BY (SELECT 1)) AS [__rowid]
+        FROM [Customers] AS [c]
+    ) AS [t]
+    LEFT JOIN [Orders] AS [o] ON [t].[CustomerID] = [o].[CustomerID]
+    WHERE [t].[CustomerID] = N'ALFKI'
+) AS [t0] ON [o0].[CustomerID] = [t0].[CustomerID]
+LEFT JOIN [Customers] AS [c0] ON [o0].[CustomerID] = [c0].[CustomerID]
+ORDER BY [t0].[__rowid], [t0].[CustomerID]",
+                Sql);
         }
 
         public override void Include_list()

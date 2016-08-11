@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore.Query.Sql;
 using Microsoft.EntityFrameworkCore.Query.Sql.Internal;
 using Microsoft.EntityFrameworkCore.Utilities;
 using Remotion.Linq.Clauses;
@@ -24,6 +23,17 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
+        public RowNumberExpression([NotNull] ColumnExpression columnExpression)
+        {
+            Check.NotNull(columnExpression, nameof(columnExpression));
+
+            ColumnExpression = columnExpression;
+        }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
         public RowNumberExpression(
             [NotNull] ColumnExpression columnExpression,
             [NotNull] IReadOnlyList<Ordering> orderings)
@@ -32,6 +42,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions.Internal
             Check.NotNull(orderings, nameof(orderings));
 
             ColumnExpression = columnExpression;
+
             _orderings.AddRange(orderings);
         }
 
@@ -90,6 +101,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions.Internal
 
             var newOrderings = new List<Ordering>();
             var recreate = false;
+
             foreach (var ordering in _orderings)
             {
                 var newOrdering = new Ordering(visitor.Visit(ordering.Expression), ordering.OrderingDirection);
@@ -98,7 +110,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions.Internal
             }
 
             if (recreate ||
-                ((newColumnExpression != null) && (ColumnExpression != newColumnExpression)))
+                ((newColumnExpression != null)
+                 && !ReferenceEquals(ColumnExpression, newColumnExpression)))
             {
                 return new RowNumberExpression(newColumnExpression ?? ColumnExpression, newOrderings);
             }

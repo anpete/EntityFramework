@@ -114,7 +114,16 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql.Internal
             Check.NotNull(rowNumberExpression, nameof(rowNumberExpression));
 
             Sql.Append("ROW_NUMBER() OVER(");
-            GenerateOrderBy(rowNumberExpression.Orderings);
+
+            if (rowNumberExpression.Orderings.Any())
+            {
+                GenerateOrderBy(rowNumberExpression.Orderings);
+            }
+            else
+            {
+                Sql.Append("ORDER BY (SELECT 1)");
+            }
+
             Sql.Append(") AS ").Append(SqlGenerator.DelimitIdentifier(rowNumberExpression.ColumnExpression.Name));
 
             return rowNumberExpression;

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -331,7 +332,8 @@ namespace Microsoft.EntityFrameworkCore.Query
             Func<TInner, TKey> innerKeySelector,
             Func<TOuter, IAsyncEnumerable<TInner>, TResult> resultSelector,
             AsyncGroupJoinInclude outerGroupJoinInclude,
-            AsyncGroupJoinInclude innerGroupJoinInclude)
+            AsyncGroupJoinInclude innerGroupJoinInclude,
+            int groupNumberSlot)
             => new GroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult>(
                 queryContext,
                 source,
@@ -340,7 +342,8 @@ namespace Microsoft.EntityFrameworkCore.Query
                 innerKeySelector,
                 resultSelector,
                 outerGroupJoinInclude,
-                innerGroupJoinInclude);
+                innerGroupJoinInclude,
+                groupNumberSlot);
 
         private sealed class GroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> : IAsyncEnumerable<TResult>
         {
@@ -352,7 +355,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             private readonly Func<TOuter, IAsyncEnumerable<TInner>, TResult> _resultSelector;
             private readonly AsyncGroupJoinInclude _outerGroupJoinInclude;
             private readonly AsyncGroupJoinInclude _innerGroupJoinInclude;
-            private readonly bool _hasOuters;
+            private readonly int _groupNumberSlot;
 
             public GroupJoinAsyncEnumerable(
                 RelationalQueryContext queryContext,
@@ -362,7 +365,8 @@ namespace Microsoft.EntityFrameworkCore.Query
                 Func<TInner, TKey> innerKeySelector,
                 Func<TOuter, IAsyncEnumerable<TInner>, TResult> resultSelector,
                 AsyncGroupJoinInclude outerGroupJoinInclude,
-                AsyncGroupJoinInclude innerGroupJoinInclude)
+                AsyncGroupJoinInclude innerGroupJoinInclude,
+                int groupNumberSlot)
             {
                 _queryContext = queryContext;
                 _source = source;
@@ -372,7 +376,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                 _resultSelector = resultSelector;
                 _outerGroupJoinInclude = outerGroupJoinInclude;
                 _innerGroupJoinInclude = innerGroupJoinInclude;
-                _hasOuters = (_innerShaper as EntityShaper)?.ValueBufferOffset > 0;
+                _groupNumberSlot = groupNumberSlot;
             }
 
             public IAsyncEnumerator<TResult> GetEnumerator() => new GroupJoinAsyncEnumerator(this);
@@ -380,21 +384,22 @@ namespace Microsoft.EntityFrameworkCore.Query
             private sealed class GroupJoinAsyncEnumerator : IAsyncEnumerator<TResult>
             {
                 private readonly GroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> _groupJoinAsyncEnumerable;
-                private readonly IEqualityComparer<TKey> _comparer;
+                
+                private AsyncGroupJoinInclude.AsyncGroupJoinIncludeContext _outerGroupJoinIncludeContext;
+                private AsyncGroupJoinInclude.AsyncGroupJoinIncludeContext _innerGroupJoinIncludeContext;
+                private Func<TOuter, object> _outerAccessor;
+                private Func<TInner, object> _innerAccessor;
 
                 private IAsyncEnumerator<ValueBuffer> _sourceEnumerator;
                 private bool _hasNext;
-                private TOuter _nextOuter;
-                private AsyncGroupJoinInclude.AsyncGroupJoinIncludeContext _outerGroupJoinIncludeContext;
-                private AsyncGroupJoinInclude.AsyncGroupJoinIncludeContext _innerGroupJoinIncludeContext;
-                private Func<TOuter, object> _outerEntityAccessor;
-                private Func<TInner, object> _innerEntityAccessor;
+                private long _currentGroupNumber;
+                private TOuter _outer;
+                private List<TInner> _inners;
 
                 public GroupJoinAsyncEnumerator(
                     GroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> groupJoinAsyncEnumerable)
                 {
                     _groupJoinAsyncEnumerable = groupJoinAsyncEnumerable;
-                    _comparer = EqualityComparer<TKey>.Default;
                 }
 
                 public async Task<bool> MoveNext(CancellationToken cancellationToken)
@@ -405,123 +410,100 @@ namespace Microsoft.EntityFrameworkCore.Query
                     {
                         _outerGroupJoinIncludeContext = _groupJoinAsyncEnumerable._outerGroupJoinInclude?.Initialize(_groupJoinAsyncEnumerable._queryContext);
                         _innerGroupJoinIncludeContext = _groupJoinAsyncEnumerable._innerGroupJoinInclude?.Initialize(_groupJoinAsyncEnumerable._queryContext);
-                        _outerEntityAccessor = _groupJoinAsyncEnumerable._outerGroupJoinInclude?.EntityAccessor as Func<TOuter, object>;
-                        _innerEntityAccessor = _groupJoinAsyncEnumerable._innerGroupJoinInclude?.EntityAccessor as Func<TInner, object>;
+                        _outerAccessor = _groupJoinAsyncEnumerable._outerGroupJoinInclude?.EntityAccessor as Func<TOuter, object>;
+                        _innerAccessor = _groupJoinAsyncEnumerable._innerGroupJoinInclude?.EntityAccessor as Func<TInner, object>;
+
                         _sourceEnumerator = _groupJoinAsyncEnumerable._source.GetEnumerator();
                         _hasNext = await _sourceEnumerator.MoveNext(cancellationToken);
-                        _nextOuter = default(TOuter);
-                    }
 
-                    if (_hasNext)
-                    {
-                        var outer
-                            = Equals(_nextOuter, default(TOuter))
-                                ? _groupJoinAsyncEnumerable._outerShaper
-                                    .Shape(_groupJoinAsyncEnumerable._queryContext, _sourceEnumerator.Current)
-                                : _nextOuter;
-
-                        _nextOuter = default(TOuter);
-
-                        if (_outerGroupJoinIncludeContext != null)
+                        if (!_hasNext)
                         {
-                            if (_outerEntityAccessor != null)
-                            {
-                                await _outerGroupJoinIncludeContext.IncludeAsync(_outerEntityAccessor(outer), cancellationToken);
-                            }
-                            else
-                            {
-                                await _outerGroupJoinIncludeContext.IncludeAsync(outer, cancellationToken);
-                            }
+                            return false;
                         }
 
-                        var inner
-                            = _groupJoinAsyncEnumerable._innerShaper
-                                .Shape(_groupJoinAsyncEnumerable._queryContext, _sourceEnumerator.Current);
+                        _currentGroupNumber = default(long);
+                        _outer = default(TOuter);
+                        _inners = default(List<TInner>);
+                    }
 
-                        var inners = new List<TInner>();
+                    while (_hasNext)
+                    {
+                        var nextGroupNumber = (long)_sourceEnumerator.Current[_groupJoinAsyncEnumerable._groupNumberSlot];
 
-                        if (inner == null)
+                        if (nextGroupNumber != _currentGroupNumber)
+                        {
+                            if (_currentGroupNumber != default(long))
+                            {
+                                Debug.Assert(_inners != null);
+
+                                Current
+                                    = _groupJoinAsyncEnumerable._resultSelector(
+                                        _outer, AsyncLinqOperatorProvider.ToAsyncEnumerable(_inners));
+
+                                await MoveOuter(cancellationToken, nextGroupNumber);
+
+                                return true;
+                            }
+
+                            await MoveOuter(cancellationToken, nextGroupNumber);
+                        }
+
+                        var inner = _groupJoinAsyncEnumerable._innerShaper
+                            .Shape(_groupJoinAsyncEnumerable._queryContext, _sourceEnumerator.Current);
+
+                        if (inner != null)
+                        {
+                            if (_innerGroupJoinIncludeContext != null)
+                            {
+                                if (_innerAccessor != null)
+                                {
+                                    await _innerGroupJoinIncludeContext.IncludeAsync(_innerAccessor(inner), cancellationToken);
+                                }
+                                else
+                                {
+                                    await _innerGroupJoinIncludeContext.IncludeAsync(inner, cancellationToken);
+                                }
+                            }
+
+                            Debug.Assert(_inners != null);
+
+                            _inners.Add(inner);
+                        }
+
+                        _hasNext = await _sourceEnumerator.MoveNext();
+
+                        if (!_hasNext)
                         {
                             Current
                                 = _groupJoinAsyncEnumerable._resultSelector(
-                                    outer, AsyncLinqOperatorProvider.ToAsyncEnumerable(inners));
-
-                            _hasNext = await _sourceEnumerator.MoveNext(cancellationToken);
+                                    _outer, AsyncLinqOperatorProvider.ToAsyncEnumerable(_inners));
 
                             return true;
                         }
-
-                        var currentGroupKey = _groupJoinAsyncEnumerable._innerKeySelector(inner);
-
-                        if (_innerGroupJoinIncludeContext != null)
-                        {
-                            if (_innerEntityAccessor != null)
-                            {
-                                await _innerGroupJoinIncludeContext.IncludeAsync(_innerEntityAccessor(inner), cancellationToken);
-                            }
-                            else
-                            {
-                                await _innerGroupJoinIncludeContext.IncludeAsync(inner, cancellationToken);
-                            }
-                        }
-
-                        inners.Add(inner);
-
-                        while (true)
-                        {
-                            _hasNext = await _sourceEnumerator.MoveNext(cancellationToken);
-
-                            if (!_hasNext)
-                            {
-                                break;
-                            }
-
-                            if (_groupJoinAsyncEnumerable._hasOuters)
-                            {
-                                _nextOuter
-                                    = _groupJoinAsyncEnumerable._outerShaper
-                                        .Shape(_groupJoinAsyncEnumerable._queryContext, _sourceEnumerator.Current);
-
-                                if (!Equals(outer, _nextOuter))
-                                {
-                                    break;
-                                }
-
-                                _nextOuter = default(TOuter);
-                            }
-
-                            inner
-                                = _groupJoinAsyncEnumerable._innerShaper
-                                    .Shape(_groupJoinAsyncEnumerable._queryContext, _sourceEnumerator.Current);
-
-                            if (inner == null)
-                            {
-                                break;
-                            }
-
-                            var innerKey = _groupJoinAsyncEnumerable._innerKeySelector(inner);
-
-                            if (!_comparer.Equals(currentGroupKey, innerKey))
-                            {
-                                break;
-                            }
-
-                            if (_innerGroupJoinIncludeContext != null)
-                            {
-                                await _innerGroupJoinIncludeContext.IncludeAsync(inner, cancellationToken);
-                            }
-
-                            inners.Add(inner);
-                        }
-
-                        Current
-                            = _groupJoinAsyncEnumerable._resultSelector(
-                                outer, AsyncLinqOperatorProvider.ToAsyncEnumerable(inners));
-
-                        return true;
                     }
 
                     return false;
+                }
+
+                private async Task MoveOuter(CancellationToken cancellationToken, long nextGroupNumber)
+                {
+                    _outer = _groupJoinAsyncEnumerable._outerShaper
+                        .Shape(_groupJoinAsyncEnumerable._queryContext, _sourceEnumerator.Current);
+
+                    if (_outerGroupJoinIncludeContext != null)
+                    {
+                        if (_outerAccessor != null)
+                        {
+                            await _outerGroupJoinIncludeContext.IncludeAsync(_outerAccessor(_outer), cancellationToken);
+                        }
+                        else
+                        {
+                            await _outerGroupJoinIncludeContext.IncludeAsync(_outer, cancellationToken);
+                        }
+                    }
+
+                    _inners = new List<TInner>();
+                    _currentGroupNumber = nextGroupNumber;
                 }
 
                 public TResult Current { get; private set; }

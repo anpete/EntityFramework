@@ -20,11 +20,13 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             IQuerySource querySource,
             RelationalQueryCompilationContext relationalQueryCompilationContext,
             MethodInfo operatorToFlatten,
-            int readerOffset)
+            int readerOffset,
+            int groupNumberSlot)
             => new QueryFlattener(
                 querySource,
                 relationalQueryCompilationContext,
                 operatorToFlatten,
-                readerOffset);
+                readerOffset,
+                groupNumberSlot);
     }
 }

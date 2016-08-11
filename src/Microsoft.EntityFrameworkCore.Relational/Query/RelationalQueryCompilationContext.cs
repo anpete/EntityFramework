@@ -93,6 +93,11 @@ namespace Microsoft.EntityFrameworkCore.Query
         public virtual bool IsLateralJoinSupported => false;
 
         /// <summary>
+        ///     True if the current provider supports generating row numbers in queries. E.g. ROW_NUMBER on SQL Server.
+        /// </summary>
+        public virtual bool IsRowNumberSupported => true;
+
+        /// <summary>
         ///     Creates query model visitor.
         /// </summary>
         /// <param name="parentEntityQueryModelVisitor"> The parent entity query model visitor. </param>

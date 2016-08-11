@@ -24,24 +24,27 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         private readonly RelationalQueryCompilationContext _relationalQueryCompilationContext;
 
         private readonly int _readerOffset;
+        private readonly int? _groupNumberSlot;
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public QueryFlattener(
-            [NotNull] IQuerySource querySource,
-            [NotNull] RelationalQueryCompilationContext relationalQueryCompilationContext,
+            [NotNull] IQuerySource querySource, 
+            [NotNull] RelationalQueryCompilationContext relationalQueryCompilationContext, 
             [NotNull] MethodInfo operatorToFlatten,
-            int readerOffset)
+            int readerOffset,
+            int groupNumberSlot)
         {
             Check.NotNull(relationalQueryCompilationContext, nameof(relationalQueryCompilationContext));
             Check.NotNull(operatorToFlatten, nameof(operatorToFlatten));
 
             _querySource = querySource;
             _relationalQueryCompilationContext = relationalQueryCompilationContext;
-            _readerOffset = readerOffset;
             _operatorToFlatten = operatorToFlatten;
+            _readerOffset = readerOffset;
+            _groupNumberSlot = groupNumberSlot;
         }
 
         /// <summary>
@@ -146,7 +149,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                         methodCallExpression.Arguments[3],
                         methodCallExpression.Arguments[4],
                         defaultGroupJoinInclude,
-                        defaultGroupJoinInclude);
+                        defaultGroupJoinInclude,
+                        Expression.Constant(_groupNumberSlot));
             }
 
             return methodCallExpression;

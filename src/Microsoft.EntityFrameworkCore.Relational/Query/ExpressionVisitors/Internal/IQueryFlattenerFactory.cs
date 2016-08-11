@@ -21,6 +21,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             [NotNull] IQuerySource querySource,
             [NotNull] RelationalQueryCompilationContext relationalQueryCompilationContext,
             [NotNull] MethodInfo operatorToFlatten,
-            int readerOffset);
+            int readerOffset,
+            int groupNumberSlot);
     }
 }

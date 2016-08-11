@@ -74,6 +74,11 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
                 await Single_Predicate_Cancellation(Fixture.CancelQuery()));
         }
 
+        public override Task GroupJoin_projection()
+        {
+            return base.GroupJoin_projection();
+        }
+
         [Fact]
         public async Task Concurrent_async_queries_are_serialized()
         {

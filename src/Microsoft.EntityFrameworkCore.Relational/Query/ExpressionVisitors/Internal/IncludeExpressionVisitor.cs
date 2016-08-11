@@ -495,7 +495,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 }
 
                 var index = orderingExpression is SelectExpression
-                    ? innerJoinSelectExpression.AddAliasToProjection(innerJoinSelectExpression.Alias + "_" + innerJoinSelectExpression.Projection.Count, orderingExpression)
+                    ? innerJoinSelectExpression.AddAliasToProjection(innerJoinSelectExpression.Alias 
+                        + "_" + innerJoinSelectExpression.Projection.Count, orderingExpression)
                     : innerJoinSelectExpression.AddToProjection(orderingExpression);
 
                 var expression = innerJoinSelectExpression.Projection[index];

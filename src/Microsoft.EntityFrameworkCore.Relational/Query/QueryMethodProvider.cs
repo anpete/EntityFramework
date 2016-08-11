@@ -4,6 +4,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using JetBrains.Annotations;
@@ -268,94 +269,62 @@ namespace Microsoft.EntityFrameworkCore.Query
             Func<TInner, TKey> innerKeySelector,
             Func<TOuter, IEnumerable<TInner>, TResult> resultSelector,
             GroupJoinInclude outerGroupJoinInclude,
-            GroupJoinInclude innerGroupJoinInclude)
+            GroupJoinInclude innerGroupJoinInclude,
+            int groupNumberSlot)
         {
             var outerGroupJoinIncludeContext = outerGroupJoinInclude?.Initialize(queryContext);
             var innerGroupJoinIncludeContext = innerGroupJoinInclude?.Initialize(queryContext);
             var outerAccessor = outerGroupJoinInclude?.EntityAccessor as Func<TOuter, object>;
             var innerAccessor = innerGroupJoinInclude?.EntityAccessor as Func<TInner, object>;
 
-            var hasOuters = (innerShaper as EntityShaper)?.ValueBufferOffset > 0;
-
             try
             {
                 using (var sourceEnumerator = source.GetEnumerator())
                 {
-                    var comparer = EqualityComparer<TKey>.Default;
                     var hasNext = sourceEnumerator.MoveNext();
-                    var nextOuter = default(TOuter);
+
+                    if (!hasNext)
+                    {
+                        yield break;
+                    }
+
+                    var currentGroupNumber = default(long);
+                    var outer = default(TOuter);
+                    var inners = default(List<TInner>);
 
                     while (hasNext)
                     {
-                        var outer
-                            = Equals(nextOuter, default(TOuter))
-                                ? outerShaper.Shape(queryContext, sourceEnumerator.Current)
-                                : nextOuter;
+                        var nextGroupNumber = (long)sourceEnumerator.Current[groupNumberSlot];
 
-                        nextOuter = default(TOuter);
-
-                        outerGroupJoinIncludeContext?.Include(outerAccessor != null ? outerAccessor(outer) : outer);
-
-                        var inner = innerShaper.Shape(queryContext, sourceEnumerator.Current);
-                        var inners = new List<TInner>();
-
-                        if (inner == null)
+                        if (nextGroupNumber != currentGroupNumber)
                         {
-                            yield return resultSelector(outer, inners);
-
-                            hasNext = sourceEnumerator.MoveNext();
-                        }
-                        else
-                        {
-                            var currentGroupKey = innerKeySelector(inner);
-
-                            innerGroupJoinIncludeContext?.Include(innerAccessor != null ? innerAccessor(inner) : inner);
-
-                            inners.Add(inner);
-
-                            while (true)
+                            if (currentGroupNumber != default(long))
                             {
-                                hasNext = sourceEnumerator.MoveNext();
-
-                                if (!hasNext)
-                                {
-                                    break;
-                                }
-
-                                if (hasOuters)
-                                {
-                                    nextOuter = outerShaper.Shape(queryContext, sourceEnumerator.Current);
-
-                                    if (!Equals(outer, nextOuter))
-                                    {
-                                        break;
-                                    }
-
-                                    nextOuter = default(TOuter);
-                                }
-
-                                inner = innerShaper.Shape(queryContext, sourceEnumerator.Current);
-
-                                if (inner == null)
-                                {
-                                    break;
-                                }
-
-                                var innerKey = innerKeySelector(inner);
-
-                                if (!comparer.Equals(currentGroupKey, innerKey))
-                                {
-                                    break;
-                                }
-
-                                innerGroupJoinIncludeContext?.Include(inner);
-
-                                inners.Add(inner);
+                                yield return resultSelector(outer, inners);
                             }
 
-                            yield return resultSelector(outer, inners);
+                            outer = outerShaper.Shape(queryContext, sourceEnumerator.Current);
+                            outerGroupJoinIncludeContext?.Include(outerAccessor != null ? outerAccessor(outer) : outer);
+                            inners = new List<TInner>();
+
+                            currentGroupNumber = nextGroupNumber;
                         }
+
+                        var inner = innerShaper.Shape(queryContext, sourceEnumerator.Current);
+
+                        if (inner != null)
+                        {
+                            innerGroupJoinIncludeContext?.Include(innerAccessor != null ? innerAccessor(inner) : inner);
+
+                            Debug.Assert(inners != null);
+
+                            inners.Add(inner);
+                        }
+
+                        hasNext = sourceEnumerator.MoveNext();
                     }
+
+                    yield return resultSelector(outer, inners);
                 }
             }
             finally
@@ -534,7 +503,7 @@ namespace Microsoft.EntityFrameworkCore.Query
         }
 
         /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public virtual MethodInfo InjectParametersMethod => _injectParametersMethodInfo;

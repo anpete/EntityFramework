@@ -4686,6 +4686,38 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
                 from o in orders
                 select o);
         }
+        
+        [ConditionalFact]
+        public virtual void GroupJoin_outer_projection()
+        {
+            AssertQuery<Customer, Order>((cs, os) =>
+                cs.GroupJoin(os, c => c.CustomerID, o => o.CustomerID, (c, o) => new { c.City, o }),
+                asserter: (l2oResults, efResults) => { Assert.Equal(l2oResults.Count, efResults.Count); });
+        }
+        
+        [ConditionalFact]
+        public virtual void GroupJoin_outer_projection2()
+        {
+            AssertQuery<Customer, Order>((cs, os) =>
+                cs.GroupJoin(os, c => c.CustomerID, o => o.CustomerID, (c, g) => new { c.City, g = g.Select(o => o.CustomerID) }),
+                asserter: (l2oResults, efResults) => { Assert.Equal(l2oResults.Count, efResults.Count); });
+        }
+
+        [ConditionalFact]
+        public virtual void GroupJoin_outer_projection_reverse()
+        {
+            AssertQuery<Customer, Order>((cs, os) =>
+                os.GroupJoin(cs, o => o.CustomerID, c => c.CustomerID, (o, c) => new { o.CustomerID, c }),
+                asserter: (l2oResults, efResults) => { Assert.Equal(l2oResults.Count, efResults.Count); });
+        }
+        
+        [ConditionalFact]
+        public virtual void GroupJoin_outer_projection_reverse2()
+        {
+            AssertQuery<Customer, Order>((cs, os) =>
+                os.GroupJoin(cs, o => o.CustomerID, c => c.CustomerID, (o, g) => new { o.CustomerID, g = g.Select(c => c.City) }),
+                asserter: (l2oResults, efResults) => { Assert.Equal(l2oResults.Count, efResults.Count); });
+        }
 
         [ConditionalFact]
         public virtual void GroupJoin_tracking_groups()

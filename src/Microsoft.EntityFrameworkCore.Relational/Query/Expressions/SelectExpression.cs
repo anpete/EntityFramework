@@ -340,6 +340,30 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             }
         }
 
+        public virtual void LiftOrderBy(SelectExpression selectionExpression)
+        {
+            foreach (var ordering in selectionExpression.OrderBy)
+            {
+                var aliasExpression = ordering.Expression as AliasExpression;
+
+                if (aliasExpression != null)
+                {
+                    var expression = UpdateColumnExpression(aliasExpression.Expression, selectionExpression);
+
+                    _orderBy.Add(
+                        new Ordering(
+                            new AliasExpression(aliasExpression.Alias, expression),
+                            ordering.OrderingDirection));
+                }
+            }
+
+            if ((selectionExpression.Limit == null)
+                && (selectionExpression.Offset == null))
+            {
+                selectionExpression.ClearOrderBy();
+            }
+        }
+
         private void PushDownIfLimit()
         {
             if (_limit != null)
@@ -410,7 +434,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
             _isDistinct = false;
 
             Predicate = null;
-
+            
             ClearTables();
             ClearProjection();
             ClearOrderBy();
