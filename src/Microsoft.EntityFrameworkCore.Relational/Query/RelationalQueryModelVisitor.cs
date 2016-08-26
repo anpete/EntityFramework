@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net.Security;
 using System.Reflection;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Extensions.Internal;
@@ -715,6 +716,11 @@ namespace Microsoft.EntityFrameworkCore.Query
                             {
                                 subQuery.IsProjectStar = true;
                             }
+
+//                            foreach (AliasExpression aliasExpression in projection)
+//                            {
+//                                aliasExpression.Alias = subQuery.Alias;
+//                            }
 
                             joinExpression = previousSelectExpression.AddLeftOuterJoin(tableExpression, projection);
 

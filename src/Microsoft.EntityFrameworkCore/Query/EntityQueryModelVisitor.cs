@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -1397,7 +1398,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             querySourceReferenceExpression = null;
 
             while (memberExpression?.Expression != null
-                   || (IsPropertyMethod(methodCallExpression?.Method) && methodCallExpression?.Arguments?[0] != null))
+                   || (IsPropertyMethod(methodCallExpression?.Method) && methodCallExpression?.Arguments[0] != null))
             {
                 var propertyName = memberExpression?.Member.Name ?? (string)(methodCallExpression.Arguments[1] as ConstantExpression)?.Value;
                 expression = memberExpression?.Expression ?? methodCallExpression.Arguments[0];
@@ -1416,6 +1417,8 @@ namespace Microsoft.EntityFrameworkCore.Query
                         break;
                     }
                 }
+
+                Debug.Assert(propertyName != null);
 
                 var property
                     = (IPropertyBase)entityType.FindProperty(propertyName)

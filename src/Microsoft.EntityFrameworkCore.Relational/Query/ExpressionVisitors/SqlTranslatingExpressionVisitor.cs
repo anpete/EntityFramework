@@ -617,9 +617,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                         .BindMethodCallExpression(methodCallExpression, CreateAliasedColumnExpressionCore);
             }
 
-            return expression == null
-                ? _queryModelVisitor.BindMethodToOuterQueryParameter(methodCallExpression)
-                : expression;
+            return expression 
+                ?? _queryModelVisitor.BindMethodToOuterQueryParameter(methodCallExpression);
         }
 
         /// <summary>
@@ -687,9 +686,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                 }
             }
 
-            return aliasExpression == null
-                ? _queryModelVisitor.BindMemberToOuterQueryParameter(expression)
-                : aliasExpression;
+            return aliasExpression 
+                ?? _queryModelVisitor.BindMemberToOuterQueryParameter(expression);
         }
 
         private AliasExpression CreateAliasedColumnExpression(

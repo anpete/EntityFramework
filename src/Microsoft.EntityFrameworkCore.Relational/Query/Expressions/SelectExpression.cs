@@ -557,7 +557,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
 
                             return (ce != null
                                     && columnExpression != null
-                                    && (ce.Property == columnExpression.Property || ce.Name == columnExpression.Name)
+                                    && (ce.Property == columnExpression.Property/* || ce.Name == columnExpression.Name*/)
                                     && ce.TableAlias == columnExpression.TableAlias)
                                 || ae?.Expression == expression;
                         });

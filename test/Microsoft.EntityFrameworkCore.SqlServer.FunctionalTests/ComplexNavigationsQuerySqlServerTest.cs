@@ -296,7 +296,6 @@ WHERE [e1.OneToOne_Required_FK].[Name] LIKE N'L' + N'%' AND (CHARINDEX(N'L', [e1
         {
             base.Join_navigation_in_outer_selector_translated_to_extra_join();
 
-            // See issue#4458
             Assert.Contains(
                 @"SELECT [e2].[Id]
 FROM [Level2] AS [e2]",
@@ -314,7 +313,6 @@ ORDER BY [e1].[Id]",
         {
             base.Join_navigation_in_outer_selector_translated_to_extra_join_nested();
 
-            // See issue#4458
             Assert.Contains(
                 @"SELECT [e3].[Id]
 FROM [Level3] AS [e3]",
