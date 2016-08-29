@@ -713,7 +713,10 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                 new ColumnExpression(
                     _relationalAnnotationProvider.For(property).ColumnName,
                     property,
-                    selectExpression.GetTableForQuerySource(querySource)));
+                    selectExpression.GetTableForQuerySource(querySource))
+                {
+                    QuerySource = querySource
+                });
 
         /// <summary>
         ///     Visit a unary expression.

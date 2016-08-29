@@ -4744,6 +4744,19 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
         }
 
         [ConditionalFact]
+        public virtual void GroupJoin_subquery_projection_outer_mixed()
+        {
+            AssertQuery<Customer, Order>((cs, os) =>
+                from c in cs
+                from o0 in os.Take(1)
+                join o1 in os on c.CustomerID equals o1.CustomerID into orders
+                from o2 in orders
+                select new { A = c.CustomerID, B = o0.CustomerID, C = o2.CustomerID },
+                asserter:
+                    (l2oResults, efResults) => { Assert.Equal(l2oResults.Count, efResults.Count); });
+        }
+
+        [ConditionalFact]
         public virtual void GroupJoin_simple2()
         {
             AssertQuery<Customer, Order>((cs, os) =>

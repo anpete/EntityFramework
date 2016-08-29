@@ -717,11 +717,6 @@ namespace Microsoft.EntityFrameworkCore.Query
                                 subQuery.IsProjectStar = true;
                             }
 
-//                            foreach (AliasExpression aliasExpression in projection)
-//                            {
-//                                aliasExpression.Alias = subQuery.Alias;
-//                            }
-
                             joinExpression = previousSelectExpression.AddLeftOuterJoin(tableExpression, projection);
 
                             predicate

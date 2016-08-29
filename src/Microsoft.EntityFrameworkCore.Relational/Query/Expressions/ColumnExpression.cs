@@ -7,6 +7,7 @@ using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query.Sql;
 using Microsoft.EntityFrameworkCore.Utilities;
+using Remotion.Linq.Clauses;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
@@ -90,6 +91,11 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
         /// </summary>
         /// <returns> The <see cref="Type" /> that represents the static type of the expression. </returns>
         public override Type Type { get; }
+        
+        public IQuerySource QuerySource
+        {
+            get;set;
+        }
 
         /// <summary>
         /// Dispatches to the specific visit method for this node type.

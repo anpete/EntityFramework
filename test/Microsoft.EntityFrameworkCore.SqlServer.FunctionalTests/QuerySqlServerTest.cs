@@ -21,7 +21,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public QuerySqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
 
         public override void Local_array()
@@ -3248,6 +3248,21 @@ ORDER BY [t].[__rowid]",
         public override void GroupJoin_outer_projection_reverse2()
         {
             base.GroupJoin_outer_projection_reverse2();
+
+            Assert.Equal(
+                @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region], [t].[__rowid], [t].[CustomerID]
+FROM (
+    SELECT [o].*, ROW_NUMBER() OVER(ORDER BY (SELECT 1)) AS [__rowid]
+    FROM [Orders] AS [o]
+) AS [t]
+LEFT JOIN [Customers] AS [c] ON [t].[CustomerID] = [c].[CustomerID]
+ORDER BY [t].[__rowid]",
+                Sql);
+        }
+
+        public override void GroupJoin_subquery_projection_outer_mixed()
+        {
+            base.GroupJoin_subquery_projection_outer_mixed();
 
             Assert.Equal(
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region], [t].[__rowid], [t].[CustomerID]

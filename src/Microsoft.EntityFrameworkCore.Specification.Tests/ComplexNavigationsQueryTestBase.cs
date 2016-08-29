@@ -516,15 +516,15 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
         [ConditionalFact]
         public virtual void Join_navigation_in_outer_selector_translated_to_extra_join_nested()
         {
-//            List<Level1> levelOnes;
-//            List<Level3> levelThrees;
-//            using (var context = CreateContext())
-//            {
-//                levelOnes = context.LevelOne.Include(e => e.OneToOne_Required_FK.OneToOne_Optional_FK).ToList();
-//                levelThrees = context.LevelThree.ToList();
-//            }
-//
-//            ClearLog();
+            List<Level1> levelOnes;
+            List<Level3> levelThrees;
+            using (var context = CreateContext())
+            {
+                levelOnes = context.LevelOne.Include(e => e.OneToOne_Required_FK.OneToOne_Optional_FK).ToList();
+                levelThrees = context.LevelThree.ToList();
+            }
+
+            //ClearLog();
 
             using (var context = CreateContext())
             {
@@ -534,15 +534,15 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
 
                 var result = query.ToList();
 
-//                var expected = (from e1 in levelOnes
-//                                join e3 in levelThrees on e1.OneToOne_Required_FK?.OneToOne_Optional_FK?.Id equals e3.Id
-//                                select new { Id1 = e1.Id, Id3 = e3.Id }).ToList();
+                var expected = (from e1 in levelOnes
+                                join e3 in levelThrees on e1.OneToOne_Required_FK?.OneToOne_Optional_FK?.Id equals e3.Id
+                                select new { Id1 = e1.Id, Id3 = e3.Id }).ToList();
 
-//                Assert.Equal(expected.Count, result.Count);
-//                foreach (var resultItem in result)
-//                {
-//                    Assert.True(expected.Contains(resultItem));
-//                }
+                Assert.Equal(expected.Count, result.Count);
+                foreach (var resultItem in result)
+                {
+                    Assert.True(expected.Contains(resultItem));
+                }
             }
         }
 

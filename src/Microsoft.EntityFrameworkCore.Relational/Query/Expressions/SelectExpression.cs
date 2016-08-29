@@ -597,6 +597,17 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
                     }
                 }
 
+//                if (columnExpression != null)
+//                {
+//                    var targetSubquery = GetTableForQuerySource(columnExpression.QuerySource)
+//                        as SelectExpression;
+//
+//                    if (targetSubquery != null)
+//                    {
+//                        //var targetTable = FindTargetTable(columnExpression.QuerySource);
+//                    }
+//                }
+                
                 _projection.Add(new AliasExpression(alias, expression));
 
                 IsProjectStar = false;
@@ -604,6 +615,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
 
             return projectionIndex;
         }
+
+        //private Tabl
 
         /// <summary>
         ///     Adds a ColumnExpression to the projection.

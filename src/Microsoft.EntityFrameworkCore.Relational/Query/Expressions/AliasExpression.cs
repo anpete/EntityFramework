@@ -7,6 +7,7 @@ using System.Reflection;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Query.Sql;
 using Microsoft.EntityFrameworkCore.Utilities;
+using Remotion.Linq.Clauses;
 
 namespace Microsoft.EntityFrameworkCore.Query.Expressions
 {
@@ -118,7 +119,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
         ///     The source member.
         /// </value>
         public virtual MemberInfo SourceMember { get; [param: CanBeNull] set; }
-
+        
         /// <summary>
         /// Dispatches to the specific visit method for this node type.
         /// </summary>
