@@ -274,7 +274,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             SelectExpression selectExpression;
             return QueriesBySource.TryGetValue(querySource, out selectExpression)
                 ? selectExpression
-                : QueriesBySource.Values.SingleOrDefault(se => se.HandlesQuerySource(querySource));
+                : QueriesBySource.Values.LastOrDefault(se => se.HandlesQuerySource(querySource));
         }
 
         /// <summary>
@@ -712,10 +712,10 @@ namespace Microsoft.EntityFrameworkCore.Query
 
                             subQuery.AddToProjection(CreateRowNumberExpression(rowIdColumn));
 
-                            if (subQuery.Projection.Count == 1)
-                            {
+//                            if (subQuery.Projection.Count == 1)
+//                            {
                                 subQuery.IsProjectStar = true;
-                            }
+//                            }
 
                             joinExpression = previousSelectExpression.AddLeftOuterJoin(tableExpression, projection);
 

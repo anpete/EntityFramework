@@ -599,12 +599,17 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
 
 //                if (columnExpression != null)
 //                {
-//                    var targetSubquery = GetTableForQuerySource(columnExpression.QuerySource)
-//                        as SelectExpression;
+////                    var targetSubquery = GetTableForQuerySource(columnExpression.QuerySource)
+////                        as SelectExpression;
+////
+////                    if (targetSubquery != null)
+////                    {
+////                        //var targetTable = FindTargetTable(columnExpression.QuerySource);
+////                    }
 //
-//                    if (targetSubquery != null)
+//                    foreach (var table in _tables)
 //                    {
-//                        //var targetTable = FindTargetTable(columnExpression.QuerySource);
+//                        table.
 //                    }
 //                }
                 
