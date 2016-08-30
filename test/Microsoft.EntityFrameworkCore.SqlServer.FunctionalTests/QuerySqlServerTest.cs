@@ -21,7 +21,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public QuerySqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
 
         public override void Local_array()
@@ -3265,14 +3265,18 @@ ORDER BY [t].[__rowid]",
             base.GroupJoin_subquery_projection_outer_mixed();
 
             Assert.Equal(
-                @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region], [t].[__rowid], [t].[CustomerID]
+                @"SELECT [o1].[OrderID], [o1].[CustomerID], [o1].[EmployeeID], [o1].[OrderDate], [t0].[__rowid], [t0].[CustomerID], [t0].[CustomerID0]
 FROM (
-    SELECT [o].*, ROW_NUMBER() OVER(ORDER BY (SELECT 1)) AS [__rowid]
-    FROM [Orders] AS [o]
-) AS [t]
-LEFT JOIN [Customers] AS [c] ON [t].[CustomerID] = [c].[CustomerID]
-ORDER BY [t].[__rowid]",
-                Sql);
+    SELECT ROW_NUMBER() OVER(ORDER BY (SELECT 1)) AS [__rowid], [c].[CustomerID], [t].[CustomerID] AS [CustomerID0]
+    FROM [Customers] AS [c]
+    CROSS JOIN (
+        SELECT TOP(1) [o0].*
+        FROM [Orders] AS [o0]
+    ) AS [t]
+) AS [t0]
+LEFT JOIN [Orders] AS [o1] ON [t0].[CustomerID] = [o1].[CustomerID]
+ORDER BY [t0].[__rowid]",
+            Sql);
         }
 
         public override void GroupJoin_simple2()

@@ -557,9 +557,11 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
 
                             return (ce != null
                                     && columnExpression != null
-                                    && (ce.Property == columnExpression.Property/* || ce.Name == columnExpression.Name*/)
+                                    && (ce.Property == columnExpression.Property
+                                        || (ce.Name == columnExpression.Name
+                                            && ce.QuerySource == columnExpression.QuerySource))
                                     && ce.TableAlias == columnExpression.TableAlias)
-                                || ae?.Expression == expression;
+                                   || ae?.Expression == expression;
                         });
 
             if (projectionIndex == -1)
@@ -597,22 +599,39 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
                     }
                 }
 
-//                if (columnExpression != null)
-//                {
-////                    var targetSubquery = GetTableForQuerySource(columnExpression.QuerySource)
-////                        as SelectExpression;
-////
-////                    if (targetSubquery != null)
-////                    {
-////                        //var targetTable = FindTargetTable(columnExpression.QuerySource);
-////                    }
-//
-//                    foreach (var table in _tables)
-//                    {
-//                        table.
-//                    }
-//                }
-                
+                if (columnExpression?.QuerySource != null)
+                {
+                    var subSelectExpression
+                        = columnExpression.Table as SelectExpression;
+
+                    if (subSelectExpression != null
+                        && (subSelectExpression.IsProjectStar == false
+                            || subSelectExpression.Tables.Count > 1))
+                    {
+                        var subIndex
+                            = subSelectExpression
+                                .AddToProjection(
+                                    columnExpression.Name,
+                                    columnExpression.Property,
+                                    columnExpression.QuerySource);
+
+                        {
+                            var subAliasExpression
+                                = subSelectExpression.Projection[subIndex] as AliasExpression;
+
+                            if (subAliasExpression?.Alias != null
+                                && subAliasExpression.Alias != columnExpression.Name)
+                            {
+                                expression
+                                    = new ColumnExpression(
+                                        subAliasExpression.Alias,
+                                        columnExpression.Property,
+                                        columnExpression.Table);
+                            }
+                        }
+                    }
+                }
+
                 _projection.Add(new AliasExpression(alias, expression));
 
                 IsProjectStar = false;
@@ -620,8 +639,6 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
 
             return projectionIndex;
         }
-
-        //private Tabl
 
         /// <summary>
         ///     Adds a ColumnExpression to the projection.

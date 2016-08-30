@@ -712,19 +712,14 @@ namespace Microsoft.EntityFrameworkCore.Query
 
                             subQuery.AddToProjection(CreateRowNumberExpression(rowIdColumn));
 
-//                            if (subQuery.Projection.Count == 1)
-//                            {
+                            if (subQuery.Projection.Count == 1)
+                            {
                                 subQuery.IsProjectStar = true;
-//                            }
+                            }
 
                             joinExpression = previousSelectExpression.AddLeftOuterJoin(tableExpression, projection);
 
-                            predicate
-                                = sqlTranslatingExpressionVisitor
-                                    .Visit(
-                                        Expression.Equal(
-                                            joinClause.OuterKeySelector,
-                                            joinClause.InnerKeySelector));
+                            predicate = new ColumnTableUpdater(subQuery).Visit(predicate);
 
                             rowIdColumn = new ColumnExpression(rowIdColumn.Name, rowIdColumn.Type, subQuery);
 
@@ -737,6 +732,8 @@ namespace Microsoft.EntityFrameworkCore.Query
                         }
                         else
                         {
+                            previousSelectExpression.RemoveRangeFromProjection(previousSelectProjectionCount);
+
                             joinExpression = previousSelectExpression.AddInnerJoin(tableExpression, projection);
                         }
 
@@ -760,6 +757,46 @@ namespace Microsoft.EntityFrameworkCore.Query
             if (RequiresClientJoin)
             {
                 WarnClientEval(joinClause);
+            }
+        }
+
+        private class ColumnTableUpdater : ExpressionVisitor
+        {
+            private readonly SelectExpression _targetSelectExpression;
+
+            public ColumnTableUpdater(SelectExpression targetSelectExpression)
+            {
+                _targetSelectExpression = targetSelectExpression;
+            }
+
+            public override Expression Visit(Expression expression)
+            {
+                var columnExpression = expression.TryGetColumnExpression();
+
+                if (columnExpression != null
+                    && _targetSelectExpression.HandlesQuerySource(columnExpression.Table.QuerySource))
+                {
+                    if (!_targetSelectExpression.IsProjectStar)
+                    {
+                        var projectionIndex
+                            = _targetSelectExpression.AddToProjection(
+                                columnExpression.Name,
+                                columnExpression.Property,
+                                columnExpression.QuerySource);
+
+                        return _targetSelectExpression
+                            .UpdateColumnExpression(
+                                _targetSelectExpression.Projection[projectionIndex],
+                                _targetSelectExpression);
+                    }
+
+                    return _targetSelectExpression
+                        .UpdateColumnExpression(
+                            columnExpression,
+                            _targetSelectExpression);
+                }
+
+                return base.Visit(expression);
             }
         }
 

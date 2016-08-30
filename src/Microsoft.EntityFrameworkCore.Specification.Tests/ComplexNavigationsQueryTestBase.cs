@@ -1743,7 +1743,7 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
                         )).ToList();
             }
 
-            ClearLog();
+            //ClearLog();
 
             using (var context = CreateContext())
             {
