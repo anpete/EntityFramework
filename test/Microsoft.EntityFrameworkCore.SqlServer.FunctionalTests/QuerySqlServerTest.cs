@@ -21,7 +21,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public QuerySqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
 
         public override void Project_to_object_array()
@@ -3046,6 +3046,11 @@ ORDER BY [c].[CustomerID]",
 FROM [Orders] AS [o]
 ORDER BY [o].[CustomerID]",
                 Sql);
+        }
+
+        public override void GroupJoin_then_select_many()
+        {
+            base.GroupJoin_then_select_many();
         }
 
         public override void GroupBy_Distinct()

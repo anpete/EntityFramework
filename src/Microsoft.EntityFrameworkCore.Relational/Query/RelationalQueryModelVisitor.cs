@@ -509,14 +509,14 @@ namespace Microsoft.EntityFrameworkCore.Query
 
         private bool CanFlattenSelectMany()
         {
-            var selectManyExpression = Expression as MethodCallExpression;
-            if (selectManyExpression == null
-                || !selectManyExpression.Method.MethodIsClosedFormOf(LinqOperatorProvider.SelectMany)
-                || !IsShapedQueryExpression(selectManyExpression.Arguments[0] as MethodCallExpression, innerShapedQuery: false)
-                || !IsShapedQueryExpression((selectManyExpression.Arguments[1] as LambdaExpression)?.Body as MethodCallExpression, innerShapedQuery: true))
-            {
-                return false;
-            }
+//            var selectManyExpression = Expression as MethodCallExpression;
+//            if (selectManyExpression == null
+//                || !selectManyExpression.Method.MethodIsClosedFormOf(LinqOperatorProvider.SelectMany)
+//                || !IsShapedQueryExpression(selectManyExpression.Arguments[0] as MethodCallExpression, innerShapedQuery: false)
+//                || !IsShapedQueryExpression((selectManyExpression.Arguments[1] as LambdaExpression)?.Body as MethodCallExpression, innerShapedQuery: true))
+//            {
+//                return false;
+//            }
 
             return true;
         }

@@ -72,14 +72,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     .HandleResultOperator(QueryModelVisitor, ResultOperator, QueryModel);
             }
 
-            public SqlTranslatingExpressionVisitor CreateSqlTranslatingVisitor(bool bindParentQueries = false)
-            {
-                return _sqlTranslatingExpressionVisitorFactory
+            public SqlTranslatingExpressionVisitor CreateSqlTranslatingVisitor(bool bindParentQueries = false) 
+                => _sqlTranslatingExpressionVisitorFactory
                     .Create(
                         QueryModelVisitor,
                         SelectExpression,
                         bindParentQueries: bindParentQueries);
-            }
         }
 
         private static readonly Dictionary<Type, Func<HandlerContext, Expression>>

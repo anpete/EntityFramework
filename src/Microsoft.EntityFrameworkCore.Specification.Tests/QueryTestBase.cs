@@ -4744,6 +4744,18 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
                 from o in orders
                 select o);
         }
+        
+        [ConditionalFact]
+        public virtual void GroupJoin_then_select_many()
+        {
+            AssertQuery<Customer, Order>((cs, os) =>
+                from c in cs
+                join o in os on c.CustomerID equals o.CustomerID into orders
+                from o in orders
+                from c2 in cs
+                where o.CustomerID == "ALFKI"
+                select o);
+        }
 
         [ConditionalFact]
         public virtual void GroupJoin_tracking_groups()
