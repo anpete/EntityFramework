@@ -23,6 +23,7 @@ using Microsoft.EntityFrameworkCore.Utilities;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
+using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Microsoft.EntityFrameworkCore.Query
 {
@@ -666,9 +667,13 @@ namespace Microsoft.EntityFrameworkCore.Query
 
             baseVisitAction();
 
+            var groupJoin 
+                = operatorToFlatten
+                    .MethodIsClosedFormOf(LinqOperatorProvider.GroupJoin);
+
             if (!RequiresClientSelectMany
                 && previousSelectExpression != null
-                && (!operatorToFlatten.MethodIsClosedFormOf(LinqOperatorProvider.GroupJoin) 
+                && (!groupJoin 
                     || CanFlattenGroupJoin()))
             {
                 var selectExpression = TryGetQuery(joinClause);
@@ -719,14 +724,47 @@ namespace Microsoft.EntityFrameworkCore.Query
                             }
                         }
 
-                        Expression
-                            = _queryFlattenerFactory
-                                .Create(
-                                    joinClause,
-                                    QueryCompilationContext,
-                                    operatorToFlatten,
-                                    previousSelectProjectionCount)
-                                .Flatten((MethodCallExpression)Expression);
+                        var needsClientExpression = true;
+
+                        var nextAdditionalFromClause
+                            = queryModel.BodyClauses.ElementAtOrDefault(index + 1)
+                                as AdditionalFromClause;
+
+                        if (groupJoin
+                            && nextAdditionalFromClause != null)
+                        {
+                            var subQueryModel
+                                = (nextAdditionalFromClause.FromExpression as SubQueryExpression)
+                                    ?.QueryModel;
+
+                            if (subQueryModel != null
+                                && subQueryModel.ResultOperators.Count == 1
+                                && subQueryModel.ResultOperators[0] is DefaultIfEmptyResultOperator
+                                && ((subQueryModel.MainFromClause.FromExpression as QuerySourceReferenceExpression)
+                                    ?.ReferencedQuerySource as GroupJoinClause)
+                                    ?.JoinClause == joinClause)
+                            {
+
+
+                                queryModel.BodyClauses.RemoveAt(index + 1);
+
+
+
+                                needsClientExpression = false;
+                            }
+                        }
+
+                        if (needsClientExpression)
+                        {
+                            Expression
+                                = _queryFlattenerFactory
+                                    .Create(
+                                        joinClause,
+                                        QueryCompilationContext,
+                                        operatorToFlatten,
+                                        previousSelectProjectionCount)
+                                    .Flatten((MethodCallExpression)Expression);
+                        }
 
                         RequiresClientJoin = false;
                     }

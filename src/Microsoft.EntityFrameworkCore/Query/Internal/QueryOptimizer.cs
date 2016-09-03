@@ -128,9 +128,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             referenceCount++;
                         }
 
-                        var sq = e as SubQueryExpression;
-
-                        sq?.QueryModel.TransformExpressions(groupReferenceFinder);
+                        (e as SubQueryExpression)?.QueryModel
+                            .TransformExpressions(groupReferenceFinder);
 
                         return e;
                     };

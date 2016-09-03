@@ -21,7 +21,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public QuerySqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
 
         public override void Project_to_object_array()
