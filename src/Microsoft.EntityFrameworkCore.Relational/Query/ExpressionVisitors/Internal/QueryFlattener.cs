@@ -14,7 +14,7 @@ using Remotion.Linq.Clauses;
 namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 {
     /// <summary>
-    ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
+    ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
     ///     directly from your code. This API may change or be removed in future releases.
     /// </summary>
     public class QueryFlattener
@@ -26,7 +26,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         private readonly int _readerOffset;
 
         /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public QueryFlattener(
@@ -35,17 +35,18 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             [NotNull] MethodInfo operatorToFlatten,
             int readerOffset)
         {
+            Check.NotNull(querySource, nameof(querySource));
             Check.NotNull(relationalQueryCompilationContext, nameof(relationalQueryCompilationContext));
             Check.NotNull(operatorToFlatten, nameof(operatorToFlatten));
 
             _querySource = querySource;
             _relationalQueryCompilationContext = relationalQueryCompilationContext;
-            _readerOffset = readerOffset;
             _operatorToFlatten = operatorToFlatten;
+            _readerOffset = readerOffset;
         }
 
         /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public virtual Expression Flatten([NotNull] MethodCallExpression methodCallExpression)
@@ -81,6 +82,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 }
 
                 var materializerLambda = (LambdaExpression)methodCallExpression.Arguments.Last();
+
                 var materializerReturnType = materializerLambda.ReturnType;
                 var materializer = materializerLambda.Compile();
 

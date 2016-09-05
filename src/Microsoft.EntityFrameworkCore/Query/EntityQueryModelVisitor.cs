@@ -839,7 +839,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                         CurrentParameter,
                         innerItemParameter));
 
-            IntroduceTransparentScope(joinClause, queryModel, index, transparentIdentifierType);
+             IntroduceTransparentScope(joinClause, queryModel, index, transparentIdentifierType);
         }
 
         /// <summary>
@@ -1422,7 +1422,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             querySourceReferenceExpression = null;
 
             while (memberExpression?.Expression != null
-                   || (IsPropertyMethod(methodCallExpression?.Method) && methodCallExpression?.Arguments?[0] != null))
+                   || (IsPropertyMethod(methodCallExpression?.Method) && methodCallExpression?.Arguments[0] != null))
             {
                 var propertyName = memberExpression?.Member.Name ?? (string)(methodCallExpression.Arguments[1] as ConstantExpression)?.Value;
                 expression = memberExpression?.Expression ?? methodCallExpression.Arguments[0];

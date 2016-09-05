@@ -325,9 +325,11 @@ namespace Microsoft.EntityFrameworkCore.Query
                     .FindQuerySourcesRequiringMaterialization(queryModel);
 
             var groupJoinClauses = queryModel.BodyClauses.OfType<GroupJoinClause>().ToList();
+
             if (groupJoinClauses.Any())
             {
                 _querySourcesRequiringMaterialization.Add(queryModel.MainFromClause);
+
                 foreach (var groupJoinClause in groupJoinClauses)
                 {
                     _querySourcesRequiringMaterialization.Add(groupJoinClause.JoinClause);

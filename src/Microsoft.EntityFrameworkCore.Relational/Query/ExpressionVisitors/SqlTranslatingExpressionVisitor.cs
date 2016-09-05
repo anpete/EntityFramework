@@ -618,9 +618,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                         .BindMethodCallExpression(methodCallExpression, CreateAliasedColumnExpressionCore);
             }
 
-            return expression == null
-                ? _queryModelVisitor.BindMethodToOuterQueryParameter(methodCallExpression)
-                : expression;
+            return expression 
+                ?? _queryModelVisitor.BindMethodToOuterQueryParameter(methodCallExpression);
         }
 
         /// <summary>
@@ -688,9 +687,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                 }
             }
 
-            return aliasExpression == null
-                ? _queryModelVisitor.BindMemberToOuterQueryParameter(expression)
-                : aliasExpression;
+            return aliasExpression 
+                ?? _queryModelVisitor.BindMemberToOuterQueryParameter(expression);
         }
 
         private AliasExpression CreateAliasedColumnExpression(
@@ -990,12 +988,10 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
             }
 
             var nullConditional = expression as NullConditionalExpression;
-            if (nullConditional != null)
-            {
-                return Visit(nullConditional.AccessOperation);
-            }
 
-            return base.VisitExtension(expression);
+            return nullConditional != null 
+                ? Visit(nullConditional.AccessOperation) 
+                : base.VisitExtension(expression);
         }
 
         /// <summary>
@@ -1008,6 +1004,28 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
         protected override Expression VisitQuerySourceReference(QuerySourceReferenceExpression expression)
         {
             Check.NotNull(expression, nameof(expression));
+
+            if (!_inProjection)
+            {
+                var joinClause
+                    = expression.ReferencedQuerySource as JoinClause;
+
+                if (joinClause != null)
+                {
+                    var entityType
+                        = _queryModelVisitor.QueryCompilationContext.Model
+                            .FindEntityType(joinClause.ItemType);
+
+                    if (entityType != null)
+                    {
+                        return Visit(
+                            EntityQueryModelVisitor.CreatePropertyExpression(
+                                expression, entityType.FindPrimaryKey().Properties[0]));
+                    }
+
+                    return null;
+                }
+            }
 
             var selector
                 = ((expression.ReferencedQuerySource as FromClauseBase)

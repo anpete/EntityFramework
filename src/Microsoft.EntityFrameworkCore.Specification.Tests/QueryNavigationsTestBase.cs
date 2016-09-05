@@ -64,6 +64,21 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
         }
 
         [ConditionalFact]
+        public virtual void Select_Where_Navigation_Scalar_Equals_Navigation_Scalar2()
+        {
+            using (var context = CreateContext())
+            {
+                var orders
+                    = (from o1 in context.Set<Order>()
+                       from o2 in context.Set<Order>()
+                       where o1.Customer.City == o2.Customer.City
+                       select new { o1, o2 }).ToList();
+
+                Assert.Equal(223, orders.Count);
+            }
+        }
+
+        [ConditionalFact]
         public virtual void Select_Where_Navigation_Scalar_Equals_Navigation_Scalar_Projected()
         {
             using (var context = CreateContext())

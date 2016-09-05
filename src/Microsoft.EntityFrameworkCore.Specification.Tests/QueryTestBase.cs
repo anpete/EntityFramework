@@ -4946,6 +4946,19 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
                 where o != null && o.CustomerID == "ALFKI"
                 select o);
         }
+
+        [ConditionalFact]
+        public virtual void Join_GroupJoin_DefaultIfEmpty_Where()
+        {
+            AssertQuery<Customer, Order>((cs, os) =>
+                from c in cs
+                join o in os on c.CustomerID equals o.CustomerID
+                join o2 in os on c.CustomerID equals o2.CustomerID into orders
+                from o3 in orders.DefaultIfEmpty()
+                where o3 != null && o3.CustomerID == "ALFKI"
+                select o3);
+        }
+        
         
         [ConditionalFact]
         public virtual void GroupJoin_DefaultIfEmpty_Project()

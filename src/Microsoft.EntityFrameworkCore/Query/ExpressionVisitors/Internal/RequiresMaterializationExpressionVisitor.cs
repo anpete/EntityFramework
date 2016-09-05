@@ -196,7 +196,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
                 if (expression.QueryModel.ResultOperators.LastOrDefault() is DefaultIfEmptyResultOperator)
                 {
-                    var underlyingQuerySource = (((querySourceReferenceExpression.ReferencedQuerySource as MainFromClause)
+                    var underlyingQuerySource 
+                        = (((querySourceReferenceExpression.ReferencedQuerySource as MainFromClause)
                         ?.FromExpression as QuerySourceReferenceExpression)
                         ?.ReferencedQuerySource as GroupJoinClause)?.JoinClause;
 
@@ -236,7 +237,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             return expression;
         }
 
-        private Expression SetResultOperationSourceExpression(ResultOperatorBase resultOperator)
+        private static Expression SetResultOperationSourceExpression(ResultOperatorBase resultOperator)
         {
             var concatOperator = resultOperator as ConcatResultOperator;
             if (concatOperator != null)
@@ -257,13 +258,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             }
 
             var unionOperator = resultOperator as UnionResultOperator;
-            // ReSharper disable once UseNullPropagation
-            if (unionOperator != null)
-            {
-                return unionOperator.Source2;
-            }
 
-            return null;
+            return unionOperator?.Source2;
         }
     }
 }

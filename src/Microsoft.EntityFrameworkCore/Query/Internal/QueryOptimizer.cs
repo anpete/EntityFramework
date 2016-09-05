@@ -17,7 +17,7 @@ using Remotion.Linq.Transformations;
 namespace Microsoft.EntityFrameworkCore.Query.Internal
 {
     /// <summary>
-    ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
+    ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
     ///     directly from your code. This API may change or be removed in future releases.
     /// </summary>
     public class QueryOptimizer : SubQueryFromClauseFlattener, IQueryOptimizer
@@ -51,7 +51,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         private IReadOnlyCollection<IQueryAnnotation> _queryAnnotations;
 
         /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public virtual void Optimize(
@@ -64,7 +64,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         }
 
         /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public override void VisitJoinClause(JoinClause joinClause, QueryModel queryModel, int index)
@@ -95,7 +95,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         }
 
         /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public override void VisitGroupJoinClause(GroupJoinClause groupJoinClause, QueryModel queryModel, int index)
@@ -104,39 +104,17 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             // Attempts to rewrite GroupJoin/SelectMany to regular join
 
-            var additionalFromClause 
+            var additionalFromClause
                 = queryModel.BodyClauses.ElementAtOrDefault(index + 1)
                     as AdditionalFromClause;
 
-            var querySourceReferenceExpression 
+            var querySourceReferenceExpression
                 = additionalFromClause?.FromExpression as QuerySourceReferenceExpression;
 
             if (querySourceReferenceExpression != null
                 && querySourceReferenceExpression.ReferencedQuerySource == groupJoinClause)
             {
-                var referenceCount = 0;
-
-                Func<Expression, Expression> groupReferenceFinder = null;
-
-                groupReferenceFinder 
-                    = e =>
-                    {
-                        var qsre = e as QuerySourceReferenceExpression;
-
-                        if (qsre?.ReferencedQuerySource == groupJoinClause)
-                        {
-                            referenceCount++;
-                        }
-
-                        (e as SubQueryExpression)?.QueryModel
-                            .TransformExpressions(groupReferenceFinder);
-
-                        return e;
-                    };
-
-                queryModel.TransformExpressions(groupReferenceFinder);
-
-                if (referenceCount == 1)
+                if (queryModel.CountQuerySourceReferences(groupJoinClause) == 1)
                 {
                     // GroupJoin/SelectMany can be rewritten to regular Join.
 
@@ -160,7 +138,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         }
 
         /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         protected override void FlattenSubQuery(
@@ -235,7 +213,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         }
 
         /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public override void VisitResultOperator(ResultOperatorBase resultOperator, QueryModel queryModel, int index)
