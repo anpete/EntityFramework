@@ -512,15 +512,11 @@ namespace Microsoft.EntityFrameworkCore.Query
         private bool CanFlattenSelectMany()
         {
             var selectManyExpression = Expression as MethodCallExpression;
-            if (selectManyExpression == null
-                || !selectManyExpression.Method.MethodIsClosedFormOf(LinqOperatorProvider.SelectMany)
-                || !IsShapedQueryExpression(selectManyExpression.Arguments[0] as MethodCallExpression, innerShapedQuery: false)
-                || !IsShapedQueryExpression((selectManyExpression.Arguments[1] as LambdaExpression)?.Body as MethodCallExpression, innerShapedQuery: true))
-            {
-                return false;
-            }
 
-            return true;
+            return selectManyExpression != null 
+                && selectManyExpression.Method.MethodIsClosedFormOf(LinqOperatorProvider.SelectMany) 
+                && IsShapedQueryExpression(selectManyExpression.Arguments[0] as MethodCallExpression, innerShapedQuery: false) 
+                && IsShapedQueryExpression((selectManyExpression.Arguments[1] as LambdaExpression)?.Body as MethodCallExpression, innerShapedQuery: true);
         }
 
         private bool IsShapedQueryExpression(MethodCallExpression shapedQueryExpression, bool innerShapedQuery)
@@ -779,6 +775,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                                     previousSelectExpression.RemoveRangeFromProjection(previousProjectionCount);
 
                                     QueriesBySource.Remove(joinClause);
+                                    //QueryCompilationContext.QuerySourceMapping.
 
                                     operatorToFlatten = LinqOperatorProvider.Join;
                                 }

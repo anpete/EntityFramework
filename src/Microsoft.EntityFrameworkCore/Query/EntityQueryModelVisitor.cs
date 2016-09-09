@@ -1145,9 +1145,18 @@ namespace Microsoft.EntityFrameworkCore.Query
                 return targetExpression;
             }
 
-            return Expression.MakeMemberAccess(
-                ShiftMemberAccess(targetExpression, memberExpression.Expression),
-                memberExpression.Member);
+            try
+            {
+                return Expression.MakeMemberAccess(
+                    ShiftMemberAccess(targetExpression, memberExpression.Expression),
+                    memberExpression.Member);
+            }
+            catch
+            {
+                // TODO
+            }
+
+            return currentExpression;
         }
 
         #endregion
