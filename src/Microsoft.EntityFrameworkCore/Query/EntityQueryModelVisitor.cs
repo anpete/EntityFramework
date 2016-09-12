@@ -1113,13 +1113,22 @@ namespace Microsoft.EntityFrameworkCore.Query
 
             RescopeTransparentAccess(queryModel.MainFromClause, outerAccessExpression);
 
-            for (var i = 0; i < index; i++)
+            for (var i = 0; i < queryModel.BodyClauses.Count; i++)
             {
                 var querySource = queryModel.BodyClauses[i] as IQuerySource;
 
-                if (querySource != null)
+                if (querySource != null
+                    && QueryCompilationContext.QuerySourceMapping.ContainsMapping(querySource))
                 {
                     RescopeTransparentAccess(querySource, outerAccessExpression);
+
+                    var groupJoinClause = querySource as GroupJoinClause;
+
+                    if (groupJoinClause != null
+                        && QueryCompilationContext.QuerySourceMapping.ContainsMapping(groupJoinClause.JoinClause))
+                    {
+                        RescopeTransparentAccess(groupJoinClause.JoinClause, outerAccessExpression);
+                    }
                 }
             }
 

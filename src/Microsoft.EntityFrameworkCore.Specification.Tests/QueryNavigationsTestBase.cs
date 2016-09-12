@@ -68,17 +68,17 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
         {
             using (var context = CreateContext())
             {
-//                var orders
-//                    = (from o1 in context.Set<Order>()
-//                       from o2 in context.Set<Order>()
-//                       where o1.Customer.City == o2.Customer.City
-//                       select new { o1, o2 }).ToList();
-
-                 var orders
+                var orders
                     = (from o1 in context.Set<Order>()
                        from o2 in context.Set<Order>()
-                       //where o1.Customer.City == o2.Customer.City
-                       select new { o1.Customer.City/*, City2 = o2.Customer.City*/ }).ToList();
+                       where o1.Customer.City == o2.Customer.City
+                       select new { o1, o2 }).ToList();
+
+//                 var orders
+//                    = (from o1 in context.Set<Order>()
+//                       from o2 in context.Set<Order>()
+//                       //where o1.Customer.City == o2.Customer.City
+//                       select new { o1.Customer.City/*, City2 = o2.Customer.City*/ }).ToList();
 
                 Assert.Equal(223, orders.Count);
             }

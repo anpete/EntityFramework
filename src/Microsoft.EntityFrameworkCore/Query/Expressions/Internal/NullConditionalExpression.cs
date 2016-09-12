@@ -1,6 +1,5 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-// Logic in this file is based on https://github.com/bartdesmet/ExpressionFutures/
 
 using System;
 using System.Linq.Expressions;
@@ -15,7 +14,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions.Internal
     /// </summary>
     public class NullConditionalExpression : Expression
     {
-        private Type _type;
+        private readonly Type _type;
 
         /// <summary>
         ///     Creates a new instance of NullConditionalExpression.
@@ -36,27 +35,29 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions.Internal
             Caller = caller;
             AccessOperation = accessOperation;
 
-            _type = AccessOperation.Type.IsNullableType() ? AccessOperation.Type : AccessOperation.Type.MakeNullable();
+            _type = accessOperation.Type.IsNullableType()
+                ? accessOperation.Type
+                : accessOperation.Type.MakeNullable();
         }
 
         /// <summary>
         ///     Expression representing potentially nullable caller that needs to be tested for it's nullability.
         /// </summary>
-        public virtual Expression NullableCaller { get; [param: NotNull] private set; }
+        public virtual Expression NullableCaller { get; }
 
         /// <summary>
-        ///     Expression representig actual caller for the access operation.
+        ///     Expression representing actual caller for the access operation.
         /// </summary>
-        public virtual Expression Caller { get; [param: NotNull] private set; }
+        public virtual Expression Caller { get; }
 
         /// <summary>
         ///     Expression representing access operation.
         /// </summary>
-        public virtual Expression AccessOperation { get; [param: NotNull] private set; }
+        public virtual Expression AccessOperation { get; }
 
         /// <summary>
         ///     Indicates that the node can be reduced to a simpler node. If this returns true,
-        ///     Reduce() can be called to produce the reduced form. 
+        ///     Reduce() can be called to produce the reduced form.
         /// </summary>
         public override bool CanReduce => true;
 
@@ -100,7 +101,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions.Internal
                         NotEqual(nullableCaller, Default(nullableCallerType)),
                         Assign(result, operation)),
                     result
-                );
+                    );
 
             return resultExpression;
         }
@@ -116,7 +117,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions.Internal
                 _newCaller = newCaller;
             }
 
-            public override Expression Visit([CanBeNull] Expression node) => node == _originalCaller ? _newCaller : base.Visit(node);
+            public override Expression Visit(Expression node)
+                => node == _originalCaller ? _newCaller : base.Visit(node);
         }
     }
 }
