@@ -191,7 +191,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     break;
 
                 default:
-                    UnhandledExpressionType(node.NodeType);
+                    UnhandledExpressionType(node);
                     break;
             }
 
@@ -219,7 +219,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 string operand;
                 if (!_binaryOperandMap.TryGetValue(node.NodeType, out operand))
                 {
-                    UnhandledExpressionType(node.NodeType);
+                    UnhandledExpressionType(node);
                 }
                 else
                 {
@@ -640,8 +640,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             return processedPlan;
         }
 
-        private void UnhandledExpressionType(ExpressionType expressionType)
-            => _stringBuilder.AppendLine(CoreStrings.UnhandledExpressionType(expressionType));
+        private void UnhandledExpressionType(Expression e)
+            => _stringBuilder.AppendLine(e);
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
@@ -653,7 +653,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            bool TryPrintConstant([NotNull] object value, [NotNull] IndentedStringBuilder stringBuilder);
+            bool TryPrintConstant([CanBeNull] object value, [NotNull] IndentedStringBuilder stringBuilder);
         }
 
         private class CollectionConstantPrinter : IConstantPrinter
@@ -705,6 +705,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             public bool TryPrintConstant(object value, IndentedStringBuilder stringBuilder)
             {
                 var stringValue = "null";
+
                 if (value != null)
                 {
                     stringValue = value.ToString() != value.GetType().ToString()

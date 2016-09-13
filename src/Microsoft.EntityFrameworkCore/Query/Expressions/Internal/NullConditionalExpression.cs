@@ -87,7 +87,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions.Internal
                 ? (Expression)Convert(nullableCaller, Caller.Type)
                 : nullableCaller;
 
-            var operation = new CallerReplacingExpressionVisitor(Caller, caller).Visit(AccessOperation);
+            var operation 
+                = new CallerReplacingExpressionVisitor(Caller, caller)
+                    .Visit(AccessOperation);
 
             if (operation.Type != _type)
             {
@@ -122,6 +124,16 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions.Internal
                 => node == _originalCaller
                     ? _newCaller
                     : base.Visit(node);
+
+//            protected override Expression VisitExtension(Expression node)
+//            {
+//                if (node is NullConditionalExpression)
+//                {
+//                    return node.Reduce();
+//                }
+//
+//                return base.VisitExtension(node);
+//            }
         }
 
         /// <summary>
