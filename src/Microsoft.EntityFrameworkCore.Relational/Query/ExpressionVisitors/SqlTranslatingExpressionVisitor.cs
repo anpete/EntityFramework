@@ -618,9 +618,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                         .BindMethodCallExpression(methodCallExpression, CreateAliasedColumnExpressionCore);
             }
 
-            return expression == null
-                ? _queryModelVisitor.BindMethodToOuterQueryParameter(methodCallExpression)
-                : expression;
+            return expression ?? _queryModelVisitor.BindMethodToOuterQueryParameter(methodCallExpression);
         }
 
         /// <summary>
@@ -688,9 +686,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                 }
             }
 
-            return aliasExpression == null
-                ? _queryModelVisitor.BindMemberToOuterQueryParameter(expression)
-                : aliasExpression;
+            return aliasExpression ?? _queryModelVisitor.BindMemberToOuterQueryParameter(expression);
         }
 
         private AliasExpression CreateAliasedColumnExpression(
@@ -963,6 +959,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
         protected override Expression VisitExtension(Expression expression)
         {
             var stringCompare = expression as StringCompareExpression;
+
             if (stringCompare != null)
             {
                 var newLeft = Visit(stringCompare.Left);
@@ -980,6 +977,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
             }
 
             var explicitCast = expression as ExplicitCastExpression;
+
             if (explicitCast != null)
             {
                 var newOperand = Visit(explicitCast.Operand);
@@ -990,9 +988,12 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
             }
 
             var nullConditional = expression as NullConditionalExpression;
+
             if (nullConditional != null)
             {
-                return Visit(nullConditional.AccessOperation);
+                //return Visit(nullConditional.AccessOperation);
+
+                return null;
             }
 
             return base.VisitExtension(expression);

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Query.Expressions.Internal;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
@@ -168,6 +169,20 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
             return node;
         }
+        
+//        /// <summary>
+//        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
+//        ///     directly from your code. This API may change or be removed in future releases.
+//        /// </summary>
+//        protected override Expression VisitExtension(Expression node)
+//        {
+//            if (node is NullConditionalExpression)
+//            {
+//                return node;
+//            }
+//
+//            return base.VisitExtension(node);
+//        }
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
@@ -236,7 +251,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             return expression;
         }
 
-        private Expression SetResultOperationSourceExpression(ResultOperatorBase resultOperator)
+        private static Expression SetResultOperationSourceExpression(ResultOperatorBase resultOperator)
         {
             var concatOperator = resultOperator as ConcatResultOperator;
             if (concatOperator != null)

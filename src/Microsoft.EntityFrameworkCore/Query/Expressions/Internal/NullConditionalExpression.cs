@@ -11,6 +11,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions.Internal
 {
     /// <summary>
     ///     Expression representing null-conditional access.
+    ///     Logic in this file is based on https://github.com/bartdesmet/ExpressionFutures
     /// </summary>
     public class NullConditionalExpression : Expression
     {
@@ -122,5 +123,42 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions.Internal
                     ? _newCaller
                     : base.Visit(node);
         }
+
+        /// <summary>
+        ///     Reduces the node and then calls the visitor delegate on the reduced expression.
+        ///     The method throws an exception if the node is not
+        ///     reducible.
+        /// </summary>
+        /// <returns>
+        ///     The expression being visited, or an expression which should replace it in the tree.
+        /// </returns>
+        /// <param name="visitor">An instance of <see cref="T:System.Func`2" />.</param>
+        protected override Expression VisitChildren(ExpressionVisitor visitor)
+        {
+            var newNullableCaller = visitor.Visit(NullableCaller);
+            var newCaller = visitor.Visit(Caller);
+            var newAccessOperation = visitor.Visit(AccessOperation);
+
+            if (newNullableCaller != NullableCaller
+                || newCaller != Caller
+                || newAccessOperation != AccessOperation)
+            {
+                return new NullConditionalExpression(
+                    newNullableCaller, newCaller, newAccessOperation);
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        ///     Returns a textual representation of the <see cref="T:System.Linq.Expressions.Expression" />.
+        /// </summary>
+        /// <returns>
+        ///     A textual representation of the <see cref="T:System.Linq.Expressions.Expression" />.
+        /// </returns>
+        public override string ToString()
+            => AccessOperation.ToString()
+                .Replace("?.", ".")
+                .Replace(".", "?.");
     }
 }

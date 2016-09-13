@@ -657,7 +657,7 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
                             select e1.Id).ToList();
             }
 
-            ClearLog();
+            //ClearLog();
 
             using (var context = CreateContext())
             {

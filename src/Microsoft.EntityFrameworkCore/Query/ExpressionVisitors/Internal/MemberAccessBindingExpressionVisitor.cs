@@ -123,6 +123,18 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             return newExpression;
         }
 
+//        /// <summary>
+//        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
+//        ///     directly from your code. This API may change or be removed in future releases.
+//        /// </summary>
+//        protected override Expression VisitExtension(Expression node)
+//        {
+////            var nullConditionalExpression
+////                = 
+//
+//            return node;
+//        }
+
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used 
         ///     directly from your code. This API may change or be removed in future releases.
