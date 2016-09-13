@@ -500,10 +500,12 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                     }
             }
 
-            Expression newObject = Visit(node.Object);
+            var newObject = Visit(node.Object);
             var newArguments = node.Arguments.Select(Visit);
 
-            if (newObject != node.Object && newObject.Type.IsNullableType() && newObject is NullConditionalExpression)
+            if (newObject != node.Object 
+                && newObject.Type.IsNullableType() 
+                && newObject is NullConditionalExpression)
             {
                 var newMethodCallExpression = node.Update(node.Object, newArguments);
 
