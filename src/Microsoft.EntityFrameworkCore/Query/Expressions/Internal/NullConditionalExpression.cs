@@ -87,21 +87,21 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions.Internal
                 : nullableCaller;
 
             var operation = new CallerReplacingExpressionVisitor(Caller, caller).Visit(AccessOperation);
+
             if (operation.Type != _type)
             {
                 operation = Convert(operation, _type);
             }
 
-            var resultExpression =
-                Block(
+            var resultExpression
+                = Block(
                     new[] { nullableCaller, result },
                     Assign(nullableCaller, NullableCaller),
                     Assign(result, Default(_type)),
                     IfThen(
                         NotEqual(nullableCaller, Default(nullableCallerType)),
                         Assign(result, operation)),
-                    result
-                    );
+                    result);
 
             return resultExpression;
         }
