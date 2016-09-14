@@ -1007,6 +1007,28 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
         {
             Check.NotNull(expression, nameof(expression));
 
+            if (!_inProjection)
+            {
+                var joinClause
+                    = expression.ReferencedQuerySource as JoinClause;
+
+                if (joinClause != null)
+                {
+                    var entityType
+                        = _queryModelVisitor.QueryCompilationContext.Model
+                            .FindEntityType(joinClause.ItemType);
+
+                    if (entityType != null)
+                    {
+                        return Visit(
+                            EntityQueryModelVisitor.CreatePropertyExpression(
+                                expression, entityType.FindPrimaryKey().Properties[0]));
+                    }
+
+                    return null;
+                }
+            }
+
             var selector
                 = ((expression.ReferencedQuerySource as FromClauseBase)
                     ?.FromExpression as SubQueryExpression)

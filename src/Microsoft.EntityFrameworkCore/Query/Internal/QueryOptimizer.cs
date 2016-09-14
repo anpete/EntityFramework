@@ -114,30 +114,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             if (querySourceReferenceExpression != null
                 && querySourceReferenceExpression.ReferencedQuerySource == groupJoinClause)
             {
-                var referenceCount = 0;
-
-                Func<Expression, Expression> groupReferenceFinder = null;
-
-                groupReferenceFinder 
-                    = e =>
-                    {
-                        var qsre = e as QuerySourceReferenceExpression;
-
-                        if (qsre?.ReferencedQuerySource == groupJoinClause)
-                        {
-                            referenceCount++;
-                        }
-
-                        var sq = e as SubQueryExpression;
-
-                        sq?.QueryModel.TransformExpressions(groupReferenceFinder);
-
-                        return e;
-                    };
-
-                queryModel.TransformExpressions(groupReferenceFinder);
-
-                if (referenceCount == 1)
+                if (queryModel.CountQuerySourceReferences(groupJoinClause) == 1)
                 {
                     // GroupJoin/SelectMany can be rewritten to regular Join.
 

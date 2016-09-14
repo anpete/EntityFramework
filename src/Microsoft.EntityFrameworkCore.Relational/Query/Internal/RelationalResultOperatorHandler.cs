@@ -680,10 +680,11 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
         private static Expression HandleSum(HandlerContext handlerContext)
         {
-            if (!handlerContext.QueryModelVisitor.RequiresClientProjection)
+            if (!handlerContext.QueryModelVisitor.RequiresClientProjection
+                && handlerContext.SelectExpression.Projection.Count == 1)
             {
                 var sumExpression
-                    = new SumExpression(handlerContext.SelectExpression.Projection.Single());
+                    = new SumExpression(handlerContext.SelectExpression.Projection.First());
 
                 handlerContext.SelectExpression.SetProjectionExpression(sumExpression);
 
