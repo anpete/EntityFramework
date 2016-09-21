@@ -476,6 +476,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
         public virtual int AddToProjection([NotNull] Expression expression, bool resetProjectStar)
         {
             Check.NotNull(expression, nameof(expression));
+            
+            expression = expression.RemoveConvert();
 
             var columnExpression = expression as ColumnExpression;
             var aliasExpression = expression as AliasExpression;

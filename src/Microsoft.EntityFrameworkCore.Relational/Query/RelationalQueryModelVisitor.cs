@@ -245,7 +245,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             Check.NotNull(querySource, nameof(querySource));
             Check.NotNull(queryModelVisitor, nameof(queryModelVisitor));
 
-            _subQueryModelVisitorsBySource.Add(querySource, queryModelVisitor);
+            _subQueryModelVisitorsBySource[querySource] = queryModelVisitor;
         }
 
         /// <summary>
