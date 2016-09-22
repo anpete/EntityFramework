@@ -1000,7 +1000,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                 if (newAccessOperation != null
                     && newAccessOperation.Type != nullConditionalExpression.Type)
                 {
-                    newAccessOperation 
+                    newAccessOperation
                         = Expression.Convert(newAccessOperation, nullConditionalExpression.Type);
                 }
 

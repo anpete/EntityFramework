@@ -318,12 +318,15 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
             newExpression = new PredicateReductionExpressionOptimizer().Visit(newExpression);
             newExpression = new PredicateNegationExpressionOptimizer().Visit(newExpression);
             newExpression = new ReducingExpressionVisitor().Visit(newExpression);
+
             var searchConditionTranslatingVisitor = new SearchConditionTranslatingVisitor(searchCondition);
+
             newExpression = searchConditionTranslatingVisitor.Visit(newExpression);
 
             if (searchCondition && !SearchConditionTranslatingVisitor.IsSearchCondition(newExpression))
             {
                 var constantExpression = newExpression as ConstantExpression;
+
                 if ((constantExpression != null)
                     && (bool)constantExpression.Value)
                 {
@@ -1144,7 +1147,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
                           ?? parentTypeMapping;
                 }
 
-                var needParens = expression.Left is BinaryExpression;
+                var needParens = expression.Left.RemoveConvert() is BinaryExpression;
 
                 if (needParens)
                 {
@@ -1179,7 +1182,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
 
                 _relationalCommandBuilder.Append(op);
 
-                needParens = expression.Right is BinaryExpression;
+                needParens = expression.Right.RemoveConvert() is BinaryExpression;
 
                 if (needParens)
                 {
@@ -1693,11 +1696,13 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
 
                     var newExpression 
                         = expression.Update(newLeft, expression.Conversion, newRight);
-
+                    
                     if (IsSearchCondition(newExpression))
                     {
                         return Expression.Condition(
-                            newExpression,
+                            newExpression.Type == typeof(bool)
+                                ? (Expression)newExpression
+                                : Expression.Convert(newExpression, typeof(bool)),
                             Expression.Constant(true, typeof(bool)),
                             Expression.Constant(false, typeof(bool)));
                     }
@@ -1769,10 +1774,22 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
                     if (expression.NodeType == ExpressionType.Convert
                         && operand.IsSimpleExpression())
                     {
-                        return Expression.Equal(
-                            //Expression.Convert(operand, expression.Type),
-                            operand,
-                            Expression.Constant(true, typeof(bool)));
+//                        return Expression.Equal(
+//                            Expression.Convert(operand, expression.Type),
+//                            Expression.Constant(true, typeof(bool)));
+
+
+
+                        var equalExpression
+                            = Expression.Equal(
+                                operand.Type != typeof(bool)
+                                    ? Expression.Convert(operand, typeof(bool))
+                                    : operand,
+                                Expression.Constant(true, typeof(bool)));
+
+                        return equalExpression.Type == expression.Type
+                            ? (Expression)equalExpression
+                            : Expression.Convert(equalExpression, expression.Type);
                     }
                 }
                 else

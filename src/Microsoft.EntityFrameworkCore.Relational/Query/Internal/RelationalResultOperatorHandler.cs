@@ -700,12 +700,14 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         {
             var takeResultOperator = (TakeResultOperator)handlerContext.ResultOperator;
 
-            var sqlTranslatingExpressionVisitor = handlerContext.CreateSqlTranslatingVisitor(bindParentQueries: true);
+            var sqlTranslatingExpressionVisitor 
+                = handlerContext.CreateSqlTranslatingVisitor(bindParentQueries: true);
 
             var limit = sqlTranslatingExpressionVisitor.Visit(takeResultOperator.Count);
+
             if (limit != null)
             {
-                handlerContext.SelectExpression.Limit = takeResultOperator.Count;
+                handlerContext.SelectExpression.Limit = limit;
 
                 return handlerContext.EvalOnServer;
             }
