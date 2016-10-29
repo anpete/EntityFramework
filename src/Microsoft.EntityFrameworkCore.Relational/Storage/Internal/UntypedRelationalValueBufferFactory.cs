@@ -14,6 +14,8 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
     /// </summary>
     public class UntypedRelationalValueBufferFactory : IRelationalValueBufferFactory
     {
+        private static readonly object[] _values = new object[2];
+
         private readonly Action<object[]> _processValuesAction;
 
         /// <summary>
@@ -40,7 +42,8 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
                 return ValueBuffer.Empty;
             }
 
-            var values = new object[fieldCount];
+            //var values = new object[fieldCount];
+            var values = _values;
 
             dataReader.GetValues(values);
 

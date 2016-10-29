@@ -124,10 +124,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             ? _valueBufferFactory.Create(_dbDataReader)
                             : default(ValueBuffer);
 
-                    if (buffer)
-                    {
+                    //if (buffer)
+                    //{
                         await BufferAllAsync(cancellationToken);
-                    }
+                    //}
 
                     return hasNext;
                 }
