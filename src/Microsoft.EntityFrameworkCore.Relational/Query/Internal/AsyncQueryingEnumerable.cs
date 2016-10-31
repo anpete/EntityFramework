@@ -3,7 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -94,25 +96,36 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             {
                 try
                 {
-                    if (_dataReader == null)
+                    if (_dbDataReader == null)
                     {
                         await _queryingEnumerable._relationalQueryContext.Connection
                             .OpenAsync(cancellationToken);
 
-                        var relationalCommand
-                            = _queryingEnumerable._shaperCommandContext
-                                .GetRelationalCommand(_queryingEnumerable._relationalQueryContext.ParameterValues);
+//                        var relationalCommand
+//                            = _queryingEnumerable._shaperCommandContext
+//                                .GetRelationalCommand(_queryingEnumerable._relationalQueryContext.ParameterValues);
+//
+//                        await _queryingEnumerable._relationalQueryContext
+//                            .RegisterValueBufferCursorAsync(this, _queryingEnumerable._queryIndex, cancellationToken);
+//
+//                        _dataReader
+//                            = await relationalCommand.ExecuteReaderAsync(
+//                                _queryingEnumerable._relationalQueryContext.Connection,
+//                                _queryingEnumerable._relationalQueryContext.ParameterValues,
+//                                cancellationToken);
+//
+//                        _dbDataReader = _dataReader.DbDataReader;
 
-                        await _queryingEnumerable._relationalQueryContext
-                            .RegisterValueBufferCursorAsync(this, _queryingEnumerable._queryIndex, cancellationToken);
+                        var cmd = _queryingEnumerable._relationalQueryContext.Connection.DbConnection.CreateCommand();
+                        cmd.CommandText = "SELECT id, randomnumber FROM world WHERE id = @Id";
+                        var id = cmd.CreateParameter();
+                        id.ParameterName = "@Id";
+                        id.DbType = DbType.Int32;
+                        id.Value = _queryingEnumerable._relationalQueryContext.ParameterValues.Values.First();
+                        cmd.Parameters.Add(id);
+                        
+                        _dbDataReader = await cmd.ExecuteReaderAsync();
 
-                        _dataReader
-                            = await relationalCommand.ExecuteReaderAsync(
-                                _queryingEnumerable._relationalQueryContext.Connection,
-                                _queryingEnumerable._relationalQueryContext.ParameterValues,
-                                cancellationToken);
-
-                        _dbDataReader = _dataReader.DbDataReader;
                         _queryingEnumerable._shaperCommandContext.NotifyReaderCreated(_dbDataReader);
                         _valueBufferFactory = _queryingEnumerable._shaperCommandContext.ValueBufferFactory;
                     }
@@ -124,10 +137,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             ? _valueBufferFactory.Create(_dbDataReader)
                             : default(ValueBuffer);
 
-                    //if (buffer)
-                    //{
+                    if (buffer)
+                    {
                         await BufferAllAsync(cancellationToken);
-                    //}
+                    }
 
                     return hasNext;
                 }

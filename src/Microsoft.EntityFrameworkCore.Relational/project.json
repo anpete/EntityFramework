@@ -26,7 +26,8 @@
   },
   "dependencies": {
     "Microsoft.EntityFrameworkCore": "1.2.0-*",
-    "NETStandard.Library": "1.6.1-*"
+    "NETStandard.Library": "1.6.1-*",
+    "System.Buffers": "4.3.0-*"
   },
   "frameworks": {
     "net451": {

@@ -2,9 +2,11 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Data;
+using System.Data.Common;
+using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,38 +25,37 @@ namespace Bencher
         private static readonly Stopwatch _stopwatch = new Stopwatch();
 
         private static long _requests;
-        private static long _connections;
 
         public static void Main(string[] args)
         {
             WriteResults();
             Test(TestEf).Wait();
+            //Test(TestRaw).Wait();
         }
 
         private static async Task TestEf()
         {
             while (true)
             {
-                using (var context = new ApplicationDbContext())
-                {
-                    Interlocked.Increment(ref _connections);
+                var efDb = new EfDb();
 
-                    var efDb = new EfDb(context);
+                var result = await efDb.LoadSingleQueryRow();
+                //await efDb.LoadMultipleQueriesRows(20);
 
-                    await efDb.LoadSingleQueryRow();
-
-                    Interlocked.Increment(ref _requests);
-
-                    EnsureWatchStarted();
-                }
+                Interlocked.Increment(ref _requests);
             }
         }
 
-        private static void EnsureWatchStarted()
+        private static async Task TestRaw()
         {
-            if (Interlocked.Exchange(ref _stopwatchStarted, 1) == 0)
+            while (true)
             {
-                _stopwatch.Start();
+                var rawDb = new RawDb();
+
+                await rawDb.LoadSingleQueryRow();
+                //await rawDb.LoadMultipleQueriesRows(20);
+
+                Interlocked.Increment(ref _requests);
             }
         }
 
@@ -72,11 +73,13 @@ namespace Bencher
             return Task.WhenAll(tasks);
         }
 
-        private static void Log(string message)
-            => Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] {message}");
-
         private static async void WriteResults()
         {
+            if (Interlocked.Exchange(ref _stopwatchStarted, 1) == 0)
+            {
+                _stopwatch.Start();
+            }
+
             var lastRequests = (long)0;
             var lastElapsed = TimeSpan.Zero;
 
@@ -103,45 +106,115 @@ namespace Bencher
         }
 
         private static void WriteResult(long totalRequests, long currentRequests, TimeSpan elapsed)
-            => Log($"Connections: {_connections}, Requests: {totalRequests}, RPS: {Math.Round(currentRequests / elapsed.TotalSeconds)}");
+            => Log($"Requests: {totalRequests}, RPS: {Math.Round(currentRequests / elapsed.TotalSeconds)}");
+
+        private static void Log(string message)
+            => Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] {message}");
     }
 
-    public class EfDb
+    public class RawDb
     {
-        private readonly Random _random = new Random();
-        private readonly ApplicationDbContext _dbContext;
+        private const string ConnectionString = "Data Source=(localdb)\\MSSQLLocalDB;Database=Fortunes;Integrated Security=True";
 
-        public EfDb(ApplicationDbContext dbContext)
+        private readonly Random _random = new Random();
+
+        public async Task<World> LoadSingleQueryRow()
         {
-            _dbContext = dbContext;
-            _dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+            using (var db = new SqlConnection())
+            {
+                using (var cmd = CreateReadCommand(db))
+                {
+                    db.ConnectionString = ConnectionString;
+
+                    await db.OpenAsync();
+
+                    return await ReadSingleRow(cmd);
+                }
+            }
         }
 
-        public Task<World> LoadSingleQueryRow()
+        private static async Task<World> ReadSingleRow(DbCommand cmd)
         {
-            var id = _random.Next(1, 10001);
-            return _dbContext.World.FirstAsync(w => w.Id == id);
+            // Prepared statements improve PostgreSQL performance by 10-15%
+            cmd.Prepare();
+
+            using (var rdr = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow))
+            {
+                await rdr.ReadAsync();
+
+                return new World
+                {
+                    Id = rdr.GetInt32(0),
+                    RandomNumber = rdr.GetInt32(1)
+                };
+            }
+        }
+
+        private DbCommand CreateReadCommand(DbConnection connection)
+        {
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT id, randomnumber FROM world WHERE id = @Id";
+            var id = cmd.CreateParameter();
+            id.ParameterName = "@Id";
+            id.DbType = DbType.Int32;
+            id.Value = _random.Next(1, 10001);
+            cmd.Parameters.Add(id);
+
+            return cmd;
         }
 
         public async Task<World[]> LoadMultipleQueriesRows(int count)
         {
             var result = new World[count];
 
-            for (var i = 0; i < count; i++)
+            using (var db = new SqlConnection())
             {
-                var id = _random.Next(1, 10001);
-                result[i] = await _dbContext.World.FirstAsync(w => w.Id == id);
+                using (var cmd = CreateReadCommand(db))
+                {
+                    db.ConnectionString = ConnectionString;
+
+                    await db.OpenAsync();
+
+                    for (var i = 0; i < count; i++)
+                    {
+                        result[i] = await ReadSingleRow(cmd);
+
+                        cmd.Parameters["@Id"].Value = _random.Next(1, 10001);
+                    }
+                }
             }
 
             return result;
         }
+    }
 
-        public async Task<IEnumerable<Fortune>> LoadFortunesRows()
+    public class EfDb
+    {
+        private readonly Random _random = new Random();
+
+        public async Task<World> LoadSingleQueryRow()
         {
-            var result = await _dbContext.Fortune.ToListAsync();
+            var id = _random.Next(1, 10001);
 
-            result.Add(new Fortune { Message = "Additional fortune added at request time." });
-            result.Sort();
+            using (var context = new ApplicationDbContext())
+            {
+                return await context.World.FirstAsync(w => w.Id == id);
+            }
+        }
+
+        public async Task<World[]> LoadMultipleQueriesRows(int count)
+        {
+            var result = new World[count];
+
+            using (var context = new ApplicationDbContext())
+            {
+                for (var i = 0; i < count; i++)
+                {
+                    var id = _random.Next(1, 10001);
+
+                    result[i] = await context.World.FirstAsync(w => w.Id == id);
+                }
+            }
 
             return result;
         }
@@ -152,6 +225,7 @@ namespace Bencher
         public ApplicationDbContext()
         {
             Database.AutoTransactionsEnabled = false;
+            ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         }
 
         public DbSet<World> World { get; set; }
