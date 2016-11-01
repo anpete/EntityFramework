@@ -2,6 +2,8 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
@@ -11,7 +13,11 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Bencher
 {
@@ -27,87 +33,81 @@ namespace Bencher
 
         private static long _requests;
 
-        private static DbContextOptions _contextOptions;
+        private static IServiceProvider _serviceProvider;
 
         public static void Main(string[] args)
         {
-            var serviceProvider = new ServiceCollection()
-                .AddEntityFrameworkSqlServer()
-                .BuildServiceProvider();
+            _serviceProvider
+                = new ServiceCollection()
+                    .AddEntityFrameworkSqlServer()
+                    .AddPooledDbContext<ApplicationDbContext>((sp, options) =>
+                        {
+                            options
+                                .UseInternalServiceProvider(sp)
+                                .UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Database=Fortunes;Integrated Security=True");
+                        })
+                    .BuildServiceProvider();
 
-            _contextOptions
-                = new DbContextOptionsBuilder()
-                    .UseInternalServiceProvider(serviceProvider)
-                    .UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Database=Fortunes;Integrated Security=True")
-                    .Options;
-
-            //            using (var context = _serviceCollection.GetService<ApplicationDbContext>())
-            //                {
-            //                    var efDb = new EfDb(context);
-            //
-            //                    var row = efDb.LoadSingleQueryRow().Result;
-            //                    //await efDb.LoadMultipleQueriesRows(20);
-            //
-            //                    Interlocked.Increment(ref _requests);
-            //                }
-
-            using (var context = new ApplicationDbContext(_contextOptions))
-            {
-                var efDb = new EfDb(context);
-
-                efDb.LoadSingleQueryRow().Wait();
-            }
+            ExecuteEfSingleQuery().Wait();
 
             WriteResults();
 
-            //Test(TestEf).Wait();
-            Test(TestEf_Fast).Wait();
-            //Test(TestRaw).Wait();
+            Test(TestEf).Wait();
         }
 
         private static async Task TestEf()
         {
             while (true)
             {
-                using (var context = new ApplicationDbContext(_contextOptions))
-                {
-                    var efDb = new EfDb(context);
-
-                    await efDb.LoadSingleQueryRow();
-
-                    Interlocked.Increment(ref _requests);
-                }
+                await ExecuteEfSingleQuery();
             }
         }
 
-        private static async Task TestEf_Fast()
+        private static async Task ExecuteEfSingleQuery()
         {
-            using (var context = new ApplicationDbContext(_contextOptions))
+            using (var serviceScope = _serviceProvider.CreateScope())
             {
+                var context = serviceScope.ServiceProvider.GetService<ApplicationDbContext>();
                 var efDb = new EfDb(context);
 
-                while (true)
-                {
-                    await efDb.LoadSingleQueryRow();
-                    //await efDb.LoadMultipleQueriesRows(20);
-
-                    Interlocked.Increment(ref _requests);
-                }
-            }
-        }
-
-        private static async Task TestRaw()
-        {
-            while (true)
-            {
-                var rawDb = new RawDb();
-
-                await rawDb.LoadSingleQueryRow();
-                //await rawDb.LoadMultipleQueriesRows(20);
+                await efDb.LoadSingleQueryRow();
 
                 Interlocked.Increment(ref _requests);
             }
         }
+
+        #region Other tests
+
+        //        private static async Task TestEf_Fast()
+        //        {
+        //            using (var context = _serviceProvider.GetService<ApplicationDbContext>())
+        //            {
+        //                var efDb = new EfDb(context);
+        //
+        //                while (true)
+        //                {
+        //                    await efDb.LoadSingleQueryRow();
+        //                    //await efDb.LoadMultipleQueriesRows(20);
+        //
+        //                    Interlocked.Increment(ref _requests);
+        //                }
+        //            }
+        //        }
+        //
+        //        private static async Task TestRaw()
+        //        {
+        //            while (true)
+        //            {
+        //                var rawDb = new RawDb();
+        //
+        //                await rawDb.LoadSingleQueryRow();
+        //                //await rawDb.LoadMultipleQueriesRows(20);
+        //
+        //                Interlocked.Increment(ref _requests);
+        //            }
+        //        }
+
+        #endregion
 
         private static Task Test(Func<Task> action)
         {
@@ -160,6 +160,71 @@ namespace Bencher
 
         private static void Log(string message)
             => Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] {message}");
+    }
+
+    public static class PoolExtensions
+    {
+        private static readonly ConcurrentQueue<object> _pool = new ConcurrentQueue<object>();
+
+        public static IServiceCollection AddPooledDbContext<TContext>(
+            this IServiceCollection serviceCollection,
+            Action<IServiceProvider, DbContextOptionsBuilder> optionsAction,
+            ServiceLifetime contextLifetime = ServiceLifetime.Scoped)
+            where TContext : DbContext
+        {
+            serviceCollection
+                .AddMemoryCache()
+                .AddLogging();
+
+            serviceCollection.TryAddSingleton(p => DbContextOptionsFactory<TContext>(p, optionsAction));
+            serviceCollection.AddSingleton<DbContextOptions>(p => p.GetRequiredService<DbContextOptions<TContext>>());
+
+            serviceCollection.TryAdd(
+                new ServiceDescriptor(
+                    typeof(TContext),
+                    CreateInstance<TContext>,
+                    contextLifetime));
+
+            return serviceCollection;
+        }
+
+        private static TContext CreateInstance<TContext>(IServiceProvider sp) 
+            where TContext : DbContext
+        {
+            object instance;
+            if (_pool.TryDequeue(out instance))
+            {
+                return (TContext)instance;
+            }
+
+            var context = ActivatorUtilities.CreateInstance<TContext>(sp);
+
+            Console.WriteLine("Created new instance!");
+
+            var applicationDbContext = context as ApplicationDbContext;
+
+            if (applicationDbContext != null)
+            {
+                applicationDbContext.OnDispose = () => _pool.Enqueue(context);
+            }
+
+            return context;
+        }
+
+        private static DbContextOptions<TContext> DbContextOptionsFactory<TContext>(
+            IServiceProvider applicationServiceProvider,
+            Action<IServiceProvider, DbContextOptionsBuilder> optionsAction)
+            where TContext : DbContext
+        {
+            var builder = new DbContextOptionsBuilder<TContext>(
+                    new DbContextOptions<TContext>(new Dictionary<Type, IDbContextOptionsExtension>()))
+                .UseMemoryCache(applicationServiceProvider.GetService<IMemoryCache>())
+                .UseLoggerFactory(applicationServiceProvider.GetService<ILoggerFactory>());
+
+            optionsAction?.Invoke(applicationServiceProvider, builder);
+
+            return builder.Options;
+        }
     }
 
     public class RawDb
@@ -293,6 +358,13 @@ namespace Bencher
 
         public DbSet<World> World { get; set; }
         public DbSet<Fortune> Fortune { get; set; }
+
+        public Action OnDispose;
+
+        public override void Dispose()
+        {
+            OnDispose();
+        }
 
         //        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         //            => optionsBuilder.UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Database=Fortunes;Integrated Security=True");

@@ -39,19 +39,23 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include='Microsoft.Extensions.DependencyInjection'>
-      <HintPath>C:\Users\Andrew\.nuget\packages\Microsoft.Extensions.DependencyInjection\1.1.0-preview2-22562\lib\netstandard1.1\Microsoft.Extensions.DependencyInjection.dll</HintPath>
-    </Reference>
-    <Content Include='C:\Users\Andrew\.nuget\packages\Microsoft.Extensions.DependencyInjection\1.1.0-preview2-22562\lib\netstandard1.1\Microsoft.Extensions.DependencyInjection.dll'>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Visible>False</Visible>
-    </Content>
+      <HintPath>C:\Users\anpete\.nuget\packages\Microsoft.Extensions.DependencyInjection\1.1.0-preview2-22573\lib\netstandard1.1\Microsoft.Extensions.DependencyInjection.dll</HintPath>
+    </Reference><Reference Include="System.Data" />
     <Reference Include='Microsoft.Extensions.DependencyInjection.Abstractions'>
-      <HintPath>C:\Users\Andrew\.nuget\packages\Microsoft.Extensions.DependencyInjection.Abstractions\1.1.0-preview2-22562\lib\netstandard1.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
+      <HintPath>C:\Users\anpete\.nuget\packages\Microsoft.Extensions.DependencyInjection.Abstractions\1.1.0-preview2-22573\lib\netstandard1.1\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
     </Reference>
-    <Content Include='C:\Users\Andrew\.nuget\packages\Microsoft.Extensions.DependencyInjection.Abstractions\1.1.0-preview2-22562\lib\netstandard1.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll'>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Visible>False</Visible>
-    </Content>
+    <Reference Include='Microsoft.Extensions.Caching.Abstractions'>
+      <HintPath>C:\Users\anpete\.nuget\packages\Microsoft.Extensions.Caching.Abstractions\1.1.0-preview2-22573\lib\netstandard1.0\Microsoft.Extensions.Caching.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include='Microsoft.Extensions.Caching.Memory'>
+      <HintPath>C:\Users\anpete\.nuget\packages\Microsoft.Extensions.Caching.Memory\1.1.0-preview2-22573\lib\net451\Microsoft.Extensions.Caching.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include='Microsoft.Extensions.Logging'>
+      <HintPath>C:\Users\anpete\.nuget\packages\Microsoft.Extensions.Logging\1.1.0-preview2-22573\lib\netstandard1.1\Microsoft.Extensions.Logging.dll</HintPath>
+    </Reference>
+    <Reference Include='Microsoft.Extensions.Logging.Abstractions'>
+      <HintPath>C:\Users\anpete\.nuget\packages\Microsoft.Extensions.Logging.Abstractions\1.1.0-preview2-22573\lib\netstandard1.1\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
