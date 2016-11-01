@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Bencher
 {
@@ -26,10 +27,41 @@ namespace Bencher
 
         private static long _requests;
 
+        private static DbContextOptions _contextOptions;
+
         public static void Main(string[] args)
         {
+            var serviceProvider = new ServiceCollection()
+                .AddEntityFrameworkSqlServer()
+                .BuildServiceProvider();
+
+            _contextOptions
+                = new DbContextOptionsBuilder()
+                    .UseInternalServiceProvider(serviceProvider)
+                    .UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Database=Fortunes;Integrated Security=True")
+                    .Options;
+
+            //            using (var context = _serviceCollection.GetService<ApplicationDbContext>())
+            //                {
+            //                    var efDb = new EfDb(context);
+            //
+            //                    var row = efDb.LoadSingleQueryRow().Result;
+            //                    //await efDb.LoadMultipleQueriesRows(20);
+            //
+            //                    Interlocked.Increment(ref _requests);
+            //                }
+
+            using (var context = new ApplicationDbContext(_contextOptions))
+            {
+                var efDb = new EfDb(context);
+
+                efDb.LoadSingleQueryRow().Wait();
+            }
+
             WriteResults();
-            Test(TestEf).Wait();
+
+            //Test(TestEf).Wait();
+            Test(TestEf_Fast).Wait();
             //Test(TestRaw).Wait();
         }
 
@@ -37,12 +69,30 @@ namespace Bencher
         {
             while (true)
             {
-                var efDb = new EfDb();
+                using (var context = new ApplicationDbContext(_contextOptions))
+                {
+                    var efDb = new EfDb(context);
 
-                var result = await efDb.LoadSingleQueryRow();
-                //await efDb.LoadMultipleQueriesRows(20);
+                    await efDb.LoadSingleQueryRow();
 
-                Interlocked.Increment(ref _requests);
+                    Interlocked.Increment(ref _requests);
+                }
+            }
+        }
+
+        private static async Task TestEf_Fast()
+        {
+            using (var context = new ApplicationDbContext(_contextOptions))
+            {
+                var efDb = new EfDb(context);
+
+                while (true)
+                {
+                    await efDb.LoadSingleQueryRow();
+                    //await efDb.LoadMultipleQueriesRows(20);
+
+                    Interlocked.Increment(ref _requests);
+                }
             }
         }
 
@@ -192,47 +242,60 @@ namespace Bencher
     {
         private readonly Random _random = new Random();
 
-        public async Task<World> LoadSingleQueryRow()
+        private readonly ApplicationDbContext _context;
+
+        public EfDb(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        public Task<World> LoadSingleQueryRow()
         {
             var id = _random.Next(1, 10001);
 
-            using (var context = new ApplicationDbContext())
-            {
-                return await context.World.FirstAsync(w => w.Id == id);
-            }
+            return _context.World.FirstAsync(w => w.Id == id);
         }
 
         public async Task<World[]> LoadMultipleQueriesRows(int count)
         {
             var result = new World[count];
 
-            using (var context = new ApplicationDbContext())
-            {
-                for (var i = 0; i < count; i++)
-                {
-                    var id = _random.Next(1, 10001);
-
-                    result[i] = await context.World.FirstAsync(w => w.Id == id);
-                }
-            }
+            //            using (var context = new ApplicationDbContext())
+            //            {
+            //                for (var i = 0; i < count; i++)
+            //                {
+            //                    var id = _random.Next(1, 10001);
+            //
+            //                    result[i] = await context.World.FirstAsync(w => w.Id == id);
+            //                }
+            //            }
 
             return result;
         }
+
+        //public void Dispose() => _context.Dispose();
     }
 
     public sealed class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext()
+        public ApplicationDbContext(DbContextOptions options)
+            : base(options)
         {
             Database.AutoTransactionsEnabled = false;
             ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         }
 
+        //        public ApplicationDbContext()
+        //        {
+        //            Database.AutoTransactionsEnabled = false;
+        //            ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+        //        }
+
         public DbSet<World> World { get; set; }
         public DbSet<Fortune> Fortune { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-            => optionsBuilder.UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Database=Fortunes;Integrated Security=True");
+        //        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        //            => optionsBuilder.UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Database=Fortunes;Integrated Security=True");
     }
 
     [Table("world")]

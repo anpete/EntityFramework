@@ -54,7 +54,6 @@ namespace Microsoft.EntityFrameworkCore
         private ChangeTracker _changeTracker;
         private DatabaseFacade _database;
         private IStateManager _stateManager;
-        private IChangeDetector _changeDetector;
         private IEntityGraphAttacher _graphAttacher;
         private IModel _model;
         private ILogger _logger;
@@ -103,10 +102,6 @@ namespace Microsoft.EntityFrameworkCore
 
             initializer.InitializeSets(this);
         }
-
-        private IChangeDetector ChangeDetector
-            => _changeDetector
-               ?? (_changeDetector = InternalServiceProvider.GetRequiredService<IChangeDetector>());
 
         private IStateManager StateManager
             => _stateManager
@@ -372,7 +367,6 @@ namespace Microsoft.EntityFrameworkCore
                 _setInitializer = null;
                 _changeTracker = null;
                 _stateManager = null;
-                _changeDetector = null;
                 _graphAttacher = null;
                 _model = null;
             }

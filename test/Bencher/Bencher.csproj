@@ -38,6 +38,20 @@
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
+    <Reference Include='Microsoft.Extensions.DependencyInjection'>
+      <HintPath>C:\Users\Andrew\.nuget\packages\Microsoft.Extensions.DependencyInjection\1.1.0-preview2-22562\lib\netstandard1.1\Microsoft.Extensions.DependencyInjection.dll</HintPath>
+    </Reference>
+    <Content Include='C:\Users\Andrew\.nuget\packages\Microsoft.Extensions.DependencyInjection\1.1.0-preview2-22562\lib\netstandard1.1\Microsoft.Extensions.DependencyInjection.dll'>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>False</Visible>
+    </Content>
+    <Reference Include='Microsoft.Extensions.DependencyInjection.Abstractions'>
+      <HintPath>C:\Users\Andrew\.nuget\packages\Microsoft.Extensions.DependencyInjection.Abstractions\1.1.0-preview2-22562\lib\netstandard1.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
+    </Reference>
+    <Content Include='C:\Users\Andrew\.nuget\packages\Microsoft.Extensions.DependencyInjection.Abstractions\1.1.0-preview2-22562\lib\netstandard1.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll'>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>False</Visible>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
