@@ -63,6 +63,7 @@
     <Compile Include="ExistingConnectionTest.cs" />
     <Compile Include="F1SqlServerFixture.cs" />
     <Compile Include="FieldMappingSqlServerTest.cs" />
+    <Compile Include="FiltersSqlServerTest.cs" />
     <Compile Include="FindSqlServerTest.cs" />
     <Compile Include="FromSqlQuerySqlServerTest.cs" />
     <Compile Include="FromSqlSprocQuerySqlServerTest.cs" />
@@ -89,6 +90,7 @@
     <Compile Include="MigrationsSqlServerTest.cs" />
     <Compile Include="MonsterFixupSqlServerTest.cs" />
     <Compile Include="NavigationTest.cs" />
+    <Compile Include="NorthwindFiltersQuerySqlServerFixture.cs" />
     <Compile Include="NorthwindQuerySqlServerFixture.cs" />
     <Compile Include="NorthwindRowNumberPagingQuerySqlServerFixture.cs" />
     <Compile Include="NorthwindSprocQuerySqlServerFixture.cs" />

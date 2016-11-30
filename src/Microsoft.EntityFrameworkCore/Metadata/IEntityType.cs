@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using JetBrains.Annotations;
 
 namespace Microsoft.EntityFrameworkCore.Metadata
@@ -16,6 +17,11 @@ namespace Microsoft.EntityFrameworkCore.Metadata
         ///     Gets the base type of the entity. Returns null if this is not a derived type in an inheritance hierarchy.
         /// </summary>
         IEntityType BaseType { get; }
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        LambdaExpression Filter { get; }
 
         /// <summary>
         ///     <para>

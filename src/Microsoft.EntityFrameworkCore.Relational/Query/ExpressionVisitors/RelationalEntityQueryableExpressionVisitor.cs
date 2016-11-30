@@ -18,6 +18,8 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Utilities;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
+using Remotion.Linq.Clauses.ExpressionVisitors;
+using Remotion.Linq.Parsing.ExpressionVisitors;
 
 namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
 {
@@ -181,6 +183,23 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                         _relationalAnnotationProvider.For(entityType).Schema,
                         tableAlias,
                         _querySource));
+
+                if (entityType.Filter != null)
+                {
+                    var filter
+                        = ReplacingExpressionVisitor
+                            .Replace(
+                                entityType.Filter.Parameters.Single(),
+                                new QuerySourceReferenceExpression(_querySource), 
+                                entityType.Filter.Body);
+
+                    var predicate
+                        = QueryModelVisitor.SqlTranslatingExpressionVisitorFactory
+                           .Create(QueryModelVisitor)
+                           .Visit(filter);
+
+                    selectExpression.Predicate = predicate;
+                }
             }
             else
             {

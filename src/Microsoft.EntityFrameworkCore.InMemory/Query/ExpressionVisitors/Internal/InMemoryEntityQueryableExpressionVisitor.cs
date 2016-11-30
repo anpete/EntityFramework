@@ -58,13 +58,26 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             {
                 var materializer = _materializerFactory.CreateMaterializer(entityType);
 
-                return Expression.Call(
-                    InMemoryQueryModelVisitor.EntityQueryMethodInfo.MakeGenericMethod(elementType),
-                    EntityQueryModelVisitor.QueryContextParameter,
-                    Expression.Constant(entityType),
-                    Expression.Constant(entityType.FindPrimaryKey()),
-                    materializer,
-                    Expression.Constant(QueryModelVisitor.QueryCompilationContext.IsTrackingQuery));
+                var expression
+                    = Expression.Call(
+                        InMemoryQueryModelVisitor.EntityQueryMethodInfo.MakeGenericMethod(elementType),
+                        EntityQueryModelVisitor.QueryContextParameter,
+                        Expression.Constant(entityType),
+                        Expression.Constant(entityType.FindPrimaryKey()),
+                        materializer,
+                        Expression.Constant(QueryModelVisitor.QueryCompilationContext.IsTrackingQuery));
+
+                if (entityType.Filter != null)
+                {
+                    expression
+                        = Expression.Call(
+                            QueryModelVisitor.LinqOperatorProvider.Where
+                                .MakeGenericMethod(elementType),
+                            expression,
+                            entityType.Filter);
+                }
+
+                return expression;
             }
 
             return Expression.Call(

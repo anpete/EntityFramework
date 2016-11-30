@@ -69,7 +69,9 @@
     <Compile Include="FieldMappingInMemoryTest.cs" />
     <Compile Include="FindInMemoryTest.cs" />
     <Compile Include="LoadInMemoryTest.cs" />
+    <Compile Include="NorthwindFiltersQueryInMemoryFixture.cs" />
     <Compile Include="PropertyValuesInMemoryTest.cs" />
+    <Compile Include="FiltersInMemoryTest.cs" />
     <Compile Include="StoreGeneratedFixupInMemoryTest.cs" />
     <Compile Include="WarningsTest.cs" />
     <Compile Include="EndToEndTest.cs" />

@@ -236,6 +236,12 @@ namespace Microsoft.EntityFrameworkCore.Query
         public virtual RelationalQueryModelVisitor ParentQueryModelVisitor { get; }
 
         /// <summary>
+        /// TODO
+        /// </summary>
+        public ISqlTranslatingExpressionVisitorFactory SqlTranslatingExpressionVisitorFactory 
+            => _sqlTranslatingExpressionVisitorFactory;
+
+        /// <summary>
         ///     Registers a sub query visitor.
         /// </summary>
         /// <param name="querySource"> The query source. </param>

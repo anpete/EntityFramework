@@ -75,6 +75,7 @@
     <Compile Include="PropertyValuesTestBase.cs" />
     <Compile Include="QueryNavigationsTestBase.cs" />
     <Compile Include="CompiledQueryTestBase.cs" />
+    <Compile Include="FiltersTestBase.cs" />
     <Compile Include="QueryTestBase.cs" />
     <Compile Include="StoreGeneratedFixupTestBase.cs" />
     <Compile Include="StoreGeneratedTestBase.cs" />

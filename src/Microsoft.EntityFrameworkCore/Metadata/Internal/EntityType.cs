@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
@@ -37,6 +38,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
         private Key _primaryKey;
         private EntityType _baseType;
+        private LambdaExpression _filter;
 
         private ChangeTrackingStrategy? _changeTrackingStrategy;
 
@@ -84,7 +86,13 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public virtual EntityType BaseType => _baseType;
+        public virtual EntityType BaseType => _baseType;     
+        
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual LambdaExpression Filter => _filter;
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -1692,6 +1700,12 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         {
             get { return _baseType; }
             set { HasBaseType((EntityType)value); }
+        }
+
+        LambdaExpression IMutableEntityType.Filter
+        {
+            get { return _filter; }
+            set { _filter = value; }
         }
 
         IMutableKey IMutableEntityType.SetPrimaryKey(IReadOnlyList<IMutableProperty> properties)
