@@ -26,6 +26,7 @@ using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.ExpressionVisitors;
 using Remotion.Linq.Clauses.ResultOperators;
+using Remotion.Linq.Parsing.ExpressionVisitors;
 
 namespace Microsoft.EntityFrameworkCore.Query
 {
@@ -238,8 +239,26 @@ namespace Microsoft.EntityFrameworkCore.Query
         /// <summary>
         /// TODO
         /// </summary>
-        public ISqlTranslatingExpressionVisitorFactory SqlTranslatingExpressionVisitorFactory 
-            => _sqlTranslatingExpressionVisitorFactory;
+        /// <param name="entityType"></param>
+        /// <param name="selectExpression"></param>
+        /// <param name="querySource"></param>
+        public virtual void ApplyEntityFilter(
+            IEntityType entityType, SelectExpression selectExpression, IQuerySource querySource)
+        {
+            var filter
+                = ReplacingExpressionVisitor
+                    .Replace(
+                        entityType.Filter.Parameters.Single(),
+                        new QuerySourceReferenceExpression(querySource),
+                        entityType.Filter.Body);
+
+            var predicate
+                = _sqlTranslatingExpressionVisitorFactory
+                    .Create(this)
+                    .Visit(filter);
+
+            selectExpression.Predicate = predicate;
+        }
 
         /// <summary>
         ///     Registers a sub query visitor.
@@ -358,6 +377,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                     includeSpecification.QuerySource,
                     includeSpecification.NavigationPath,
                     QueryCompilationContext,
+                    this,
                     _navigationIndexMap[includeSpecification],
                     querySourceRequiresTracking);
 

@@ -31,6 +31,17 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
             }
         }
 
+        [ConditionalFact]
+        public virtual void Included_many_to_one_query()
+        {
+            using (var context = CreateContext())
+            {
+                var results = context.Orders.Include(o => o.Customer).ToList();
+
+                Assert.Equal(7, results.Count);
+            }
+        }
+
         protected NorthwindContext CreateContext() => Fixture.CreateContext();
 
         protected FiltersTestBase(TFixture fixture)

@@ -58,11 +58,12 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public virtual ExpressionVisitor Create(
-            IQuerySource querySource,
-            IReadOnlyList<INavigation> navigationPath,
-            RelationalQueryCompilationContext relationalQueryCompilationContext,
-            IReadOnlyList<int> queryIndexes,
-            bool querySourceRequiresTracking)
+                IQuerySource querySource,
+                IReadOnlyList<INavigation> navigationPath,
+                RelationalQueryCompilationContext relationalQueryCompilationContext,
+                RelationalQueryModelVisitor queryModelVisitor,
+                IReadOnlyList<int> queryIndexes,
+                bool querySourceRequiresTracking)
             => new IncludeExpressionVisitor(
                 _selectExpressionFactory,
                 _compositePredicateExpressionVisitorFactory,
@@ -70,6 +71,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 _shaperCommandContextFactory,
                 _relationalAnnotationProvider,
                 _querySqlGeneratorFactory,
+                Check.NotNull(queryModelVisitor, nameof(queryModelVisitor)),
                 Check.NotNull(querySource, nameof(querySource)),
                 Check.NotNull(navigationPath, nameof(navigationPath)),
                 Check.NotNull(relationalQueryCompilationContext, nameof(relationalQueryCompilationContext)),

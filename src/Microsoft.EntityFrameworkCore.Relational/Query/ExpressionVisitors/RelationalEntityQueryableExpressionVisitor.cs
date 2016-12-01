@@ -183,23 +183,6 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                         _relationalAnnotationProvider.For(entityType).Schema,
                         tableAlias,
                         _querySource));
-
-                if (entityType.Filter != null)
-                {
-                    var filter
-                        = ReplacingExpressionVisitor
-                            .Replace(
-                                entityType.Filter.Parameters.Single(),
-                                new QuerySourceReferenceExpression(_querySource), 
-                                entityType.Filter.Body);
-
-                    var predicate
-                        = QueryModelVisitor.SqlTranslatingExpressionVisitorFactory
-                           .Create(QueryModelVisitor)
-                           .Visit(filter);
-
-                    selectExpression.Predicate = predicate;
-                }
             }
             else
             {
@@ -231,7 +214,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                 if (useQueryComposition
                     && fromSqlAnnotation.QueryModel.IsIdentityQuery()
                     && !fromSqlAnnotation.QueryModel.ResultOperators.Any()
-                    && !relationalQueryCompilationContext.IsIncludeQuery)
+                    && !relationalQueryCompilationContext.IsIncludeQuery
+                    && entityType.Filter == null)
                 {
                     useQueryComposition = false;
                 }
@@ -245,6 +229,11 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                             fromSqlAnnotation.Sql,
                             fromSqlAnnotation.Arguments);
                 }
+            }
+
+            if (entityType.Filter != null)
+            {
+                QueryModelVisitor.ApplyEntityFilter(entityType, selectExpression, _querySource);
             }
 
             var shaper = CreateShaper(elementType, entityType, selectExpression);

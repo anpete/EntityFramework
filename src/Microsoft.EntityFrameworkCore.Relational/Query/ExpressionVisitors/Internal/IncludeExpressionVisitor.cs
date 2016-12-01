@@ -31,6 +31,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         private readonly IShaperCommandContextFactory _shaperCommandContextFactory;
         private readonly IRelationalAnnotationProvider _relationalAnnotationProvider;
         private readonly IQuerySqlGeneratorFactory _querySqlGeneratorFactory;
+        private readonly RelationalQueryModelVisitor _queryModelVisitor;
         private readonly IQuerySource _querySource;
         private readonly IReadOnlyList<INavigation> _navigationPath;
         private readonly RelationalQueryCompilationContext _queryCompilationContext;
@@ -48,6 +49,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             [NotNull] IShaperCommandContextFactory shaperCommandContextFactory,
             [NotNull] IRelationalAnnotationProvider relationalAnnotationProvider,
             [NotNull] IQuerySqlGeneratorFactory querySqlGeneratorFactory,
+            [NotNull] RelationalQueryModelVisitor queryModelVisitor,
             [NotNull] IQuerySource querySource,
             [NotNull] IReadOnlyList<INavigation> navigationPath,
             [NotNull] RelationalQueryCompilationContext queryCompilationContext,
@@ -60,6 +62,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             Check.NotNull(shaperCommandContextFactory, nameof(shaperCommandContextFactory));
             Check.NotNull(relationalAnnotationProvider, nameof(relationalAnnotationProvider));
             Check.NotNull(querySqlGeneratorFactory, nameof(querySqlGeneratorFactory));
+            Check.NotNull(queryModelVisitor, nameof(queryModelVisitor));
             Check.NotNull(querySource, nameof(querySource));
             Check.NotNull(navigationPath, nameof(navigationPath));
             Check.NotNull(queryCompilationContext, nameof(queryCompilationContext));
@@ -71,6 +74,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             _shaperCommandContextFactory = shaperCommandContextFactory;
             _relationalAnnotationProvider = relationalAnnotationProvider;
             _querySqlGeneratorFactory = querySqlGeneratorFactory;
+            _queryModelVisitor = queryModelVisitor;
             _querySource = querySource;
             _navigationPath = navigationPath;
             _queryCompilationContext = queryCompilationContext;
@@ -241,12 +245,23 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
                 if (!navigation.IsCollection())
                 {
-                    var joinedTableExpression
+                    TableExpressionBase joinedTableExpression
                         = new TableExpression(
                             targetTableName,
                             _relationalAnnotationProvider.For(targetEntityType).Schema,
                             targetTableAlias,
                             querySource);
+
+                    if (targetEntityType.Filter != null)
+                    {
+                        var subQueryWithFilter = _selectExpressionFactory.Create(_queryCompilationContext);
+                        
+                        subQueryWithFilter.AddTable(joinedTableExpression);
+
+                        _queryModelVisitor.ApplyEntityFilter(targetEntityType, selectExpression, _querySource);
+
+                        joinedTableExpression = subQueryWithFilter;
+                    }
 
                     var valueBufferOffset = selectExpression.Projection.Count;
 
