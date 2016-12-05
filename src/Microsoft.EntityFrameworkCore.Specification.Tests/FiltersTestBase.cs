@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore.Specification.Tests.TestModels.Northwind;
 using Microsoft.EntityFrameworkCore.Specification.Tests.TestUtilities.Xunit;
 using Xunit;
+// ReSharper disable StringStartsWithIsCultureSpecific
 
 namespace Microsoft.EntityFrameworkCore.Specification.Tests
 {
@@ -38,7 +39,8 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
             {
                 var results = context.Orders.Include(o => o.Customer).ToList();
 
-                Assert.Equal(7, results.Count);
+                Assert.Equal(830, results.Count);
+                Assert.True(results.All(o => o.Customer == null  || o.CustomerID.StartsWith("B")));
             }
         }
 
