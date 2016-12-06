@@ -69,11 +69,9 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
             }
         }
 
-        private static LazyRef<Dictionary<IEntityType, IInMemoryTable>> CreateTables()
-        {
-            return new LazyRef<Dictionary<IEntityType, IInMemoryTable>>(
+        private static LazyRef<Dictionary<IEntityType, IInMemoryTable>> CreateTables() 
+            => new LazyRef<Dictionary<IEntityType, IInMemoryTable>>(
                 () => new Dictionary<IEntityType, IInMemoryTable>());
-        }
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used

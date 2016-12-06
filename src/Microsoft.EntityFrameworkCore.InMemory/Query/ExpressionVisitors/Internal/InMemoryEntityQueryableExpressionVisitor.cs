@@ -2,12 +2,18 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query.Internal;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Utilities;
 using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.Expressions;
+using Remotion.Linq.Parsing.ExpressionVisitors;
 
 namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 {
@@ -53,6 +59,10 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
             var entityType = _model.FindEntityType(elementType);
 
+            var valueBufferFilter 
+                = (Expression)QueryModelVisitor.TryCreateEntityFilter(entityType, _querySource)
+                    ?? Expression.Constant(null, typeof(Func<ValueBuffer, bool>));
+
             if (QueryModelVisitor.QueryCompilationContext
                 .QuerySourceRequiresMaterialization(_querySource))
             {
@@ -60,30 +70,67 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
                 var expression
                     = Expression.Call(
-                        InMemoryQueryModelVisitor.EntityQueryMethodInfo.MakeGenericMethod(elementType),
-                        EntityQueryModelVisitor.QueryContextParameter,
+                        _entityQueryMethodInfo.MakeGenericMethod(elementType),
+                        Expression.Convert(EntityQueryModelVisitor.QueryContextParameter, typeof(InMemoryQueryContext)),
                         Expression.Constant(entityType),
                         Expression.Constant(entityType.FindPrimaryKey()),
                         materializer,
-                        Expression.Constant(QueryModelVisitor.QueryCompilationContext.IsTrackingQuery));
-
-                if (entityType.Filter != null)
-                {
-                    expression
-                        = Expression.Call(
-                            QueryModelVisitor.LinqOperatorProvider.Where
-                                .MakeGenericMethod(elementType),
-                            expression,
-                            entityType.Filter);
-                }
+                        Expression.Constant(QueryModelVisitor.QueryCompilationContext.IsTrackingQuery),
+                        valueBufferFilter);
 
                 return expression;
             }
 
             return Expression.Call(
-                InMemoryQueryModelVisitor.ProjectionQueryMethodInfo,
-                EntityQueryModelVisitor.QueryContextParameter,
-                Expression.Constant(entityType));
+                _projectionQueryMethodInfo,
+                Expression.Convert(EntityQueryModelVisitor.QueryContextParameter, typeof(InMemoryQueryContext)),
+                Expression.Constant(entityType),
+                valueBufferFilter);
         }
+
+        private static readonly MethodInfo _entityQueryMethodInfo
+            = typeof(InMemoryEntityQueryableExpressionVisitor).GetTypeInfo()
+                .GetDeclaredMethod(nameof(EntityQuery));
+
+        [UsedImplicitly]
+        private static IEnumerable<TEntity> EntityQuery<TEntity>(
+            InMemoryQueryContext queryContext,
+            IEntityType entityType,
+            IKey key,
+            Func<IEntityType, ValueBuffer, object> materializer,
+            bool queryStateManager,
+            Func<ValueBuffer, bool> filter)
+            where TEntity : class
+            => queryContext.Store
+                .GetTables(entityType)
+                .SelectMany(t =>
+                    t.Rows
+                        .Select(vs => new ValueBuffer(vs))
+                        .Where(vb => filter == null || filter(vb))
+                        .Select(vb =>
+                            (TEntity)queryContext
+                                .QueryBuffer
+                                .GetEntity(
+                                    key,
+                                    new EntityLoadInfo(
+                                        vb,
+                                        vr => materializer(t.EntityType, vr)),
+                                    queryStateManager,
+                                    throwOnNullKey: false)));
+
+        private static readonly MethodInfo _projectionQueryMethodInfo
+            = typeof(InMemoryEntityQueryableExpressionVisitor).GetTypeInfo()
+                .GetDeclaredMethod(nameof(ProjectionQuery));
+
+        [UsedImplicitly]
+        private static IEnumerable<ValueBuffer> ProjectionQuery(
+            InMemoryQueryContext queryContext,
+            IEntityType entityType,
+            Func<ValueBuffer, bool> filter)
+            => queryContext.Store
+                .GetTables(entityType)
+                .SelectMany(t => t.Rows)
+                .Select(vs => new ValueBuffer(vs))
+                .Where(vb => filter == null || filter(vb));
     }
 }

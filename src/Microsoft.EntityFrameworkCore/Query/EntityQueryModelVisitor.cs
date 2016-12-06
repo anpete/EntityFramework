@@ -84,7 +84,6 @@ namespace Microsoft.EntityFrameworkCore.Query
         private readonly IQuerySourceTracingExpressionVisitorFactory _querySourceTracingExpressionVisitorFactory;
         private readonly IEntityResultFindingExpressionVisitorFactory _entityResultFindingExpressionVisitorFactory;
         private readonly ITaskBlockingExpressionVisitor _taskBlockingExpressionVisitor;
-        private readonly IMemberAccessBindingExpressionVisitorFactory _memberAccessBindingExpressionVisitorFactory;
         private readonly IProjectionExpressionVisitorFactory _projectionExpressionVisitorFactory;
         private readonly IEntityQueryableExpressionVisitorFactory _entityQueryableExpressionVisitorFactory;
         private readonly IQueryAnnotationExtractor _queryAnnotationExtractor;
@@ -179,7 +178,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             _querySourceTracingExpressionVisitorFactory = querySourceTracingExpressionVisitorFactory;
             _entityResultFindingExpressionVisitorFactory = entityResultFindingExpressionVisitorFactory;
             _taskBlockingExpressionVisitor = taskBlockingExpressionVisitor;
-            _memberAccessBindingExpressionVisitorFactory = memberAccessBindingExpressionVisitorFactory;
+            MemberAccessBindingExpressionVisitorFactory = memberAccessBindingExpressionVisitorFactory;
             _projectionExpressionVisitorFactory = projectionExpressionVisitorFactory;
             _entityQueryableExpressionVisitorFactory = entityQueryableExpressionVisitorFactory;
             _queryAnnotationExtractor = queryAnnotationExtractor;
@@ -230,6 +229,11 @@ namespace Microsoft.EntityFrameworkCore.Query
         ///     Gets the <see cref="ILinqOperatorProvider" /> being used for this query.
         /// </summary>
         public virtual ILinqOperatorProvider LinqOperatorProvider { get; private set; }
+        
+        /// <summary>
+        ///     Gets the <see cref="IMemberAccessBindingExpressionVisitorFactory" /> being used for this query.
+        /// </summary>
+        protected virtual IMemberAccessBindingExpressionVisitorFactory MemberAccessBindingExpressionVisitorFactory { get; }
 
         /// <summary>
         ///     Creates an action to execute this query.
@@ -1218,7 +1222,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                     .Visit(expression);
 
             expression
-                = _memberAccessBindingExpressionVisitorFactory
+                = MemberAccessBindingExpressionVisitorFactory
                     .Create(QueryCompilationContext.QuerySourceMapping, this, inProjection)
                     .Visit(expression);
 

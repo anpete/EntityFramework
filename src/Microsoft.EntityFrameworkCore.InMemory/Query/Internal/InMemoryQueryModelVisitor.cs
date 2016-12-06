@@ -15,6 +15,9 @@ using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors;
 using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Utilities;
+using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.Expressions;
+using Remotion.Linq.Parsing.ExpressionVisitors;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
 {
@@ -73,6 +76,52 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
+        public virtual Expression<Func<ValueBuffer, bool>> TryCreateEntityFilter(
+            [NotNull] IEntityType entityType, [CanBeNull] IQuerySource querySource = null)
+        {
+            querySource = querySource ?? new FilterQuerySource(entityType.ClrType);
+
+            Expression<Func<ValueBuffer, bool>> valueBufferFilter = null;
+
+            if (entityType.Filter != null)
+            {
+                var boundFilter
+                    = ReplacingExpressionVisitor
+                        .Replace(
+                            entityType.Filter.Parameters.Single(),
+                            new QuerySourceReferenceExpression(querySource),
+                            entityType.Filter.Body);
+
+                var querySourceMapping = new QuerySourceMapping();
+                var valueBufferParameter = Expression.Parameter(typeof(ValueBuffer), "vb");
+
+                querySourceMapping.AddMapping(querySource, valueBufferParameter);
+
+                valueBufferFilter
+                    = Expression.Lambda<Func<ValueBuffer, bool>>(
+                        MemberAccessBindingExpressionVisitorFactory
+                            .Create(querySourceMapping, this, inProjection: false)
+                            .Visit(boundFilter), valueBufferParameter);
+            }
+
+            return valueBufferFilter;
+        }
+
+        public class FilterQuerySource : IQuerySource
+        {
+            public FilterQuerySource(Type itemType)
+            {
+                ItemType = itemType;
+            }
+
+            public string ItemName => "f";
+            public Type ItemType { get; }
+        }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
         protected override void IncludeNavigations(
             IncludeSpecification includeSpecification,
             Type resultType,
@@ -88,7 +137,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     LinqOperatorProvider,
                     includeSpecification,
                     accessorExpression,
-                    querySourceRequiresTracking);
+                    querySourceRequiresTracking,
+                    this);
 
             Expression = includeExpressionVisitor.Visit(Expression);
         }
@@ -100,19 +150,22 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             private readonly ILinqOperatorProvider _linqOperatorProvider;
             private readonly Expression _accessorExpression;
             private readonly bool _querySourceRequiresTracking;
+            private readonly InMemoryQueryModelVisitor _queryModelVisitor;
 
             public InMemoryIncludeExpressionVisitor(
                 [NotNull] IMaterializerFactory materializerFactory,
                 [NotNull] ILinqOperatorProvider linqOperatorProvider,
                 [NotNull] IncludeSpecification includeSpecification,
                 [NotNull] Expression accessorExpression,
-                bool querySourceRequiresTracking)
+                bool querySourceRequiresTracking,
+                InMemoryQueryModelVisitor queryModelVisitor)
             {
                 _materializerFactory = materializerFactory;
                 _linqOperatorProvider = linqOperatorProvider;
                 _includeSpecification = includeSpecification;
                 _accessorExpression = accessorExpression;
                 _querySourceRequiresTracking = querySourceRequiresTracking;
+                _queryModelVisitor = queryModelVisitor;
             }
 
             protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -124,7 +177,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             _includeSpecification,
                             _materializerFactory,
                             _accessorExpression,
-                            _querySourceRequiresTracking);
+                            _querySourceRequiresTracking,
+                            _queryModelVisitor);
 
                     var newSelector = selectorIncludeInjectingVisitor.Visit(node.Arguments[1]);
 
@@ -154,7 +208,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                     var targetType = n.GetTargetType();
                                     var materializer = _materializerFactory.CreateMaterializer(targetType);
 
-                                    return new RelatedEntitiesLoader(targetType, materializer.Compile());
+                                    return new RelatedEntitiesLoader(
+                                        targetType,
+                                        materializer.Compile(),
+                                        _queryModelVisitor.TryCreateEntityFilter(targetType)?.Compile());
                                 })
                             .ToArray()),
                     Expression.Constant(_querySourceRequiresTracking));
@@ -165,17 +222,20 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 private readonly IMaterializerFactory _materializerFactory;
                 private readonly Expression _accessorExpression;
                 private readonly bool _querySourceRequiresTracking;
+                private readonly InMemoryQueryModelVisitor _queryModelVisitor;
 
                 public SelectorIncludeInjectingExpressionVisitor(
                     IncludeSpecification includeSpecification,
                     IMaterializerFactory materializerFactory,
                     Expression accessorExpression,
-                    bool querySourceRequiresTracking)
+                    bool querySourceRequiresTracking,
+                    InMemoryQueryModelVisitor queryModelVisitor)
                 {
                     _includeSpecification = includeSpecification;
                     _materializerFactory = materializerFactory;
                     _accessorExpression = accessorExpression;
                     _querySourceRequiresTracking = querySourceRequiresTracking;
+                    _queryModelVisitor = queryModelVisitor;
                 }
 
                 public override Expression Visit(Expression node)
@@ -199,7 +259,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                             var targetType = n.GetTargetType();
                                             var materializer = _materializerFactory.CreateMaterializer(targetType);
 
-                                            return new RelatedEntitiesLoader(targetType, materializer.Compile());
+                                            return new RelatedEntitiesLoader(
+                                                targetType,
+                                                materializer.Compile(),
+                                                _queryModelVisitor.TryCreateEntityFilter(targetType)?.Compile());
                                         })
                                     .ToArray()),
                             Expression.Constant(_querySourceRequiresTracking));
@@ -223,43 +286,27 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         {
             private readonly IEntityType _targetType;
             private readonly Func<IEntityType, ValueBuffer, object> _materializer;
+            private readonly Func<ValueBuffer, bool> _filter;
 
             public RelatedEntitiesLoader(
-                IEntityType targetType, 
+                IEntityType targetType,
                 Func<IEntityType, ValueBuffer, object> materializer,
-                ILinqOperatorProvider linqOperatorProvider)
+                Func<ValueBuffer, bool> filter)
             {
                 _targetType = targetType;
                 _materializer = materializer;
-
-                if (_targetType.Filter != null)
-                {
-                    _loader = Expression.Call(
-                            linqOperatorProvider.Where
-                                .MakeGenericMethod(_targetType.ClrType),
-                            Expression.Call(
-                                ),
-                            _targetType.Filter);
-                }
+                _filter = filter;
             }
-            
+
             public IEnumerable<EntityLoadInfo> Load(QueryContext queryContext, IIncludeKeyComparer keyComparer)
-                => _loader != null
-                    ? _loader(queryContext, keyComparer)
-                    : LoadCore(queryContext, keyComparer);
-
-            private IEnumerable<EntityLoadInfo> LoadCore(QueryContext queryContext, IIncludeKeyComparer keyComparer)
                 => ((InMemoryQueryContext)queryContext).Store
-                    .GetTables(_targetType)
-                    .SelectMany(t =>
-                        t.Rows.Select(vs => new EntityLoadInfo(
-                                new ValueBuffer(vs), vb => _materializer(t.EntityType, vb)))
-                            .Where(eli => keyComparer.ShouldInclude(eli.ValueBuffer)));
-
-            private IEnumerable<EntityLoadInfo> FilteredLoad<TEntity>(
-                QueryContext queryContext, IIncludeKeyComparer keyComparer, Func<TEntity, bool> filter)
-                => LoadCore(queryContext, keyComparer)
-                    .Where(eli => filter((TEntity)eli.Materialize()));
+                .GetTables(_targetType)
+                .SelectMany(t =>
+                    t.Rows
+                        .Select(vs => new ValueBuffer(vs))
+                        .Where(vb => _filter == null || _filter(vb))
+                        .Select(vb => new EntityLoadInfo(vb, vs => _materializer(t.EntityType, vs)))
+                        .Where(eli => keyComparer.ShouldInclude(eli.ValueBuffer)));
 
             public void Dispose()
             {
@@ -361,58 +408,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public static readonly MethodInfo EntityQueryMethodInfo
-            = typeof(InMemoryQueryModelVisitor).GetTypeInfo()
-                .GetDeclaredMethod(nameof(EntityQuery));
-
-        /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public static readonly MethodInfo OfTypeMethodInfo
             = typeof(Enumerable).GetTypeInfo()
                 .GetDeclaredMethod(nameof(Enumerable.OfType));
-
-        [UsedImplicitly]
-        private static IEnumerable<TEntity> EntityQuery<TEntity>(
-            QueryContext queryContext,
-            IEntityType entityType,
-            IKey key,
-            Func<IEntityType, ValueBuffer, object> materializer,
-            bool queryStateManager)
-            where TEntity : class
-        => ((InMemoryQueryContext)queryContext).Store
-            .GetTables(entityType)
-            .SelectMany(t =>
-                t.Rows.Select(vs =>
-                    {
-                        var valueBuffer = new ValueBuffer(vs);
-
-                        return (TEntity)queryContext
-                            .QueryBuffer
-                            .GetEntity(
-                                key,
-                                new EntityLoadInfo(
-                                    valueBuffer,
-                                    vr => materializer(t.EntityType, vr)),
-                                queryStateManager,
-                                throwOnNullKey: false);
-                    }));
-
-        /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public static readonly MethodInfo ProjectionQueryMethodInfo
-            = typeof(InMemoryQueryModelVisitor).GetTypeInfo()
-                .GetDeclaredMethod(nameof(ProjectionQuery));
-
-        [UsedImplicitly]
-        private static IEnumerable<ValueBuffer> ProjectionQuery(
-                QueryContext queryContext,
-                IEntityType entityType)
-            => ((InMemoryQueryContext)queryContext).Store
-                .GetTables(entityType)
-                .SelectMany(t => t.Rows.Select(vs => new ValueBuffer(vs)));
     }
 }
