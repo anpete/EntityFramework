@@ -224,19 +224,42 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             private readonly IEntityType _targetType;
             private readonly Func<IEntityType, ValueBuffer, object> _materializer;
 
-            public RelatedEntitiesLoader(IEntityType targetType, Func<IEntityType, ValueBuffer, object> materializer)
+            public RelatedEntitiesLoader(
+                IEntityType targetType, 
+                Func<IEntityType, ValueBuffer, object> materializer,
+                ILinqOperatorProvider linqOperatorProvider)
             {
                 _targetType = targetType;
                 _materializer = materializer;
-            }
 
+                if (_targetType.Filter != null)
+                {
+                    _loader = Expression.Call(
+                            linqOperatorProvider.Where
+                                .MakeGenericMethod(_targetType.ClrType),
+                            Expression.Call(
+                                ),
+                            _targetType.Filter);
+                }
+            }
+            
             public IEnumerable<EntityLoadInfo> Load(QueryContext queryContext, IIncludeKeyComparer keyComparer)
+                => _loader != null
+                    ? _loader(queryContext, keyComparer)
+                    : LoadCore(queryContext, keyComparer);
+
+            private IEnumerable<EntityLoadInfo> LoadCore(QueryContext queryContext, IIncludeKeyComparer keyComparer)
                 => ((InMemoryQueryContext)queryContext).Store
                     .GetTables(_targetType)
                     .SelectMany(t =>
                         t.Rows.Select(vs => new EntityLoadInfo(
                                 new ValueBuffer(vs), vb => _materializer(t.EntityType, vb)))
                             .Where(eli => keyComparer.ShouldInclude(eli.ValueBuffer)));
+
+            private IEnumerable<EntityLoadInfo> FilteredLoad<TEntity>(
+                QueryContext queryContext, IIncludeKeyComparer keyComparer, Func<TEntity, bool> filter)
+                => LoadCore(queryContext, keyComparer)
+                    .Where(eli => filter((TEntity)eli.Materialize()));
 
             public void Dispose()
             {

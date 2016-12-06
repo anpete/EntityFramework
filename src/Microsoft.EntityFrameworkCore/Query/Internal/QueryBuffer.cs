@@ -65,13 +65,16 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             var identityMap = GetOrCreateIdentityMap(key);
 
             bool hasNullKey;
+
             var weakReference = identityMap.TryGetEntity(entityLoadInfo.ValueBuffer, out hasNullKey);
+
             if (hasNullKey)
             {
                 if (throwOnNullKey)
                 {
                     throw new InvalidOperationException(CoreStrings.InvalidKeyValue(key.DeclaringEntityType.DisplayName()));
                 }
+
                 return null;
             }
 
@@ -80,6 +83,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 || !weakReference.TryGetTarget(out entity))
             {
                 entity = entityLoadInfo.Materialize();
+
+
 
                 if (weakReference != null)
                 {
