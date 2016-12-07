@@ -254,9 +254,12 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
                     if (targetEntityType.Filter != null)
                     {
-                        var subQueryWithFilter = _selectExpressionFactory.Create(_queryCompilationContext);
+                        var subQueryWithFilter 
+                            = _selectExpressionFactory.Create(_queryCompilationContext);
                         
                         subQueryWithFilter.AddTable(joinedTableExpression);
+                        subQueryWithFilter.IsProjectStar = true;
+                        subQueryWithFilter.ProjectStarAlias = joinedTableExpression.Alias;
 
                         _queryModelVisitor.ApplyEntityFilter(targetEntityType, selectExpression);
 

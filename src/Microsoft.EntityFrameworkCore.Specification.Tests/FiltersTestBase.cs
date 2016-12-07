@@ -72,6 +72,8 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
             Assert.True(results.All(p => !p.OrderDetails.Any() || p.OrderDetails.All(od => od.Quantity > 100)));
         }
 
+        // inheritance
+
         public static void ConfigureModel(ModelBuilder modelBuilder)
         {
             Expression<Func<Customer, bool>> customerFilter = c => c.CompanyName.StartsWith("B");
