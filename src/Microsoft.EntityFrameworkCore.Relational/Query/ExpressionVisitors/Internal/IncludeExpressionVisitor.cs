@@ -260,8 +260,9 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                         subQueryWithFilter.AddTable(joinedTableExpression);
                         subQueryWithFilter.IsProjectStar = true;
                         subQueryWithFilter.ProjectStarAlias = joinedTableExpression.Alias;
+                        subQueryWithFilter.Alias = targetTableAlias;
 
-                        _queryModelVisitor.ApplyEntityFilter(targetEntityType, selectExpression);
+                        _queryModelVisitor.ApplyEntityFilter(targetEntityType, subQueryWithFilter);
 
                         joinedTableExpression = subQueryWithFilter;
                     }
@@ -365,6 +366,11 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                             querySource);
 
                     targetSelectExpression.AddTable(targetTableExpression, createUniqueAlias: false);
+
+                    if (targetEntityType.Filter != null)
+                    {
+                        _queryModelVisitor.ApplyEntityFilter(targetEntityType, targetSelectExpression);
+                    }
 
                     var materializer
                         = _materializerFactory

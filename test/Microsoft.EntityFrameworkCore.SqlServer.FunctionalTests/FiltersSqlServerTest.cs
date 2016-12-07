@@ -77,9 +77,13 @@ ORDER BY [o].[CustomerID]",
             base.Included_many_to_one_query();
 
             Assert.Equal(
-                @"SELECT [c].[CustomerID]
-FROM [Customers] AS [c]
-WHERE [c].[CompanyName] LIKE N'B' + N'%' AND (CHARINDEX(N'B', [c].[CompanyName]) = 1)",
+                @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate], [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
+FROM [Orders] AS [o]
+LEFT JOIN (
+    SELECT [c0].*
+    FROM [Customers] AS [c0]
+    WHERE [c0].[CompanyName] LIKE N'B' + N'%' AND (CHARINDEX(N'B', [c0].[CompanyName]) = 1)
+) AS [c] ON [o].[CustomerID] = [c].[CustomerID]",
                 Sql);
         }
 
@@ -88,9 +92,17 @@ WHERE [c].[CompanyName] LIKE N'B' + N'%' AND (CHARINDEX(N'B', [c].[CompanyName])
             base.Included_one_to_many_query();
             
             Assert.Equal(
-                @"SELECT [c].[CustomerID]
-FROM [Customers] AS [c]
-WHERE [c].[CompanyName] LIKE N'B' + N'%' AND (CHARINDEX(N'B', [c].[CompanyName]) = 1)",
+                @"SELECT [p].[ProductID], [p].[Discontinued], [p].[ProductName], [p].[UnitsInStock]
+FROM [Products] AS [p]
+ORDER BY [p].[ProductID]
+
+SELECT [o].[OrderID], [o].[ProductID], [o].[Discount], [o].[Quantity], [o].[UnitPrice]
+FROM [Order Details] AS [o]
+WHERE ([o].[Quantity] > 100) AND EXISTS (
+    SELECT 1
+    FROM [Products] AS [p]
+    WHERE [o].[ProductID] = [p].[ProductID])
+ORDER BY [o].[ProductID]",
                 Sql);
         }
 
