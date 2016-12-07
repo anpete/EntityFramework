@@ -1512,6 +1512,14 @@ namespace Microsoft.EntityFrameworkCore.Internal
             get { return GetString("PoolingOptionsModified"); }
         }
 
+        /// <summary>
+        /// The filter '{filter}' for entity type '{entityType}' could not be bound. Ensure that all components of the filter are mapped properties. Client-evaluation is not supported for entity filters.
+        /// </summary>
+        public static string UnboundEntityFilter([CanBeNull] object filter, [CanBeNull] object entityType)
+        {
+            return string.Format(CultureInfo.CurrentCulture, GetString("UnboundEntityFilter", "filter", "entityType"), filter, entityType);
+        }
+
         private static string GetString(string name, params string[] formatterNames)
         {
             var value = _resourceManager.GetString(name);

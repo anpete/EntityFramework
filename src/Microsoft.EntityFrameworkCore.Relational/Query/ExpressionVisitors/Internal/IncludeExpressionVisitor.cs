@@ -258,7 +258,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                         
                         subQueryWithFilter.AddTable(joinedTableExpression);
 
-                        _queryModelVisitor.ApplyEntityFilter(targetEntityType, selectExpression, _querySource);
+                        _queryModelVisitor.ApplyEntityFilter(targetEntityType, selectExpression);
 
                         joinedTableExpression = subQueryWithFilter;
                     }

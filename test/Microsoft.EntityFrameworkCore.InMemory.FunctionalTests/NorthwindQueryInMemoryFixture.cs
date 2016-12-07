@@ -49,7 +49,12 @@ namespace Microsoft.EntityFrameworkCore.InMemory.FunctionalTests
 
         private class TestLogger : ILogger
         {
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+            public void Log<TState>(
+                LogLevel logLevel, 
+                EventId eventId, 
+                TState state, 
+                Exception exception, 
+                Func<TState, Exception, string> formatter)
                 => TestOutputHelper?.WriteLine(formatter(state, exception));
 
             public bool IsEnabled(LogLevel logLevel) => TestOutputHelper != null;

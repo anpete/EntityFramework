@@ -678,4 +678,7 @@
   <data name="PoolingOptionsModified" xml:space="preserve">
     <value>OnConfiguring cannot be used to modify DbContextOptions when DbContext pooling is enabled.</value>
   </data>
+  <data name="UnboundEntityFilter" xml:space="preserve">
+    <value>The filter '{filter}' for entity type '{entityType}' could not be bound. Ensure that all components of the filter are mapped properties. Client-evaluation is not supported for entity filters.</value>
+  </data>
 </root>

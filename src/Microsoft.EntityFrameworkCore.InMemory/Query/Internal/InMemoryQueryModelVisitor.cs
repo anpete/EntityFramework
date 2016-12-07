@@ -9,6 +9,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Extensions.Internal;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors;
@@ -17,6 +18,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Utilities;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
+using Remotion.Linq.Parsing;
 using Remotion.Linq.Parsing.ExpressionVisitors;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
@@ -97,26 +99,43 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 querySourceMapping.AddMapping(querySource, valueBufferParameter);
 
-                valueBufferFilter
-                    = Expression.Lambda<Func<ValueBuffer, bool>>(
-                        MemberAccessBindingExpressionVisitorFactory
-                            .Create(querySourceMapping, this, inProjection: false)
-                            .Visit(boundFilter), valueBufferParameter);
+                try
+                {
+                    valueBufferFilter
+                        = Expression.Lambda<Func<ValueBuffer, bool>>(
+                            MemberAccessBindingExpressionVisitorFactory
+                                .Create(querySourceMapping, this, inProjection: false)
+                                .Visit(boundFilter), valueBufferParameter);
+                }
+                catch (Exception)
+                {
+                    throw ThrowUnboundEntityFilter(entityType);
+                }
+
+                new ValueBufferFilterValidator(entityType).Visit(valueBufferFilter);
             }
 
             return valueBufferFilter;
         }
 
-        public class FilterQuerySource : IQuerySource
+        public class ValueBufferFilterValidator : RelinqExpressionVisitor
         {
-            public FilterQuerySource(Type itemType)
+            private readonly IEntityType _entityType;
+
+            public ValueBufferFilterValidator(IEntityType entityType)
             {
-                ItemType = itemType;
+                _entityType = entityType;
             }
 
-            public string ItemName => "f";
-            public Type ItemType { get; }
+            protected override Expression VisitQuerySourceReference(QuerySourceReferenceExpression expression)
+            {
+                throw ThrowUnboundEntityFilter(_entityType);
+            }
         }
+
+        private static Exception ThrowUnboundEntityFilter(IEntityType entityType)
+            => new InvalidOperationException(
+                CoreStrings.UnboundEntityFilter(entityType.Filter, entityType.DisplayName()));
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used

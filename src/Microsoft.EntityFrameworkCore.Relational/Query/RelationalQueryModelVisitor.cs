@@ -243,8 +243,19 @@ namespace Microsoft.EntityFrameworkCore.Query
         /// <param name="selectExpression"></param>
         /// <param name="querySource"></param>
         public virtual void ApplyEntityFilter(
-            IEntityType entityType, SelectExpression selectExpression, IQuerySource querySource)
+            IEntityType entityType, SelectExpression selectExpression, IQuerySource querySource = null)
         {
+            var removeQuery = false;
+
+            if (querySource == null)
+            {
+                querySource = new FilterQuerySource(entityType.ClrType);
+
+                AddQuery(querySource, selectExpression);
+
+                removeQuery = true;
+            }
+
             var filter
                 = ReplacingExpressionVisitor
                     .Replace(
@@ -256,6 +267,19 @@ namespace Microsoft.EntityFrameworkCore.Query
                 = _sqlTranslatingExpressionVisitorFactory
                     .Create(this)
                     .Visit(filter);
+
+            if (predicate == null)
+            {
+                throw new InvalidOperationException(
+                    CoreStrings.UnboundEntityFilter(entityType.Filter, entityType.DisplayName()));
+            }
+
+            if (removeQuery)
+            {
+                QueriesBySource.Remove(querySource);
+            }
+
+            Debug.Assert(selectExpression.Predicate == null);
 
             selectExpression.Predicate = predicate;
         }

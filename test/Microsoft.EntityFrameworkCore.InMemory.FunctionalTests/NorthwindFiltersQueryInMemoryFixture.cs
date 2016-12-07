@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore.Specification.Tests;
 using Microsoft.EntityFrameworkCore.Specification.Tests.TestModels.Northwind;
 
 // ReSharper disable StringStartsWithIsCultureSpecific
@@ -14,9 +15,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.FunctionalTests
         {
             base.OnModelCreating(modelBuilder);
 
-            Expression<Func<Customer, bool>> filter = c => c.CompanyName.StartsWith("B");
-
-            modelBuilder.Entity<Customer>().Metadata.Filter = filter;
+            FiltersTestBase<NorthwindFiltersQueryInMemoryFixture>.ConfigureModel(modelBuilder);
         }
     }
 }

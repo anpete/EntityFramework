@@ -12,8 +12,6 @@ using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Utilities;
 using Remotion.Linq.Clauses;
-using Remotion.Linq.Clauses.Expressions;
-using Remotion.Linq.Parsing.ExpressionVisitors;
 
 namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 {
@@ -59,9 +57,9 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
             var entityType = _model.FindEntityType(elementType);
 
-            var valueBufferFilter 
+            var valueBufferFilter
                 = (Expression)QueryModelVisitor.TryCreateEntityFilter(entityType, _querySource)
-                    ?? Expression.Constant(null, typeof(Func<ValueBuffer, bool>));
+                  ?? Expression.Constant(null, typeof(Func<ValueBuffer, bool>));
 
             if (QueryModelVisitor.QueryCompilationContext
                 .QuerySourceRequiresMaterialization(_querySource))

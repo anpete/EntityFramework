@@ -262,6 +262,7 @@
     <Compile Include="Internal\ServiceProviderCache.cs" />
     <Compile Include="Internal\TypeExtensions.cs" />
     <Compile Include="Query\Internal\CompiledQueryBase.cs" />
+    <Compile Include="Query\Internal\FilterQuerySource.cs" />
     <Compile Include="Query\Internal\IDetachableContext.cs" />
     <Compile Include="Metadata\Conventions\Internal\IPropertyAnnotationSetConvention.cs" />
     <Compile Include="Metadata\Conventions\Internal\IIndexAnnotationSetConvention.cs" />
