@@ -60,10 +60,12 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             var concreteEntityTypes
                 = entityType.GetConcreteTypesInHierarchy().ToList();
 
-            var indexMap = new int[concreteEntityTypes[0].PropertyCount()];
+            var firstConcreteEntityType = concreteEntityTypes[0];
+
+            var indexMap = new int[firstConcreteEntityType.PropertyCount()];
             var propertyIndex = 0;
 
-            foreach (var property in concreteEntityTypes[0].GetProperties())
+            foreach (var property in firstConcreteEntityType.GetProperties())
             {
                 indexMap[propertyIndex++]
                     = projectionAdder(property, selectExpression);
@@ -72,15 +74,16 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             var materializer
                 = _entityMaterializerSource
                     .CreateMaterializeExpression(
-                        concreteEntityTypes[0], valueBufferParameter, indexMap);
+                        firstConcreteEntityType, valueBufferParameter, indexMap);
 
             if (concreteEntityTypes.Count == 1
-                && concreteEntityTypes[0].RootType() == concreteEntityTypes[0])
+                && firstConcreteEntityType.RootType() == firstConcreteEntityType)
             {
                 return Expression.Lambda<Func<ValueBuffer, object>>(materializer, valueBufferParameter);
             }
 
-            var discriminatorProperty = _relationalAnnotationProvider.For(concreteEntityTypes[0]).DiscriminatorProperty;
+            var discriminatorProperty 
+                = _relationalAnnotationProvider.For(firstConcreteEntityType).DiscriminatorProperty;
 
             var discriminatorColumn
                 = selectExpression.Projection
@@ -89,10 +92,15 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
             var firstDiscriminatorValue
                 = Expression.Constant(
-                    _relationalAnnotationProvider.For(concreteEntityTypes[0]).DiscriminatorValue);
+                    _relationalAnnotationProvider.For(firstConcreteEntityType).DiscriminatorValue);
 
             var discriminatorPredicate
                 = Expression.Equal(discriminatorColumn, firstDiscriminatorValue);
+
+            if (firstConcreteEntityType.Filter != null)
+            {
+
+            }
 
             if (concreteEntityTypes.Count == 1)
             {
@@ -123,7 +131,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                         Expression.Throw(
                             Expression.Call(
                                 _createUnableToDiscriminateException,
-                                Expression.Constant(concreteEntityTypes[0])))),
+                                Expression.Constant(firstConcreteEntityType)))),
                     Expression.Label(
                         returnLabelTarget,
                         Expression.Default(returnLabelTarget.Type))

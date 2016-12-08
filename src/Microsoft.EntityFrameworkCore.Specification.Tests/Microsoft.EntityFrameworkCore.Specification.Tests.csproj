@@ -51,6 +51,7 @@
     <Compile Include="DatabindingTestBase.cs" />
     <Compile Include="F1FixtureBase.cs" />
     <Compile Include="FieldMappingTestBase.cs" />
+    <Compile Include="FiltersInheritanceTestBase.cs" />
     <Compile Include="FindTestBase.cs" />
     <Compile Include="FunkyDataQueryFixtureBase.cs" />
     <Compile Include="FunkyDataQueryTestBase.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="TestModels\ComplexNavigationsModel\ComplexNavigationsData.cs" />
     <Compile Include="TestModels\GearsOfWarModel\Mission.cs" />
     <Compile Include="TestModels\GearsOfWarModel\SquadMission.cs" />
+    <Compile Include="TestModels\Inheritance\Cat.cs" />
     <Compile Include="TestModels\Northwind\NorthwindData.Objects.cs" />
     <Compile Include="TestModels\ComplexNavigationsModel\ComplexNavigationField.cs" />
     <Compile Include="TestModels\ComplexNavigationsModel\ComplexNavigationGlobalization.cs" />

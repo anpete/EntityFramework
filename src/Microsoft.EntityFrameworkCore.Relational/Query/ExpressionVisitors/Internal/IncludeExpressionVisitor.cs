@@ -564,8 +564,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 targetSelectExpression.AddToOrderBy(new Ordering(newExpression, ordering.OrderingDirection));
             }
 
-            if ((innerJoinSelectExpression.Limit == null)
-                && (innerJoinSelectExpression.Offset == null))
+            if (innerJoinSelectExpression.Limit == null
+                && innerJoinSelectExpression.Offset == null)
             {
                 innerJoinSelectExpression.ClearOrderBy();
             }

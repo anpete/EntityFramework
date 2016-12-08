@@ -4,6 +4,7 @@
 using Microsoft.EntityFrameworkCore.Specification.Tests;
 using Microsoft.EntityFrameworkCore.Specification.Tests.TestModels.Inheritance;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.EntityFrameworkCore.InMemory.FunctionalTests
 {
@@ -11,10 +12,13 @@ namespace Microsoft.EntityFrameworkCore.InMemory.FunctionalTests
     {
         private readonly DbContextOptionsBuilder _optionsBuilder = new DbContextOptionsBuilder();
 
+        private readonly TestLoggerFactory _testLoggerFactory = new TestLoggerFactory();
+
         public InheritanceInMemoryFixture()
         {
             var serviceProvider = new ServiceCollection()
                 .AddEntityFrameworkInMemoryDatabase()
+                .AddSingleton<ILoggerFactory>(_testLoggerFactory)
                 .AddSingleton(TestInMemoryModelSource.GetFactory(OnModelCreating))
                 .BuildServiceProvider();
 
@@ -26,7 +30,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.FunctionalTests
             }
         }
 
-        public override InheritanceContext CreateContext()
+        public sealed override InheritanceContext CreateContext()
             => new InheritanceContext(_optionsBuilder.Options);
     }
 }

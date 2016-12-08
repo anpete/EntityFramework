@@ -6,12 +6,17 @@ using Xunit.Abstractions;
 
 namespace Microsoft.EntityFrameworkCore.InMemory.FunctionalTests
 {
-    public class FiltersInMemoryTest : FiltersTestBase<NorthwindFiltersQueryInMemoryFixture>
+    public class FiltersInheritanceInMemoryTest : FiltersInheritanceTestBase<FiltersInheritanceInMemoryFixture>
     {
-        public FiltersInMemoryTest(NorthwindFiltersQueryInMemoryFixture fixture, ITestOutputHelper testOutputHelper)
+        public FiltersInheritanceInMemoryTest(FiltersInheritanceInMemoryFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
             TestLoggerFactory.TestOutputHelper = testOutputHelper;
+        }
+
+        public override void Count_query_root_class()
+        {
+            base.Count_query_root_class();
         }
     }
 }

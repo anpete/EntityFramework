@@ -52,6 +52,7 @@
     <Compile Include="DefaultValuesTest.cs" />
     <Compile Include="F1SqliteFixture.cs" />
     <Compile Include="FieldMappingSqliteTest.cs" />
+    <Compile Include="FiltersSqliteTest.cs" />
     <Compile Include="FindSqliteTest.cs" />
     <Compile Include="FromSqlQuerySqliteTest.cs" />
     <Compile Include="FunkyDataQuerySqliteFixture.cs" />
@@ -73,6 +74,7 @@
     <Compile Include="MigrationsSqliteFixture.cs" />
     <Compile Include="MigrationsSqliteTest.cs" />
     <Compile Include="MonsterFixupSqliteTest.cs" />
+    <Compile Include="NorthwindFiltersQuerySqliteFixture.cs" />
     <Compile Include="NorthwindQuerySqliteFixture.cs" />
     <Compile Include="NotificationEntitiesSqliteTest.cs" />
     <Compile Include="NullKeysSqliteTest.cs" />

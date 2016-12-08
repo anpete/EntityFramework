@@ -13,6 +13,7 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
             modelBuilder.Entity<Eagle>();
             modelBuilder.Entity<Bird>();
             modelBuilder.Entity<Animal>().HasKey(e => e.Species);
+            modelBuilder.Entity<Cat>();
             modelBuilder.Entity<Rose>();
             modelBuilder.Entity<Daisy>();
             modelBuilder.Entity<Flower>();
@@ -77,6 +78,10 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
                 new Tea { HasMilk = true, CaffeineGrams = 1 },
                 new Lilt { SugarGrams = 4, Carbination = 7 },
                 new Coke { SugarGrams = 6, CaffeineGrams = 4, Carbination = 5 });
+
+            var cat = new Cat { Color = "Black" };
+
+            context.Set<Animal>().Add(cat);
 
             context.SaveChanges();
         }

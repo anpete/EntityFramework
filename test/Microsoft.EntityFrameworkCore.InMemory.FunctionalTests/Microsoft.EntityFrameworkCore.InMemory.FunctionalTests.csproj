@@ -67,12 +67,15 @@
     <Compile Include="DatabindingInMemoryTest.cs" />
     <Compile Include="F1InMemoryFixture.cs" />
     <Compile Include="FieldMappingInMemoryTest.cs" />
+    <Compile Include="FiltersInheritanceInMemoryTest.cs" />
     <Compile Include="FindInMemoryTest.cs" />
     <Compile Include="LoadInMemoryTest.cs" />
+    <Compile Include="FiltersInheritanceInMemoryFixture.cs" />
     <Compile Include="NorthwindFiltersQueryInMemoryFixture.cs" />
     <Compile Include="PropertyValuesInMemoryTest.cs" />
     <Compile Include="FiltersInMemoryTest.cs" />
     <Compile Include="StoreGeneratedFixupInMemoryTest.cs" />
+    <Compile Include="TestLoggerFactory.cs" />
     <Compile Include="WarningsTest.cs" />
     <Compile Include="EndToEndTest.cs" />
     <Compile Include="GearsOfWarQueryInMemoryFixture.cs" />
