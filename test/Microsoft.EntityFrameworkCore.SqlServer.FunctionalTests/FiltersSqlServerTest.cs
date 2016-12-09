@@ -41,6 +41,16 @@ WHERE [c].[CompanyName] LIKE N'B' + N'%' AND (CHARINDEX(N'B', [c].[CompanyName])
                 Sql);
         }
 
+        public override void Materialized_query_parameter()
+        {
+            base.Materialized_query_parameter();
+        }
+
+        public override void Projection_query_parameter()
+        {
+            base.Projection_query_parameter();
+        }
+
         public override void Projection_query()
         {
             base.Projection_query();

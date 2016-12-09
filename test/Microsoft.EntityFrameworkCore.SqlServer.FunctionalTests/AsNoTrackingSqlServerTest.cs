@@ -13,10 +13,5 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         {
             TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
-
-        public override void Test()
-        {
-            base.Test();
-        }
     }
 }

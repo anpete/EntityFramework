@@ -68,17 +68,6 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
         }
 
         [ConditionalFact]
-        public virtual void Test()
-        {
-            using (var context = CreateContext())
-            {
-                var customers = context.Set<Customer>().AsNoTracking().FirstOrDefault();
-
-               
-            }
-        }
-
-        [ConditionalFact]
         public virtual void Applied_to_body_clause()
         {
             using (var context = CreateContext())

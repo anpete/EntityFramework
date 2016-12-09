@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
 using Microsoft.EntityFrameworkCore.Query.ResultOperators.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -44,6 +45,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         private readonly ICompiledQueryCacheKeyGenerator _compiledQueryCacheKeyGenerator;
         private readonly IDatabase _database;
         private readonly ISensitiveDataLogger _logger;
+        [NotNull]
+        private readonly IModel _model;
         private readonly MethodInfoBasedNodeTypeRegistry _methodInfoBasedNodeTypeRegistry;
         private readonly Type _contextType;
 
@@ -59,6 +62,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             [NotNull] ICompiledQueryCacheKeyGenerator compiledQueryCacheKeyGenerator,
             [NotNull] IDatabase database,
             [NotNull] ISensitiveDataLogger<QueryCompiler> logger,
+            [NotNull] IModel model,
             [NotNull] MethodInfoBasedNodeTypeRegistry methodInfoBasedNodeTypeRegistry,
             [NotNull] ICurrentDbContext currentContext)
         {
@@ -67,6 +71,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             Check.NotNull(compiledQueryCacheKeyGenerator, nameof(compiledQueryCacheKeyGenerator));
             Check.NotNull(database, nameof(database));
             Check.NotNull(logger, nameof(logger));
+            Check.NotNull(model, nameof(model));
             Check.NotNull(currentContext, nameof(currentContext));
 
             _queryContextFactory = queryContextFactory;
@@ -74,6 +79,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             _compiledQueryCacheKeyGenerator = compiledQueryCacheKeyGenerator;
             _database = database;
             _logger = logger;
+            _model = model;
             _methodInfoBasedNodeTypeRegistry = methodInfoBasedNodeTypeRegistry;
             _contextType = currentContext.Context.GetType();
         }
@@ -304,6 +310,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     queryContext,
                     _evaluatableExpressionFilter,
                     _logger,
+                    _model,
                     parameterize);
         }
 

@@ -45,19 +45,6 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
             }
         }
 
-        [ConditionalFact]
-        public void Test()
-        {
-            using (var context = CreateContext())
-            {
-                var results
-                    = (from e in context.Set<Employee>()
-                       from c in context.Set<Customer>()
-                       select new { c, e }).ToList();
-                ;
-            }
-        }
-
         public override void Project_to_object_array()
         {
             base.Project_to_object_array();

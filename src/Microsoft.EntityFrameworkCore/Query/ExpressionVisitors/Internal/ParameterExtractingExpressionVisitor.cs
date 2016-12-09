@@ -5,9 +5,11 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using Remotion.Linq.Parsing.ExpressionVisitors.TreeEvaluation;
 
@@ -30,13 +32,15 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             [NotNull] QueryContext queryContext,
             [NotNull] IEvaluatableExpressionFilter evaluatableExpressionFilter,
             [NotNull] ISensitiveDataLogger logger,
+            [NotNull] IModel model,
             bool parameterize)
         {
-            var visitor 
+            var visitor
                 = new ParameterExtractingExpressionVisitor(
                     evaluatableExpressionFilter, 
                     queryContext, 
                     logger,
+                    model,
                     parameterize);
 
             return visitor.ExtractParameters(expression);
@@ -45,6 +49,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         private readonly IEvaluatableExpressionFilter _evaluatableExpressionFilter;
         private readonly QueryContext _queryContext;
         private readonly ISensitiveDataLogger _logger;
+        private readonly IModel _model;
         private readonly bool _parameterize;
 
         private PartialEvaluationInfo _partialEvaluationInfo;
@@ -55,11 +60,13 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             IEvaluatableExpressionFilter evaluatableExpressionFilter,
             QueryContext queryContext,
             ISensitiveDataLogger logger,
+            IModel model,
             bool parameterize)
         {
             _evaluatableExpressionFilter = evaluatableExpressionFilter;
             _queryContext = queryContext;
             _logger = logger;
+            _model = model;
             _parameterize = parameterize;
         }
 
@@ -198,6 +205,13 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
             if (detachableContext != null)
             {
+                var entityType = _model.FindEntityType(((IQueryable)detachableContext).ElementType);
+
+                if (entityType.Filter != null)
+                {
+                    LazyInitializer.EnsureInitialized(ref entityType.)
+                }
+
                 return Expression.Constant(detachableContext.DetachContext());
             }
 
