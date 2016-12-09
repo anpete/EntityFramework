@@ -11,7 +11,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.FunctionalTests
         public FiltersInMemoryTest(NorthwindFiltersQueryInMemoryFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            TestLoggerFactory.TestOutputHelper = testOutputHelper;
+            //TestLoggerFactory.TestOutputHelper = testOutputHelper;
         }
     }
 }

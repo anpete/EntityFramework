@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore.Specification.Tests.TestModels.Northwind;
 using Microsoft.EntityFrameworkCore.Specification.Tests.TestUtilities.Xunit;
 using Xunit;
+// ReSharper disable StaticMemberInGenericType
 
 // ReSharper disable ConvertToExpressionBodyWhenPossible
 // ReSharper disable ConvertMethodToExpressionBody
@@ -29,9 +30,29 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
         }
 
         [ConditionalFact]
+        public virtual void Materialized_query_parameter()
+        {
+            _companyPrefix = "F";
+
+            Assert.Equal(8, _context.Customers.ToList().Count);
+
+            _companyPrefix = "B";
+        }
+
+        [ConditionalFact]
         public virtual void Projection_query()
         {
             Assert.Equal(7, _context.Customers.Select(c => c.CustomerID).ToList().Count);
+        }
+
+        [ConditionalFact]
+        public virtual void Projection_query_parameter()
+        {
+            _companyPrefix = "F";
+
+            Assert.Equal(8, _context.Customers.Select(c => c.CustomerID).ToList().Count);
+
+            _companyPrefix = "B";
         }
 
         [ConditionalFact]
@@ -72,9 +93,11 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
             Assert.True(results.All(p => !p.OrderDetails.Any() || p.OrderDetails.All(od => od.Quantity > 100)));
         }
 
+        private static string _companyPrefix = "B";
+
         public static void ConfigureModel(ModelBuilder modelBuilder)
         {
-            Expression<Func<Customer, bool>> customerFilter = c => c.CompanyName.StartsWith("B");
+            Expression<Func<Customer, bool>> customerFilter = c => c.CompanyName.StartsWith(_companyPrefix);
 
             modelBuilder.Entity<Customer>().Metadata.Filter = customerFilter;
 

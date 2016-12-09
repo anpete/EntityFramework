@@ -26,7 +26,7 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
         [ConditionalFact]
         public virtual void Count_query_root_class()
         {
-            Assert.Equal(0, _context.Set<Bird>().Select(a => a.Name).ToList().Count);
+            Assert.Equal(2, _context.Set<Animal>().Select(a => a.Name).ToList().Count);
         }
 
         public static void ConfigureModel(ModelBuilder modelBuilder)
