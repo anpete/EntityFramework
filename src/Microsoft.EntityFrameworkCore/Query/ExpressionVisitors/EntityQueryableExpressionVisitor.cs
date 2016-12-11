@@ -2,9 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
 using Microsoft.EntityFrameworkCore.Query.Internal;
@@ -32,10 +30,22 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
         /// <param name="constantExpression"> The node being visited. </param>
         /// <returns> An expression to use in place of the node. </returns>
         protected override Expression VisitConstant(ConstantExpression constantExpression)
-            => constantExpression.Type.GetTypeInfo().IsGenericType
-               && constantExpression.Type.GetGenericTypeDefinition() == typeof(EntityQueryable<>)
-                ? VisitEntityQueryable(((IQueryable)constantExpression.Value).ElementType)
-                : constantExpression;
+        {
+            var entityQuery = constantExpression.Value as IEntityQuery;
+
+            if (entityQuery != null)
+            {
+                if (entityQuery.Filter != null)
+                {
+                    QueryModelVisitor.QueryCompilationContext
+                        .RegisterFilter(entityQuery.ElementType, entityQuery.Filter);
+                }
+
+                return VisitEntityQueryable(entityQuery.ElementType);
+            }
+
+            return constantExpression;
+        }
 
         /// <summary>
         ///     Visits entity type roots.

@@ -256,22 +256,24 @@ namespace Microsoft.EntityFrameworkCore.Query
                 removeQuery = true;
             }
 
-            var filter
+            var filter = QueryCompilationContext.GetFilter(entityType.ClrType);
+
+            var boundFilter
                 = ReplacingExpressionVisitor
                     .Replace(
-                        entityType.Filter.Parameters.Single(),
+                        filter.Parameters.Single(),
                         new QuerySourceReferenceExpression(querySource),
-                        entityType.Filter.Body);
+                        filter.Body);
 
             var predicate
                 = _sqlTranslatingExpressionVisitorFactory
                     .Create(this)
-                    .Visit(filter);
+                    .Visit(boundFilter);
 
             if (predicate == null)
             {
                 throw new InvalidOperationException(
-                    CoreStrings.UnboundEntityFilter(entityType.Filter, entityType.DisplayName()));
+                    CoreStrings.UnboundEntityFilter(filter, entityType.DisplayName()));
             }
 
             if (removeQuery)

@@ -17,7 +17,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
     ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
     ///     directly from your code. This API may change or be removed in future releases.
     /// </summary>
-    public class EntityQueryable<TResult> : QueryableBase<TResult>, IAsyncEnumerable<TResult>, IDetachableContext
+    public class EntityQueryable<TResult> : QueryableBase<TResult>, IAsyncEnumerable<TResult>, IEntityQuery
     {
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -42,8 +42,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         IAsyncEnumerator<TResult> IAsyncEnumerable<TResult>.GetEnumerator()
             => ((IAsyncQueryProvider)Provider).ExecuteAsync<TResult>(Expression).GetEnumerator();
 
-        IDetachableContext IDetachableContext.DetachContext()
-            => new EntityQueryable<TResult>(_nullAsyncQueryProvider);
+        IEntityQuery IEntityQuery.DetachContext(LambdaExpression filter)
+            => new EntityQueryable<TResult>(_nullAsyncQueryProvider) { _filter = filter };
+
+        private LambdaExpression _filter;
+
+        LambdaExpression IEntityQuery.Filter => _filter;
 
         private static readonly IAsyncQueryProvider _nullAsyncQueryProvider = new NullAsyncQueryProvider();
 

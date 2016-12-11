@@ -5,7 +5,6 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Threading;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -37,8 +36,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         {
             var visitor
                 = new ParameterExtractingExpressionVisitor(
-                    evaluatableExpressionFilter, 
-                    queryContext, 
+                    evaluatableExpressionFilter,
+                    queryContext,
                     logger,
                     model,
                     parameterize);
@@ -201,18 +200,17 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         /// </summary>
         protected override Expression VisitConstant(ConstantExpression constantExpression)
         {
-            var detachableContext = constantExpression.Value as IDetachableContext;
+            var detachableContext = constantExpression.Value as IEntityQuery;
 
             if (detachableContext != null)
             {
                 var entityType = _model.FindEntityType(((IQueryable)detachableContext).ElementType);
 
-                if (entityType.Filter != null)
-                {
-                    LazyInitializer.EnsureInitialized(ref entityType.)
-                }
-
-                return Expression.Constant(detachableContext.DetachContext());
+                return Expression.Constant(
+                    detachableContext.DetachContext(
+                        (LambdaExpression)(entityType.Filter != null
+                            ? ExtractParameters(entityType.Filter)
+                            : null)));
             }
 
             return !_inLambda

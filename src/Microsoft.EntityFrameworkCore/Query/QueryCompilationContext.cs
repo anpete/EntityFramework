@@ -34,6 +34,7 @@ namespace Microsoft.EntityFrameworkCore.Query
         private IReadOnlyCollection<IQueryAnnotation> _queryAnnotations;
         private IDictionary<IQuerySource, List<IReadOnlyList<INavigation>>> _trackableIncludes;
         private ISet<IQuerySource> _querySourcesRequiringMaterialization;
+        private IDictionary<Type, LambdaExpression> _filters;
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -280,7 +281,7 @@ namespace Microsoft.EntityFrameworkCore.Query
         ///     The new query model visitor.
         /// </returns>
         public virtual EntityQueryModelVisitor CreateQueryModelVisitor(
-            [CanBeNull] EntityQueryModelVisitor parentEntityQueryModelVisitor)
+                [CanBeNull] EntityQueryModelVisitor parentEntityQueryModelVisitor)
             => _entityQueryModelVisitorFactory.Create(this, parentEntityQueryModelVisitor);
 
         /// <summary>
@@ -394,6 +395,36 @@ namespace Microsoft.EntityFrameworkCore.Query
             Check.NotNull(querySource, nameof(querySource));
 
             return _querySourcesRequiringMaterialization.Contains(querySource);
+        }
+
+        /// <summary>
+        ///     TODO
+        /// </summary>
+        /// <param name="entityType"></param>
+        /// <param name="filter"></param>
+        public virtual void RegisterFilter([NotNull] Type entityType, [NotNull] LambdaExpression filter)
+        {
+            Check.NotNull(entityType, nameof(entityType));
+            Check.NotNull(filter, nameof(filter));
+
+            if (_filters == null)
+            {
+                _filters = new Dictionary<Type, LambdaExpression>();
+            }
+
+            _filters[entityType] = filter;
+        }
+
+        /// <summary>
+        ///     TODO
+        /// </summary>
+        /// <param name="entityType"></param>
+        /// <returns></returns>
+        public virtual LambdaExpression GetFilter([NotNull] Type entityType)
+        {
+            Check.NotNull(entityType, nameof(entityType));
+
+            return _filters[entityType];
         }
     }
 }

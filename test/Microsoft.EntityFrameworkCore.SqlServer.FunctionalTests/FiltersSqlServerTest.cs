@@ -16,7 +16,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public FiltersSqlServerTest(NorthwindFiltersQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
 
         public override void Count_query()
@@ -24,9 +24,11 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
             base.Count_query();
 
             Assert.Equal(
-                @"SELECT COUNT(*)
+                @"@___companyPrefix_0: B (Size = 4000)
+
+SELECT COUNT(*)
 FROM [Customers] AS [c]
-WHERE [c].[CompanyName] LIKE N'B' + N'%' AND (CHARINDEX(N'B', [c].[CompanyName]) = 1)",
+WHERE ([c].[CompanyName] LIKE @___companyPrefix_0 + N'%' AND (CHARINDEX(@___companyPrefix_0, [c].[CompanyName]) = 1)) OR (@___companyPrefix_0 = N'')",
                 Sql);
         }
 
@@ -35,20 +37,38 @@ WHERE [c].[CompanyName] LIKE N'B' + N'%' AND (CHARINDEX(N'B', [c].[CompanyName])
             base.Materialized_query();
 
             Assert.Equal(
-                @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
+                @"@___companyPrefix_0: B (Size = 4000)
+
+SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE [c].[CompanyName] LIKE N'B' + N'%' AND (CHARINDEX(N'B', [c].[CompanyName]) = 1)",
+WHERE ([c].[CompanyName] LIKE @___companyPrefix_0 + N'%' AND (CHARINDEX(@___companyPrefix_0, [c].[CompanyName]) = 1)) OR (@___companyPrefix_0 = N'')",
                 Sql);
         }
 
         public override void Materialized_query_parameter()
         {
             base.Materialized_query_parameter();
+
+            Assert.Equal(
+                @"@___companyPrefix_0: F (Size = 4000)
+
+SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
+FROM [Customers] AS [c]
+WHERE ([c].[CompanyName] LIKE @___companyPrefix_0 + N'%' AND (CHARINDEX(@___companyPrefix_0, [c].[CompanyName]) = 1)) OR (@___companyPrefix_0 = N'')",
+                Sql);
         }
 
         public override void Projection_query_parameter()
         {
             base.Projection_query_parameter();
+
+            Assert.Equal(
+                @"@___companyPrefix_0: F (Size = 4000)
+
+SELECT [c].[CustomerID]
+FROM [Customers] AS [c]
+WHERE ([c].[CompanyName] LIKE @___companyPrefix_0 + N'%' AND (CHARINDEX(@___companyPrefix_0, [c].[CompanyName]) = 1)) OR (@___companyPrefix_0 = N'')",
+                Sql);
         }
 
         public override void Projection_query()
@@ -56,9 +76,11 @@ WHERE [c].[CompanyName] LIKE N'B' + N'%' AND (CHARINDEX(N'B', [c].[CompanyName])
             base.Projection_query();
 
             Assert.Equal(
-                @"SELECT [c].[CustomerID]
+                @"@___companyPrefix_0: B (Size = 4000)
+
+SELECT [c].[CustomerID]
 FROM [Customers] AS [c]
-WHERE [c].[CompanyName] LIKE N'B' + N'%' AND (CHARINDEX(N'B', [c].[CompanyName]) = 1)",
+WHERE ([c].[CompanyName] LIKE @___companyPrefix_0 + N'%' AND (CHARINDEX(@___companyPrefix_0, [c].[CompanyName]) = 1)) OR (@___companyPrefix_0 = N'')",
                 Sql);
         }
 
@@ -67,17 +89,21 @@ WHERE [c].[CompanyName] LIKE N'B' + N'%' AND (CHARINDEX(N'B', [c].[CompanyName])
             base.Include_query();
 
             Assert.Equal(
-                @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
+                @"@___companyPrefix_0: B (Size = 4000)
+
+SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE [c].[CompanyName] LIKE N'B' + N'%' AND (CHARINDEX(N'B', [c].[CompanyName]) = 1)
+WHERE ([c].[CompanyName] LIKE @___companyPrefix_0 + N'%' AND (CHARINDEX(@___companyPrefix_0, [c].[CompanyName]) = 1)) OR (@___companyPrefix_0 = N'')
 ORDER BY [c].[CustomerID]
+
+@___companyPrefix_0: B (Size = 4000)
 
 SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
 FROM [Orders] AS [o]
 WHERE EXISTS (
     SELECT 1
     FROM [Customers] AS [c]
-    WHERE ([c].[CompanyName] LIKE N'B' + N'%' AND (CHARINDEX(N'B', [c].[CompanyName]) = 1)) AND ([o].[CustomerID] = [c].[CustomerID]))
+    WHERE (([c].[CompanyName] LIKE @___companyPrefix_0 + N'%' AND (CHARINDEX(@___companyPrefix_0, [c].[CompanyName]) = 1)) OR (@___companyPrefix_0 = N'')) AND ([o].[CustomerID] = [c].[CustomerID]))
 ORDER BY [o].[CustomerID]",
                 Sql);
         }
@@ -127,11 +153,13 @@ ORDER BY [o].[ProductID]",
             }
 
             Assert.Equal(
-                @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
+                @"@___companyPrefix_0: B (Size = 4000)
+
+SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM (
     select * from Customers
 ) AS [c]
-WHERE [c].[CompanyName] LIKE N'B' + N'%' AND (CHARINDEX(N'B', [c].[CompanyName]) = 1)",
+WHERE ([c].[CompanyName] LIKE @___companyPrefix_0 + N'%' AND (CHARINDEX(@___companyPrefix_0, [c].[CompanyName]) = 1)) OR (@___companyPrefix_0 = N'')",
                 Sql);
         }
 
