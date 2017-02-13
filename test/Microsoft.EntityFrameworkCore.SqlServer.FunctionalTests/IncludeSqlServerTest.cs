@@ -2,7 +2,9 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Linq;
 using Microsoft.EntityFrameworkCore.Specification.Tests;
+using Microsoft.EntityFrameworkCore.Specification.Tests.TestModels.Northwind;
 using Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests.Utilities;
 using Xunit;
 using Xunit.Abstractions;
@@ -16,7 +18,24 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public IncludeSqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+        }
+
+        [Fact]
+        public void Include_collection_on_inner_group_join_clause_with_filter()
+        {
+//            using (var context = CreateContext())
+//            {
+//                var customers
+//                    = (from c in context.Set<Customer>()
+//                       join o in context.Set<Order>()
+//                            on c.CustomerID equals o.CustomerID into g
+//                       where c.CustomerID == "ALFKI"
+//                       select new { c, As = g.Select(o => o.Customer) })
+//                    .ToList();
+//            }
+
+            base.Include_collection_on_inner_group_join_clause_with_filter(false);
         }
 
         public override void Include_list(bool useString)

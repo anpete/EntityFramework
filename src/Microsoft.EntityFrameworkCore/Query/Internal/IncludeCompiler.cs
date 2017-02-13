@@ -95,7 +95,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             foreach (var includeGrouping in includeGroupings)
             {
-                var entityParameter = Expression.Parameter(includeGrouping.Key.Type, name: "entity");
+                var targetEntityType = includeGrouping.First().NavigationPath[0].DeclaringEntityType;
+                var entityParameter = Expression.Parameter(targetEntityType.ClrType, name: "entity");
 
                 var propertyExpressions = new List<Expression>();
                 var blockExpressions = new List<Expression>();
@@ -107,9 +108,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             _queryBufferParameter,
                             _startTrackingMethodInfo,
                             entityParameter,
-                            Expression.Constant(
-                                _queryCompilationContext.Model
-                                    .FindEntityType(entityParameter.Type))));
+                            Expression.Constant(targetEntityType)));
                 }
 
                 var includedIndex = 0;
@@ -123,12 +122,13 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                     propertyExpressions.AddRange(
                         includeSpecification.NavigationPath
-                            .Select((t, i) =>
-                                includeSpecification.NavigationPath
-                                    .Take(i + 1)
-                                    .Aggregate(
-                                        (Expression)includeSpecification.QuerySourceReferenceExpression,
-                                        EntityQueryModelVisitor.CreatePropertyExpression)));
+                            .Select(
+                                (t, i) =>
+                                    includeSpecification.NavigationPath
+                                        .Take(i + 1)
+                                        .Aggregate(
+                                            (Expression)includeSpecification.QuerySourceReferenceExpression,
+                                            EntityQueryModelVisitor.CreatePropertyExpression)));
 
                     blockExpressions.Add(
                         BuildIncludeExpressions(
@@ -142,11 +142,20 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     includeResultOperators.Remove(includeSpecification.IncludeResultOperator);
                 }
 
+                var includeMethodInfo = _includeMethodInfo;
+
+                var sequenceType = includeGrouping.Key.Type.TryGetSequenceType();
+
+                if (sequenceType == targetEntityType.ClrType)
+                {
+                    includeMethodInfo = _includeGroupMethodInfo;
+                }
+
                 var includeReplacingExpressionVisitor
                     = new IncludeReplacingExpressionVisitor(
                         includeGrouping.Key,
                         Expression.Call(
-                            IncludeMethodInfo.MakeGenericMethod(includeGrouping.Key.Type),
+                            includeMethodInfo.MakeGenericMethod(targetEntityType.ClrType),
                             includeGrouping.Key,
                             Expression.NewArrayInit(
                                 typeof(object),
@@ -184,65 +193,59 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 = _querySourceTracingExpressionVisitorFactory.Create();
 
             return includeResultOperators
-                .Select(includeResultOperator =>
-                    {
-                        var entityType
-                            = _queryCompilationContext.Model
-                                .FindEntityType(includeResultOperator.PathFromQuerySource.Type);
-
-                        var parts = includeResultOperator.NavigationPropertyPaths.ToArray();
-                        var navigationPath = new INavigation[parts.Length];
-
-                        for (var i = 0; i < parts.Length; i++)
+                .Select(
+                    includeResultOperator =>
                         {
-                            navigationPath[i] = entityType.FindNavigation(parts[i]);
+                            var entityType
+                                = _queryCompilationContext.Model
+                                    .FindEntityType(includeResultOperator.PathFromQuerySource.Type);
 
-                            if (navigationPath[i] == null)
+                            var parts = includeResultOperator.NavigationPropertyPaths.ToArray();
+                            var navigationPath = new INavigation[parts.Length];
+
+                            for (var i = 0; i < parts.Length; i++)
                             {
-                                throw new InvalidOperationException(
-                                    CoreStrings.IncludeBadNavigation(parts[i], entityType.DisplayName()));
+                                navigationPath[i] = entityType.FindNavigation(parts[i]);
+
+                                if (navigationPath[i] == null)
+                                {
+                                    throw new InvalidOperationException(
+                                        CoreStrings.IncludeBadNavigation(parts[i], entityType.DisplayName()));
+                                }
+
+                                entityType = navigationPath[i].GetTargetType();
                             }
 
-                            entityType = navigationPath[i].GetTargetType();
-                        }
+                            var querySourceReferenceExpression
+                                = querySourceTracingExpressionVisitor
+                                    .FindResultQuerySourceReferenceExpression(
+                                        queryModel.SelectClause.Selector,
+                                        includeResultOperator.QuerySource);
 
-                        var querySourceReferenceExpression
-                            = querySourceTracingExpressionVisitor
-                                .FindResultQuerySourceReferenceExpression(
-                                    queryModel.SelectClause.Selector,
-                                    includeResultOperator.QuerySource);
+                            if (querySourceReferenceExpression == null)
+                            {
+                                _queryCompilationContext.Logger
+                                    .LogWarning(
+                                        CoreEventId.IncludeIgnoredWarning,
+                                        () => CoreStrings.LogIgnoredInclude(
+                                            $"{includeResultOperator.QuerySource.ItemName}.{navigationPath.Select(n => n.Name).Join(".")}"));
+                            }
 
-                        if (querySourceReferenceExpression == null)
+                            return new IncludeSpecification(
+                                includeResultOperator,
+                                querySourceReferenceExpression,
+                                navigationPath);
+                        })
+                .Where(
+                    a =>
                         {
-                            _queryCompilationContext.Logger
-                                .LogWarning(
-                                    CoreEventId.IncludeIgnoredWarning,
-                                    () => CoreStrings.LogIgnoredInclude(
-                                        $"{includeResultOperator.QuerySource.ItemName}.{navigationPath.Select(n => n.Name).Join(".")}"));
-                        }
+                            if (a.QuerySourceReferenceExpression == null)
+                            {
+                                return false;
+                            }
 
-                        return new IncludeSpecification(
-                            includeResultOperator,
-                            querySourceReferenceExpression,
-                            navigationPath);
-                    })
-                .Where(a =>
-                    {
-                        if (a.QuerySourceReferenceExpression == null)
-                        {
-                            return false;
-                        }
-
-                        var sequenceType = a.QuerySourceReferenceExpression.Type.TryGetSequenceType();
-
-                        if (sequenceType != null
-                            && _queryCompilationContext.Model.FindEntityType(sequenceType) != null)
-                        {
-                            return false;
-                        }
-
-                        return !a.NavigationPath.Any(n => n.IsCollection());
-                    })
+                            return !a.NavigationPath.Any(n => n.IsCollection());
+                        })
                 .ToArray();
         }
 
@@ -375,11 +378,27 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
         /// <summary>
         /// </summary>
-        public static readonly MethodInfo IncludeMethodInfo
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public static bool IsIncludeMethod(MethodInfo method)
+        {
+            if (!method.IsGenericMethod)
+            {
+                return false;
+            }
+
+            var genericMethodDefinition = method.GetGenericMethodDefinition();
+
+            return genericMethodDefinition == _includeMethodInfo
+                   || genericMethodDefinition == _includeGroupMethodInfo;
+        }
+
+        private static readonly MethodInfo _includeMethodInfo
             = typeof(IncludeCompiler).GetTypeInfo()
                 .GetDeclaredMethod(nameof(_Include));
 
         // ReSharper disable once InconsistentNaming
+
         private static TEntity _Include<TEntity>(
             TEntity entity,
             object[] included,
@@ -390,6 +409,27 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             fixup(entity, included, stateManager, queryBuffer);
 
             return entity;
+        }
+
+        private static readonly MethodInfo _includeGroupMethodInfo
+            = typeof(IncludeCompiler).GetTypeInfo()
+                .GetDeclaredMethod(nameof(_IncludeGroup));
+
+        // ReSharper disable once InconsistentNaming
+
+        private static IEnumerable<TEntity> _IncludeGroup<TEntity>(
+            IEnumerable<TEntity> group,
+            object[] included,
+            IStateManager stateManager,
+            IQueryBuffer queryBuffer,
+            Action<TEntity, object[], IStateManager, IQueryBuffer> fixup)
+        {
+            foreach (var entity in group)
+            {
+                fixup(entity, included, stateManager, queryBuffer);
+
+                yield return entity;
+            }
         }
 
         private static readonly MethodInfo _setRelationshipSnapshotValueMethodInfo
