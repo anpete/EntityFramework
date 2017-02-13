@@ -681,10 +681,16 @@ namespace Microsoft.EntityFrameworkCore.Query
 
         private class IncludeRemovingExpressionVisitor : RelinqExpressionVisitor
         {
-            protected override Expression VisitMethodCall(MethodCallExpression methodCallExpression)
-                => IncludeCompiler.IsIncludeMethod(methodCallExpression.Method)
-                    ? methodCallExpression.Arguments[0]
-                    : base.VisitMethodCall(methodCallExpression);
+            protected override Expression VisitMethodCall(MethodCallExpression node)
+            {
+                if (node.Method.IsGenericMethod
+                    && node.Method.GetGenericMethodDefinition() == IncludeCompiler.IncludeMethodInfo)
+                {
+                    return node.Arguments[0];
+                }
+
+                return base.VisitMethodCall(node);
+            }
         }
 
         private bool TrackResults(QueryModel queryModel)

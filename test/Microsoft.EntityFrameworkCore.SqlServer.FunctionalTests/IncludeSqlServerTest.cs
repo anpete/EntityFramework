@@ -24,18 +24,40 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         [Fact]
         public void Include_collection_on_inner_group_join_clause_with_filter()
         {
-//            using (var context = CreateContext())
-//            {
+            using (var context = CreateContext())
+            {
+                //                var customers
+                //                    = (from c in context.Set<Customer>()
+                //                       join o in context.Set<Order>()/*.Include("Customer")*/
+                //                       on c.CustomerID equals o.CustomerID into g
+                //                       where c.CustomerID == "ALFKI"
+                //                       select new { c, As = g.Select(o => o.Customer) })
+                //                    .ToList();
+
 //                var customers
 //                    = (from c in context.Set<Customer>()
-//                       join o in context.Set<Order>()
-//                            on c.CustomerID equals o.CustomerID into g
+//                       join o in context.Set<Order>() /*.Include("Customer")*/
+//                       on c.CustomerID equals o.CustomerID into g
+//
 //                       where c.CustomerID == "ALFKI"
 //                       select new { c, As = g.Select(o => o.Customer) })
 //                    .ToList();
-//            }
 
-            base.Include_collection_on_inner_group_join_clause_with_filter(false);
+                var customers
+                    = (from c in context.Set<Customer>()
+                        join o in context.Set<Order>().Select(o => _Include(o, new object[] { o.Customer }))
+                            on c.CustomerID equals o.CustomerID into g
+                        where c.CustomerID == "ALFKI"
+                        select new { c, g })
+                    .ToList();
+            }
+
+            //base.Include_collection_on_inner_group_join_clause_with_filter(false);
+        }
+
+        private static T _Include<T>(T entity, object[] included)
+        {
+            return entity;
         }
 
         public override void Include_list(bool useString)
