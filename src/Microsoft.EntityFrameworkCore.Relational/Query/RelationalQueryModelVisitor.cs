@@ -1303,24 +1303,31 @@ namespace Microsoft.EntityFrameworkCore.Query
                     var innerShaper = (Shaper)((ConstantExpression)sequenceMethodCallExpression.Arguments[2]).Value;
                     var selector = (LambdaExpression)selectMethodCallExpression.Arguments[1];
 
-                    var newSelector
-                        = Expression.Lambda(
-                            selector.Body,
-                            QueryContextParameter,
-                            selector.Parameters.Single());
+                    // TODO: Loosen this restriction
+                    //                    if (selector.Body.NodeType == ExpressionType.Call
+                    //                        && IncludeCompiler.IsIncludeMethod((MethodCallExpression)selector.Body))
 
-                    var shaperDecorator
-                        = _createCompositeShaperMethodInfo
-                            .MakeGenericMethod(selector.ReturnType, innerShaper.Type)
-                            .Invoke(null, new object[] { innerShaper.QuerySource, innerShaper, newSelector.Compile() });
+                    if (ParentQueryModelVisitor != null)
+                    {
+                        var newSelector
+                            = Expression.Lambda(
+                                selector.Body,
+                                QueryContextParameter,
+                                selector.Parameters.Single());
 
-                    Expression
-                        = Expression.Call(
-                            QueryCompilationContext.QueryMethodProvider.ShapedQueryMethod
-                                .MakeGenericMethod(selector.ReturnType),
-                            sequenceMethodCallExpression.Arguments[0],
-                            sequenceMethodCallExpression.Arguments[1],
-                            Expression.Constant(shaperDecorator));
+                        var shaperDecorator
+                            = _createCompositeShaperMethodInfo
+                                .MakeGenericMethod(selector.ReturnType, innerShaper.Type)
+                                .Invoke(null, new object[] { innerShaper.QuerySource, innerShaper, newSelector.Compile() });
+
+                        Expression
+                            = Expression.Call(
+                                QueryCompilationContext.QueryMethodProvider.ShapedQueryMethod
+                                    .MakeGenericMethod(selector.ReturnType),
+                                sequenceMethodCallExpression.Arguments[0],
+                                sequenceMethodCallExpression.Arguments[1],
+                                Expression.Constant(shaperDecorator));
+                    }
                 }
             }
         }
@@ -1355,13 +1362,8 @@ namespace Microsoft.EntityFrameworkCore.Query
                 => base.IsShaperForQuerySource(querySource)
                     || _innerShaper.IsShaperForQuerySource(querySource);
 
-            public override Expression GetAccessorExpression(IQuerySource querySource)
-            {
-                return Expression
-                        .Default(typeof(Func<,>)
-                            .MakeGenericType(Type, typeof(object)));
-                
-            }
+            public override Expression GetAccessorExpression(IQuerySource querySource) 
+                => Expression.Default(typeof(Func<,>).MakeGenericType(Type, typeof(object)));
 
             public override Type Type => typeof(TResult);
         }
