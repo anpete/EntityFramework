@@ -1281,6 +1281,80 @@ namespace Microsoft.EntityFrameworkCore.Query
         }
 
         /// <summary>
+        ///     Visits <see cref="SelectClause" /> nodes.
+        /// </summary>
+        /// <param name="selectClause"> The node being visited. </param>
+        /// <param name="queryModel"> The query. </param>
+        public override void VisitSelectClause(SelectClause selectClause, QueryModel queryModel)
+        {
+            base.VisitSelectClause(selectClause, queryModel);
+
+            var selectMethodCallExpression = Expression as MethodCallExpression;
+
+            if (selectMethodCallExpression != null
+                && selectMethodCallExpression.Method.MethodIsClosedFormOf(LinqOperatorProvider.Select))
+            {
+                var sequenceMethodCallExpression = selectMethodCallExpression.Arguments[0] as MethodCallExpression;
+
+                if (sequenceMethodCallExpression != null
+                    && sequenceMethodCallExpression.Method
+                        .MethodIsClosedFormOf(QueryCompilationContext.QueryMethodProvider.ShapedQueryMethod))
+                {
+                    var innerShaper = (Shaper)((ConstantExpression)sequenceMethodCallExpression.Arguments[2]).Value;
+                    var selector = (LambdaExpression)selectMethodCallExpression.Arguments[1];
+
+                    var newSelector
+                        = Expression.Lambda(
+                            selector.Body,
+                            QueryContextParameter,
+                            selector.Parameters.Single());
+
+                    var shaperDecorator
+                        = _createCompositeShaperMethodInfo
+                            .MakeGenericMethod(selector.ReturnType, innerShaper.Type)
+                            .Invoke(null, new object[] { innerShaper.QuerySource, innerShaper, newSelector.Compile() });
+
+                    Expression
+                        = Expression.Call(
+                            QueryCompilationContext.QueryMethodProvider.ShapedQueryMethod
+                                .MakeGenericMethod(selector.ReturnType),
+                            sequenceMethodCallExpression.Arguments[0],
+                            sequenceMethodCallExpression.Arguments[1],
+                            Expression.Constant(shaperDecorator));
+                }
+            }
+        }
+
+        private static readonly MethodInfo _createCompositeShaperMethodInfo
+            = typeof(RelationalQueryModelVisitor).GetTypeInfo()
+                .GetDeclaredMethod(nameof(CreateSelectShaperDecorator));
+        
+        [UsedImplicitly]
+        private static SelectShaperDecorator<TResult, TInner> CreateSelectShaperDecorator<TResult, TInner>(
+            IQuerySource querySource,
+        IShaper<TInner> innerShaper, Func<QueryContext, TInner, TResult> selector)
+            => new SelectShaperDecorator<TResult, TInner>(querySource, innerShaper, selector);
+
+        private sealed class SelectShaperDecorator<TResult, TInner> : Shaper, IShaper<TResult>
+        {
+            private readonly IShaper<TInner> _innerShaper;
+            private readonly Func<QueryContext, TInner, TResult> _selector;
+
+            public SelectShaperDecorator(
+                IQuerySource querySource, IShaper<TInner> innerShaper, Func<QueryContext, TInner, TResult> selector)
+                : base(querySource)
+            {
+                _innerShaper = innerShaper;
+                _selector = selector;
+            }
+
+            public TResult Shape(QueryContext queryContext, ValueBuffer valueBuffer)
+                => _selector(queryContext, _innerShaper.Shape(queryContext, valueBuffer));
+
+            public override Type Type => typeof(TResult);
+        }
+
+        /// <summary>
         ///     Visit a result operator.
         /// </summary>
         /// <param name="resultOperator"> The result operator being visited. </param>
