@@ -1351,6 +1351,18 @@ namespace Microsoft.EntityFrameworkCore.Query
             public TResult Shape(QueryContext queryContext, ValueBuffer valueBuffer)
                 => _selector(queryContext, _innerShaper.Shape(queryContext, valueBuffer));
 
+            public override bool IsShaperForQuerySource(IQuerySource querySource) 
+                => base.IsShaperForQuerySource(querySource)
+                    || _innerShaper.IsShaperForQuerySource(querySource);
+
+            public override Expression GetAccessorExpression(IQuerySource querySource)
+            {
+                return Expression
+                        .Default(typeof(Func<,>)
+                            .MakeGenericType(Type, typeof(object)));
+                
+            }
+
             public override Type Type => typeof(TResult);
         }
 
