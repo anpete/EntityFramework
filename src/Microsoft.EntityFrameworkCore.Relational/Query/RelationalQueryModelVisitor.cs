@@ -728,6 +728,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                         var joinExpression = !groupJoin
                             ? previousSelectExpression.AddInnerJoin(tableExpression, projection, selectExpression.Predicate)
                             : previousSelectExpression.AddLeftOuterJoin(tableExpression, projection);
+
                         joinExpression.Predicate = predicate;
 
                         if (groupJoin)
@@ -1327,6 +1328,8 @@ namespace Microsoft.EntityFrameworkCore.Query
                                 sequenceMethodCallExpression.Arguments[0],
                                 sequenceMethodCallExpression.Arguments[1],
                                 Expression.Constant(shaperDecorator));
+
+                        RequiresClientProjection = false;
                     }
                 }
             }

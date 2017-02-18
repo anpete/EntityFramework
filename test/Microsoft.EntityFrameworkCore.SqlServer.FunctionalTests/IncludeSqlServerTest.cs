@@ -16,12 +16,13 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public IncludeSqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
 
-        public override void Include_collection_on_inner_group_join_clause_with_filter(bool useString)
+        [Fact]
+        public void Include_collection_on_inner_group_join_clause_with_filter2()
         {
-            base.Include_collection_on_inner_group_join_clause_with_filter(useString);
+            base.Include_collection_on_inner_group_join_clause_with_filter(false);
 
             Assert.Equal(
                 @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate], [o.Customer].[CustomerID], [o.Customer].[Address], [o.Customer].[City], [o.Customer].[CompanyName], [o.Customer].[ContactName], [o.Customer].[ContactTitle], [o.Customer].[Country], [o.Customer].[Fax], [o.Customer].[Phone], [o.Customer].[PostalCode], [o.Customer].[Region]
