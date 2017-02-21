@@ -1308,8 +1308,8 @@ namespace Microsoft.EntityFrameworkCore.Query
                     //                    if (selector.Body.NodeType == ExpressionType.Call
                     //                        && IncludeCompiler.IsIncludeMethod((MethodCallExpression)selector.Body))
 
-                    if (ParentQueryModelVisitor != null)
-                    {
+//                    if (ParentQueryModelVisitor != null)
+//                    {
                         var newSelector
                             = Expression.Lambda(
                                 selector.Body,
@@ -1330,7 +1330,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                                 Expression.Constant(shaperDecorator));
 
                         RequiresClientProjection = false;
-                    }
+                    //}
                 }
             }
         }

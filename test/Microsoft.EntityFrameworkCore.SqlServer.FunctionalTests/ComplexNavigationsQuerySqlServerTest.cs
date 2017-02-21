@@ -1831,21 +1831,17 @@ ORDER BY [l3].[Level2_Required_Id]",
         {
             base.Order_by_key_of_projected_navigation_doesnt_get_optimized_into_FK_access_subquery();
 
-            Assert.Contains(
-                @"SELECT [l2.OneToOne_Required_FK_Inverse].[Id], [l2.OneToOne_Required_FK_Inverse].[Name]
-FROM [Level1] AS [l2.OneToOne_Required_FK_Inverse]",
-                Sql);
-
-            Assert.Contains(
+            Assert.Equal(
                 @"@__p_0: 10
 
-SELECT [t].[Level1_Required_Id]
+SELECT [l2.OneToOne_Required_FK_Inverse].[Name]
 FROM (
     SELECT TOP(@__p_0) [l3.OneToOne_Required_FK_Inverse0].*
     FROM [Level3] AS [l30]
     INNER JOIN [Level2] AS [l3.OneToOne_Required_FK_Inverse0] ON [l30].[Level2_Required_Id] = [l3.OneToOne_Required_FK_Inverse0].[Id]
     ORDER BY [l3.OneToOne_Required_FK_Inverse0].[Id]
 ) AS [t]
+INNER JOIN [Level1] AS [l2.OneToOne_Required_FK_Inverse] ON [t].[Level1_Required_Id] = [l2.OneToOne_Required_FK_Inverse].[Id]
 ORDER BY [t].[Id]",
                 Sql);
         }
@@ -2426,17 +2422,13 @@ LEFT JOIN [Level2] AS [l2_inner] ON [l1_inner].[Id] = [l2_inner].[Level1_Optiona
             base.GroupJoin_in_subquery_with_client_projection();
 
             Assert.Equal(
-                @"SELECT [l1].[Id], [l1].[Name]
+                @"SELECT [l1].[Name]
 FROM [Level1] AS [l1]
-WHERE [l1].[Id] < 3
-
-SELECT COUNT(*)
-FROM [Level1] AS [l1_inner0]
-LEFT JOIN [Level2] AS [l2_inner1] ON [l1_inner0].[Id] = [l2_inner1].[Level1_Optional_Id]
-
-SELECT COUNT(*)
-FROM [Level1] AS [l1_inner0]
-LEFT JOIN [Level2] AS [l2_inner1] ON [l1_inner0].[Id] = [l2_inner1].[Level1_Optional_Id]",
+WHERE ((
+    SELECT COUNT(*)
+    FROM [Level1] AS [l1_inner]
+    LEFT JOIN [Level2] AS [l2_inner] ON [l1_inner].[Id] = [l2_inner].[Level1_Optional_Id]
+) > 7) AND ([l1].[Id] < 3)",
                 Sql);
         }
 
