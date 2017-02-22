@@ -312,7 +312,8 @@ namespace Microsoft.EntityFrameworkCore.Query
 
             new IncludeCompiler(
                     QueryCompilationContext,
-                    _querySourceTracingExpressionVisitorFactory)
+                    _querySourceTracingExpressionVisitorFactory,
+                    new EntityQueryProvider(new QueryCompiler()))
                 .CompileIncludes(queryModel, includeResultOperators, TrackResults(queryModel));
 
             _navigationRewritingExpressionVisitorFactory

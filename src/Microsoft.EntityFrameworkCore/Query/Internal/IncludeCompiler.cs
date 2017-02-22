@@ -8,6 +8,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Microsoft.EntityFrameworkCore.Extensions.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -51,6 +52,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
         private readonly QueryCompilationContext _queryCompilationContext;
         private readonly IQuerySourceTracingExpressionVisitorFactory _querySourceTracingExpressionVisitorFactory;
+        private readonly IAsyncQueryProvider _asyncQueryProvider;
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -58,10 +60,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         /// </summary>
         public IncludeCompiler(
             [NotNull] QueryCompilationContext queryCompilationContext,
-            [NotNull] IQuerySourceTracingExpressionVisitorFactory querySourceTracingExpressionVisitorFactory)
+            [NotNull] IQuerySourceTracingExpressionVisitorFactory querySourceTracingExpressionVisitorFactory,
+            [NotNull] IAsyncQueryProvider asyncQueryProvider)
         {
             _queryCompilationContext = queryCompilationContext;
             _querySourceTracingExpressionVisitorFactory = querySourceTracingExpressionVisitorFactory;
+            _asyncQueryProvider = asyncQueryProvider;
         }
 
         private struct IncludeSpecification
@@ -144,6 +148,24 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         .LogDebug(
                             CoreEventId.IncludingNavigation,
                             () => CoreStrings.LogIncludingNavigation(includeSpecification.IncludeResultOperator));
+
+                    if (includeSpecification.NavigationPath.Length == 1
+                        && includeSpecification.NavigationPath[0].IsCollection())
+                    {
+                        var mainFromClause
+                            = new MainFromClause(
+                                includeSpecification.NavigationPath[0].Name,
+                                includeSpecification.NavigationPath[0].ClrType,
+                                Expression.Constant(
+                                    _asyncQueryProvider.CreateEntityQueryable(
+                                        _queryCompilationContext.Model.FindEntityType(
+                                            includeSpecification.NavigationPath[0].ClrType))));
+
+                        var innerQuerySourceReferenceExpression = new QuerySourceReferenceExpression(mainFromClause);
+
+                        var collectionQueryModel
+                            = new QueryModel(mainFromClause, new SelectClause(innerQuerySourceReferenceExpression));
+                    }
 
                     propertyExpressions.AddRange(
                         includeSpecification.NavigationPath
@@ -314,7 +336,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                 return false;
                             }
 
-                            return !a.NavigationPath.Any(n => n.IsCollection());
+                            return !a.NavigationPath.Any(n => n.IsCollection())
+                                   || a.NavigationPath.Length == 1;
                         })
                 .ToArray();
         }

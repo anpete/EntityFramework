@@ -20,7 +20,8 @@ namespace Microsoft.EntityFrameworkCore.Extensions.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public static ConstantExpression CreateEntityQueryable([NotNull] this IAsyncQueryProvider entityQueryProvider, [NotNull] IEntityType targetEntityType)
+        public static ConstantExpression CreateEntityQueryable(
+            [NotNull] this IAsyncQueryProvider entityQueryProvider, [NotNull] IEntityType targetEntityType)
         {
             Check.NotNull(entityQueryProvider, nameof(entityQueryProvider));
             Check.NotNull(targetEntityType, nameof(targetEntityType));
