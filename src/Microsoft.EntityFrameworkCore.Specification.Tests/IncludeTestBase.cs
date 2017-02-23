@@ -216,7 +216,7 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
                         ? context.Set<Customer>()
                             .Include("Orders")
                             .ToList()
-                        : context.Set<Customer>()
+                        : context.Set<Customer>().AsNoTracking()
                             .Include(c => c.Orders)
                             .ToList();
 

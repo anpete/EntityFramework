@@ -775,7 +775,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             var mainFromClause
                 = new MainFromClause(
                     "subQuery",
-                    targetEntityType.ClrType, _entityQueryProvider.CreateEntityQueryable(targetEntityType));
+                    targetEntityType.ClrType, _entityQueryProvider.CreateEntityQueryableExpression(targetEntityType.ClrType));
 
             var querySourceReference = new QuerySourceReferenceExpression(mainFromClause);
             var subQueryModel = new QueryModel(mainFromClause, new SelectClause(querySourceReference));
@@ -879,7 +879,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
                 if (navigation.IsCollection())
                 {
-                    _queryModel.MainFromClause.FromExpression = _entityQueryProvider.CreateEntityQueryable(targetEntityType);
+                    _queryModel.MainFromClause.FromExpression 
+                        = _entityQueryProvider.CreateEntityQueryableExpression(targetEntityType.ClrType);
 
                     var innerQuerySourceReferenceExpression
                         = new QuerySourceReferenceExpression(_queryModel.MainFromClause);
@@ -1168,7 +1169,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 = new JoinClause(
                     $"{querySourceReferenceExpression.ReferencedQuerySource.ItemName}.{navigation.Name}", // Interpolation okay; strings
                     targetEntityType.ClrType,
-                    _entityQueryProvider.CreateEntityQueryable(targetEntityType),
+                    _entityQueryProvider.CreateEntityQueryableExpression(targetEntityType.ClrType),
                     outerKeySelector,
                     Expression.Constant(null));
 

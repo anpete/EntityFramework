@@ -265,7 +265,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             var newMainFromClause = new MainFromClause(
                                 oldQuerySource.ItemName,
                                 entityType.ClrType,
-                                entityQueryProvider.CreateEntityQueryable(entityType));
+                                entityQueryProvider.CreateEntityQueryableExpression(entityType.ClrType));
                             queryModel.MainFromClause = newMainFromClause;
 
                             UpdateQuerySourceMapping(queryModel,

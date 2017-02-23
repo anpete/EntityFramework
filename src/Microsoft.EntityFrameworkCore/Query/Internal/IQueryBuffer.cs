@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,6 +49,16 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         void StartTracking(
             [NotNull] object entity,
             [NotNull] IEntityType entityType);
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        void IncludeCollection(
+            int includeId,
+            INavigation navigation,
+            [NotNull] object instance,
+            [NotNull] Func<IEnumerable<object>> valuesFactory);
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used

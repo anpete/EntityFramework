@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Linq;
 using Microsoft.EntityFrameworkCore.Specification.Tests;
 using Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests.Utilities;
 using Xunit;
@@ -16,7 +17,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public IncludeSqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
 
         public override void Include_list(bool useString)
@@ -39,9 +40,15 @@ ORDER BY [o].[ProductID]",
                 Sql);
         }
 
-        public override void Include_collection(bool useString)
+        [Fact]
+        public void Include_collection2()
         {
-            base.Include_collection(useString);
+//            using (var context = CreateContext())
+//            {
+//                var orders = context.Orders.Where(o => context.Customers.Any(c => c.CustomerID == o.CustomerID)).ToList();    
+//            }
+
+            base.Include_collection(false);
 
             Assert.Equal(
                 @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]

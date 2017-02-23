@@ -25,6 +25,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
         private QueryModel _queryModel;
         private Expression _selector;
+        private bool _inInclude;
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -113,7 +114,13 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         /// </summary>
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
+            var oldInInclude = _inInclude;
+
+            _inInclude = true;
+
             var newExpression = base.VisitMethodCall(node);
+
+            _inInclude = oldInInclude;
 
             _queryModelVisitor
                 .BindMethodCallExpression(
@@ -139,7 +146,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
             var leftSubQueryExpression = node.Left as SubQueryExpression;
 
-            if ((leftSubQueryExpression != null)
+            if (leftSubQueryExpression != null
                 && (_model.FindEntityType(leftSubQueryExpression.Type) != null))
             {
                 _selector = leftSubQueryExpression.QueryModel.SelectClause.Selector;
@@ -213,7 +220,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                             _selector,
                             querySourceReferenceExpression.ReferencedQuerySource);
 
-                if ((resultQuerySource == null)
+                if ((resultQuerySource == null && !_inInclude)
                     && !(expression.QueryModel.ResultOperators.LastOrDefault() is OfTypeResultOperator))
                 {
                     _querySources[querySourceReferenceExpression.ReferencedQuerySource]--;

@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -32,6 +33,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         private readonly ConditionalWeakTable<object, object> _valueBuffers
             = new ConditionalWeakTable<object, object>();
 
+        private readonly Dictionary<int, IEnumerable<object>> _includedCollections 
+            = new Dictionary<int, IEnumerable<object>>();
+
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
@@ -42,6 +46,65 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         {
             _stateManager = stateManager;
             _changeDetector = changeDetector;
+        }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual void IncludeCollection(
+            int includeId,
+            INavigation navigation,
+            object entity,
+            Func<IEnumerable<object>> relatedEntitiesFactory)
+        {
+            if (!_includedCollections.TryGetValue(includeId, out IEnumerable<object> includedCollection))
+            {
+                var enumerator = relatedEntitiesFactory().GetEnumerator();
+
+
+
+                //_includedCollections.Add(includeId, enumerable);
+            }
+
+            // TODO: This should be done at compile time and not require a VB unless there are shadow props
+            var keyComparer = CreateIncludeKeyComparer(entity, navigation);
+
+            //keyComparer.ShouldInclude()
+
+
+
+            //            if (!_initialized)
+            //            {
+            //                _hasRemainingRows = _relatedValuesEnumerator.MoveNext();
+            //                _initialized = true;
+            //            }
+            //
+            //            while (_hasRemainingRows
+            //                   && keyComparer.ShouldInclude(_relatedValuesEnumerator.Current))
+            //            {
+            //                yield return _relatedValuesEnumerator.Current;
+            //
+            //                _hasRemainingRows = _relatedValuesEnumerator.MoveNext();
+            //            }
+        }
+
+        private IIncludeKeyComparer CreateIncludeKeyComparer(
+            object entity,
+            INavigation navigation)
+        {
+            var identityMap = GetOrCreateIdentityMap(navigation.ForeignKey.PrincipalKey);
+
+            if (!_valueBuffers.TryGetValue(entity, out object boxedValueBuffer))
+            {
+                var entry = _stateManager.Value.TryGetEntry(entity);
+
+                Debug.Assert(entry != null);
+
+                return identityMap.CreateIncludeKeyComparer(navigation, entry);
+            }
+
+            return identityMap.CreateIncludeKeyComparer(navigation, (ValueBuffer)boxedValueBuffer);
         }
 
         /// <summary>
@@ -63,16 +126,14 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             var identityMap = GetOrCreateIdentityMap(key);
 
-            bool hasNullKey;
-            var weakReference = identityMap.TryGetEntity(entityLoadInfo.ValueBuffer, throwOnNullKey, out hasNullKey);
+            var weakReference = identityMap.TryGetEntity(entityLoadInfo.ValueBuffer, throwOnNullKey, out bool hasNullKey);
             if (hasNullKey)
             {
                 return null;
             }
 
-            object entity;
             if (weakReference == null
-                || !weakReference.TryGetTarget(out entity))
+                || !weakReference.TryGetTarget(out object entity))
             {
                 entity = entityLoadInfo.Materialize();
 
@@ -106,8 +167,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 return entry[property];
             }
 
-            object boxedValueBuffer;
-            var found = _valueBuffers.TryGetValue(entity, out boxedValueBuffer);
+            var found = _valueBuffers.TryGetValue(entity, out object boxedValueBuffer);
 
             Debug.Assert(found);
 
@@ -122,8 +182,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         /// </summary>
         public virtual void StartTracking(object entity, EntityTrackingInfo entityTrackingInfo)
         {
-            object boxedValueBuffer;
-            if (!_valueBuffers.TryGetValue(entity, out boxedValueBuffer))
+            if (!_valueBuffers.TryGetValue(entity, out object boxedValueBuffer))
             {
                 boxedValueBuffer = ValueBuffer.Empty;
             }
@@ -133,31 +192,31 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             foreach (var includedEntity
                 in entityTrackingInfo.GetIncludedEntities(_stateManager.Value, entity)
-                    .Where(includedEntity
-                        => _valueBuffers.TryGetValue(includedEntity.Entity, out boxedValueBuffer)))
+                    .Where(
+                        includedEntity
+                            => _valueBuffers.TryGetValue(includedEntity.Entity, out boxedValueBuffer)))
             {
                 includedEntity.StartTracking(_stateManager.Value, (ValueBuffer)boxedValueBuffer);
             }
         }
-        
+
         /// <summary>
-         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-         ///     directly from your code. This API may change or be removed in future releases.
-         /// </summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
         public virtual void StartTracking(object entity, IEntityType entityType)
         {
-            object boxedValueBuffer;
-            if (!_valueBuffers.TryGetValue(entity, out boxedValueBuffer))
+            if (!_valueBuffers.TryGetValue(entity, out object boxedValueBuffer))
             {
                 boxedValueBuffer = ValueBuffer.Empty;
             }
 
             _stateManager.Value
                 .StartTrackingFromQuery(
-                    entityType, 
-                    entity, 
+                    entityType,
+                    entity,
                     (ValueBuffer)boxedValueBuffer,
-                    handledForeignKeys: null); 
+                    handledForeignKeys: null);
         }
 
         /// <summary>
@@ -202,20 +261,21 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 currentNavigationIndex,
                 relatedEntitiesLoaders[currentNavigationIndex]
                     .Load(queryContext, keyComparer)
-                    .Select(eli =>
-                        {
-                            var targetEntity = GetEntity(key, eli, queryStateManager, throwOnNullKey: false);
+                    .Select(
+                        eli =>
+                            {
+                                var targetEntity = GetEntity(key, eli, queryStateManager, throwOnNullKey: false);
 
-                            Include(
-                                queryContext,
-                                targetEntity,
-                                navigationPath,
-                                relatedEntitiesLoaders,
-                                currentNavigationIndex + 1,
-                                queryStateManager);
+                                Include(
+                                    queryContext,
+                                    targetEntity,
+                                    navigationPath,
+                                    relatedEntitiesLoaders,
+                                    currentNavigationIndex + 1,
+                                    queryStateManager);
 
-                            return targetEntity;
-                        })
+                                return targetEntity;
+                            })
                     .Where(e => e != null)
                     .ToList(),
                 queryStateManager);
@@ -303,8 +363,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         {
             var identityMap = GetOrCreateIdentityMap(navigation.ForeignKey.PrincipalKey);
 
-            object boxedValueBuffer;
-            if (!_valueBuffers.TryGetValue(entity, out boxedValueBuffer))
+            if (!_valueBuffers.TryGetValue(entity, out object boxedValueBuffer))
             {
                 var entry = _stateManager.Value.TryGetEntry(entity);
 
@@ -452,8 +511,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 _identityMaps = new Dictionary<IKey, IWeakReferenceIdentityMap>();
             }
 
-            IWeakReferenceIdentityMap identityMap;
-            if (!_identityMaps.TryGetValue(key, out identityMap))
+            if (!_identityMaps.TryGetValue(key, out IWeakReferenceIdentityMap identityMap))
             {
                 identityMap = key.GetWeakReferenceIdentityMapFactory()();
                 _identityMaps[key] = identityMap;
