@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
 {
@@ -57,6 +58,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         void IncludeCollection(
             int includeId,
             INavigation navigation,
+            [NotNull] IClrCollectionAccessor clrCollectionAccessor,
             [NotNull] object instance,
             [NotNull] Func<IEnumerable<object>> valuesFactory);
 

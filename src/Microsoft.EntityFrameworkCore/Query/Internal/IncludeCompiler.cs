@@ -164,6 +164,19 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         var collectionQueryModel
                             = new QueryModel(mainFromClause, new SelectClause(innerQuerySourceReferenceExpression));
 
+                        var orderByClause = new OrderByClause();
+
+                        foreach (var property in firstNavigation.ForeignKey.Properties)
+                        {
+                           orderByClause.Orderings.Add(
+                               new Ordering(
+                                   EntityQueryModelVisitor.CreatePropertyExpression(
+                                       innerQuerySourceReferenceExpression, property),
+                                   OrderingDirection.Asc));
+                        }
+
+                        collectionQueryModel.BodyClauses.Add(orderByClause);
+
                         propertyExpressions.Add(
                             Expression.Lambda<Func<IEnumerable<object>>>(new SubQueryExpression(collectionQueryModel)));
 
@@ -270,6 +283,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     _includeCollectionMethodInfo,
                     Expression.Constant(0),
                     Expression.Constant(navigation),
+                    Expression.Constant(navigation.GetCollectionAccessor()),
                     targetEntityExpression,
                     relatedCollectionFuncExpression));
 

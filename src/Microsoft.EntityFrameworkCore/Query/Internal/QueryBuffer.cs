@@ -33,8 +33,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         private readonly ConditionalWeakTable<object, object> _valueBuffers
             = new ConditionalWeakTable<object, object>();
 
-        private readonly Dictionary<int, IEnumerable<object>> _includedCollections 
-            = new Dictionary<int, IEnumerable<object>>();
+        private readonly Dictionary<int, IEnumerator<object>> _includedCollections 
+            = new Dictionary<int, IEnumerator<object>>();
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -55,22 +55,44 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         public virtual void IncludeCollection(
             int includeId,
             INavigation navigation,
+            IClrCollectionAccessor clrCollectionAccessor,
             object entity,
             Func<IEnumerable<object>> relatedEntitiesFactory)
         {
-            if (!_includedCollections.TryGetValue(includeId, out IEnumerable<object> includedCollection))
+            if (!_includedCollections.TryGetValue(includeId, out IEnumerator<object> enumerator))
             {
-                var enumerator = relatedEntitiesFactory().GetEnumerator();
+                enumerator = relatedEntitiesFactory().GetEnumerator();
 
+                _includedCollections.Add(includeId, enumerator);
 
+                if (!enumerator.MoveNext())
+                {
+                    enumerator.Dispose();
 
-                //_includedCollections.Add(includeId, enumerable);
+                    return;
+                }
             }
 
             // TODO: This should be done at compile time and not require a VB unless there are shadow props
-            var keyComparer = CreateIncludeKeyComparer(entity, navigation);
+            //var keyComparer = CreateIncludeKeyComparer(entity, navigation);
 
-            //keyComparer.ShouldInclude()
+            //var result = _valueBuffers.TryGetValue(entity, out object boxedValueBuffer);
+
+            //Debug.Assert(result);
+
+            while (true)
+            {
+
+
+                clrCollectionAccessor.Add(entity, enumerator.Current);
+
+                if (!enumerator.MoveNext())
+                {
+                    enumerator.Dispose();
+
+                    return;
+                }
+            }
 
 
 
