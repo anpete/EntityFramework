@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -18,6 +19,7 @@ using Microsoft.EntityFrameworkCore.Query.ResultOperators.Internal;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
+using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
@@ -32,20 +34,16 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             = typeof(object).GetTypeInfo()
                 .GetDeclaredMethod(nameof(ReferenceEquals));
 
-        private static readonly MethodInfo _collectionAddMethodInfo
+        private static readonly MethodInfo _collectionAccessorAddMethodInfo
             = typeof(IClrCollectionAccessor).GetTypeInfo()
                 .GetDeclaredMethod(nameof(IClrCollectionAccessor.Add));
 
-        private static readonly MethodInfo _collectionAddRangeMethodInfo
-            = typeof(IClrCollectionAccessor).GetTypeInfo()
-                .GetDeclaredMethod(nameof(IClrCollectionAccessor.AddRange));
-
-        private static readonly MethodInfo _startTrackingMethodInfo
+        private static readonly MethodInfo _queryBufferStartTrackingMethodInfo
             = typeof(IQueryBuffer).GetTypeInfo()
                 .GetDeclaredMethods(nameof(IQueryBuffer.StartTracking))
                 .Single(mi => mi.GetParameters()[1].ParameterType == typeof(IEntityType));
 
-        private static readonly MethodInfo _includeCollectionMethodInfo
+        private static readonly MethodInfo _queryBufferIncludeCollectionMethodInfo
             = typeof(IQueryBuffer).GetTypeInfo()
                 .GetDeclaredMethod(nameof(IQueryBuffer.IncludeCollection));
 
@@ -54,6 +52,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
         private readonly QueryCompilationContext _queryCompilationContext;
         private readonly IQuerySourceTracingExpressionVisitorFactory _querySourceTracingExpressionVisitorFactory;
+
+        private int _collectionIncludeId;
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -114,7 +114,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             bool trackResults)
         {
             var querySourceReferenceExpression = includeSpecifications.First().QuerySourceReferenceExpression;
-            
+
             if (querySourceReferenceExpression.ReferencedQuerySource is GroupJoinClause groupJoinClause)
             {
                 CompileGroupJoinInclude(includeResultOperators, includeSpecifications, groupJoinClause);
@@ -134,7 +134,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             Expression.Property(
                                 EntityQueryModelVisitor.QueryContextParameter,
                                 propertyName: "QueryBuffer"),
-                            _startTrackingMethodInfo,
+                            _queryBufferStartTrackingMethodInfo,
                             entityParameter,
                             Expression.Constant(entityType)));
                 }
@@ -148,41 +148,20 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             CoreEventId.IncludingNavigation,
                             () => CoreStrings.LogIncludingNavigation(includeSpecification.IncludeResultOperator));
 
-                    var firstNavigation = includeSpecification.NavigationPath[0];
+                    var navigation = includeSpecification.NavigationPath[0];
 
-                    if (firstNavigation.IsCollection())
+                    if (navigation.IsCollection())
                     {
-                        var mainFromClause
-                            = new MainFromClause(
-                                firstNavigation.Name,
-                                firstNavigation.GetTargetType().ClrType,
-                                NullAsyncQueryProvider.Instance.CreateEntityQueryableExpression(
-                                    firstNavigation.GetTargetType().ClrType));
-
-                        var innerQuerySourceReferenceExpression = new QuerySourceReferenceExpression(mainFromClause);
-
-                        var collectionQueryModel
-                            = new QueryModel(mainFromClause, new SelectClause(innerQuerySourceReferenceExpression));
-
-                        var orderByClause = new OrderByClause();
-
-                        foreach (var property in firstNavigation.ForeignKey.Properties)
-                        {
-                           orderByClause.Orderings.Add(
-                               new Ordering(
-                                   EntityQueryModelVisitor.CreatePropertyExpression(
-                                       innerQuerySourceReferenceExpression, property),
-                                   OrderingDirection.Asc));
-                        }
-
-                        collectionQueryModel.BodyClauses.Add(orderByClause);
+                        AddOrderingsToOuterQuery(queryModel, navigation, includeSpecification.QuerySourceReferenceExpression);
 
                         propertyExpressions.Add(
-                            Expression.Lambda<Func<IEnumerable<object>>>(new SubQueryExpression(collectionQueryModel)));
+                            Expression.Lambda<Func<IEnumerable<object>>>(
+                                new SubQueryExpression(
+                                    BuildCollectionIncludeQueryModel(queryModel, navigation, includeSpecification.QuerySourceReferenceExpression))));
 
-                        blockExpressions.AddRange(
+                        blockExpressions.Add(
                             BuildCollectionIncludeExpressions(
-                                firstNavigation,
+                                navigation,
                                 entityParameter,
                                 trackResults,
                                 ref includedIndex));
@@ -230,7 +209,88 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             }
         }
 
-        private static IEnumerable<Expression> BuildCollectionIncludeExpressions(
+        private static void AddOrderingsToOuterQuery(QueryModel queryModel, INavigation navigation, Expression expression)
+        {
+            var orderByClause = queryModel.BodyClauses.OfType<OrderByClause>().LastOrDefault();
+
+            if (orderByClause == null)
+            {
+                orderByClause = new OrderByClause();
+                queryModel.BodyClauses.Add(orderByClause);
+            }
+
+            foreach (var property in navigation.ForeignKey.PrincipalKey.Properties)
+            {
+                orderByClause.Orderings.Add(
+                    new Ordering(
+                        EntityQueryModelVisitor.CreatePropertyExpression(expression, property),
+                        OrderingDirection.Asc));
+            }
+        }
+
+        private static QueryModel BuildCollectionIncludeQueryModel(
+            QueryModel parentQueryModel, INavigation navigation, QuerySourceReferenceExpression outerExpression)
+        {
+            var mainFromClause
+                = new MainFromClause(
+                    navigation.Name,
+                    navigation.GetTargetType().ClrType,
+                    NullAsyncQueryProvider.Instance.CreateEntityQueryableExpression(
+                        navigation.GetTargetType().ClrType));
+
+            var innerQuerySourceReferenceExpression = new QuerySourceReferenceExpression(mainFromClause);
+
+            var queryModel
+                = new QueryModel(
+                    mainFromClause,
+                    new SelectClause(innerQuerySourceReferenceExpression));
+
+            if (!parentQueryModel.IsIdentityQuery())
+            {
+                var outerQuerySourceIndex
+                    = parentQueryModel.BodyClauses.IndexOf((IBodyClause)outerExpression.ReferencedQuerySource);
+
+                var subQueryModel = parentQueryModel.Clone();
+
+                var outerQuerySource
+                    = outerQuerySourceIndex > 0
+                        ? (IClause)subQueryModel.BodyClauses[outerQuerySourceIndex]
+                        : subQueryModel.MainFromClause;
+
+                Expression joinPredicate 
+                    =Expression.Equal(
+                    EntityQueryModelVisitor.CreatePropertyExpression(
+                        outerExpression, navigation.ForeignKey.PrincipalKey.Properties[0]),
+                    EntityQueryModelVisitor.CreatePropertyExpression(
+                        innerQuerySourceReferenceExpression, navigation.ForeignKey.Properties[0]));
+
+                var whereClause = new WhereClause(joinPredicate);
+
+                subQueryModel.BodyClauses.Insert(0, whereClause);
+                subQueryModel.SelectClause.Selector = Expression.Constant(1);
+                subQueryModel.ResultOperators.Add(new AnyResultOperator());
+                subQueryModel.ResultTypeOverride = typeof(bool);
+                
+                queryModel.BodyClauses.Add(new WhereClause(new SubQueryExpression(subQueryModel)));
+            }
+            
+            var orderByClause = new OrderByClause();
+
+            foreach (var property in navigation.ForeignKey.Properties)
+            {
+                orderByClause.Orderings.Add(
+                    new Ordering(
+                        EntityQueryModelVisitor.CreatePropertyExpression(
+                            innerQuerySourceReferenceExpression, property),
+                        OrderingDirection.Asc));
+            }
+
+            queryModel.BodyClauses.Add(orderByClause);
+
+            return queryModel;
+        }
+
+        private Expression BuildCollectionIncludeExpressions(
             INavigation navigation,
             Expression targetEntityExpression,
             bool trackingQuery,
@@ -244,97 +304,22 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     collectionFuncArrayAccessExpression,
                     typeof(Func<IEnumerable<object>>));
 
-            //            navigation.GetCollectionAccessor().AddRange(entity, values);
-            //
-            //            if (tracking)
-            //            {
-            //                _stateManager.Value.TryGetEntry(entity)?.AddRangeToCollectionSnapshot(navigation, values);
-            //            }
+            var inverseNavigation = navigation.FindInverse();
 
-            var blockExpressions = new List<Expression>();
-
-            //            if (trackingQuery)
-            //            {
-            //                blockExpressions.Add(
-            //                    Expression.Call(
-            //                        _queryBufferParameter,
-            //                        _startTrackingMethodInfo,
-            //                        relatedArrayAccessExpression,
-            //                        Expression.Constant(navigation.GetTargetType())));
-            //
-            //                blockExpressions.Add(
-            //                    Expression.Call(
-            //                        _setRelationshipSnapshotValueMethodInfo,
-            //                        _stateManagerParameter,
-            //                        Expression.Constant(navigation),
-            //                        targetEntityExpression,
-            //                        relatedArrayAccessExpression));
-            //            }
-            //            else
-            //            {
-
-            //queryContext.Get
-
-            blockExpressions.Add(
-                Expression.Call(
-                    Expression.Property(
-                        EntityQueryModelVisitor.QueryContextParameter,
-                        propertyName: "QueryBuffer"),
-                    _includeCollectionMethodInfo,
-                    Expression.Constant(0),
-                    Expression.Constant(navigation),
-                    Expression.Constant(navigation.GetCollectionAccessor()),
-                    targetEntityExpression,
-                    relatedCollectionFuncExpression));
-
-            return blockExpressions;
-
-            //            }
-            //
-            //            var inverseNavigation = navigation.FindInverse();
-            //
-            //            if (inverseNavigation != null)
-            //            {
-            //                var collection = inverseNavigation.IsCollection();
-            //
-            //                if (trackingQuery)
-            //                {
-            //                    blockExpressions.Add(
-            //                        Expression.Call(
-            //                            collection
-            //                                ? _addToCollectionSnapshotMethodInfo
-            //                                : _setRelationshipSnapshotValueMethodInfo,
-            //                            _stateManagerParameter,
-            //                            Expression.Constant(inverseNavigation),
-            //                            relatedArrayAccessExpression,
-            //                            targetEntityExpression));
-            //                }
-            //                else
-            //                {
-            //                    blockExpressions.Add(
-            //                        collection
-            //                            ? (Expression)Expression.Call(
-            //                                Expression.Constant(inverseNavigation.GetCollectionAccessor()),
-            //                                _collectionAddMethodInfo,
-            //                                relatedArrayAccessExpression,
-            //                                targetEntityExpression)
-            //                            : Expression.Assign(
-            //                                Expression.MakeMemberAccess(
-            //                                    relatedEntityExpression,
-            //                                    inverseNavigation
-            //                                        .GetMemberInfo(forConstruction: false, forSet: true)),
-            //                                targetEntityExpression));
-            //                }
-            //            }
-
-            //            return
-            //                Expression.IfThen(
-            //                    Expression.Not(
-            //                        Expression.Call(
-            //                            _referenceEqualsMethodInfo,
-            //                            relatedArrayAccessExpression,
-            //                            Expression.Constant(null, typeof(object)))),
-            //                    Expression.Block(typeof(void), blockExpressions));
+            return Expression.Call(
+                Expression.Property(
+                    EntityQueryModelVisitor.QueryContextParameter,
+                    propertyName: "QueryBuffer"),
+                _queryBufferIncludeCollectionMethodInfo,
+                Expression.Constant(_collectionIncludeId++),
+                Expression.Constant(navigation),
+                Expression.Constant(inverseNavigation),
+                Expression.Constant(navigation.GetTargetType()),
+                Expression.Constant(navigation.GetCollectionAccessor()),
+                Expression.Constant(inverseNavigation?.GetSetter()),
+                Expression.Constant(trackingQuery),
+                targetEntityExpression,
+                relatedCollectionFuncExpression);
         }
 
         private void CompileGroupJoinInclude(
@@ -487,7 +472,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         Expression.Property(
                             EntityQueryModelVisitor.QueryContextParameter,
                             propertyName: "QueryBuffer"),
-                        _startTrackingMethodInfo,
+                        _queryBufferStartTrackingMethodInfo,
                         relatedArrayAccessExpression,
                         Expression.Constant(navigation.GetTargetType())));
 
@@ -533,7 +518,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         collection
                             ? (Expression)Expression.Call(
                                 Expression.Constant(inverseNavigation.GetCollectionAccessor()),
-                                _collectionAddMethodInfo,
+                                _collectionAccessorAddMethodInfo,
                                 relatedArrayAccessExpression,
                                 targetEntityExpression)
                             : Expression.Assign(
@@ -625,7 +610,13 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             IPropertyBase navigation,
             object entity,
             object value)
-            => stateManager.TryGetEntry(entity)?.SetRelationshipSnapshotValue(navigation, value);
+        {
+            var internalEntityEntry = stateManager.TryGetEntry(entity);
+
+            Debug.Assert(internalEntityEntry != null);
+
+            internalEntityEntry.SetRelationshipSnapshotValue(navigation, value);
+        }
 
         private static readonly MethodInfo _addToCollectionSnapshotMethodInfo
             = typeof(IncludeCompiler).GetTypeInfo()
@@ -636,6 +627,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             IPropertyBase navigation,
             object entity,
             object value)
-            => stateManager.TryGetEntry(entity)?.AddToCollectionSnapshot(navigation, value);
+        {
+            var internalEntityEntry = stateManager.TryGetEntry(entity);
+
+            Debug.Assert(internalEntityEntry != null);
+
+            internalEntityEntry.AddToCollectionSnapshot(navigation, value);
+        }
     }
 }

@@ -40,14 +40,8 @@ ORDER BY [o].[ProductID]",
                 Sql);
         }
 
-        [Fact]
-        public void Include_collection2()
+        public override void Include_collection(bool useString)
         {
-//            using (var context = CreateContext())
-//            {
-//                var orders = context.Orders.Where(o => context.Customers.Any(c => c.CustomerID == o.CustomerID)).ToList();    
-//            }
-
             base.Include_collection(false);
 
             Assert.Equal(
@@ -55,14 +49,16 @@ ORDER BY [o].[ProductID]",
 FROM [Customers] AS [c]
 ORDER BY [c].[CustomerID]
 
-SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
-FROM [Orders] AS [o]
-WHERE EXISTS (
-    SELECT 1
-    FROM [Customers] AS [c]
-    WHERE [o].[CustomerID] = [c].[CustomerID])
-ORDER BY [o].[CustomerID]",
+SELECT [Orders].[OrderID], [Orders].[CustomerID], [Orders].[EmployeeID], [Orders].[OrderDate]
+FROM [Orders] AS [Orders]
+ORDER BY [Orders].[CustomerID]",
                 Sql);
+        }
+
+        [Fact]
+        public void Test()
+        {
+            base.Include_collection_skip_no_order_by(false);
         }
 
         public override void Include_collection_skip_no_order_by(bool useString)

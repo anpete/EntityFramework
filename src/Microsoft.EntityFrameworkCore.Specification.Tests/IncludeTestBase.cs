@@ -11,6 +11,9 @@ using Microsoft.EntityFrameworkCore.Specification.Tests.TestModels.Northwind;
 using Microsoft.EntityFrameworkCore.Specification.Tests.TestUtilities.Xunit;
 using Xunit;
 
+// ReSharper disable UnusedParameter.Local
+// ReSharper disable InconsistentNaming
+// ReSharper disable ConvertToExpressionBodyWhenPossible
 // ReSharper disable StringStartsWithIsCultureSpecific
 
 namespace Microsoft.EntityFrameworkCore.Specification.Tests
@@ -216,7 +219,7 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
                         ? context.Set<Customer>()
                             .Include("Orders")
                             .ToList()
-                        : context.Set<Customer>().AsNoTracking()
+                        : context.Set<Customer>()
                             .Include(c => c.Orders)
                             .ToList();
 
@@ -2964,6 +2967,7 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
             context.ChangeTracker.AutoDetectChangesEnabled = false;
 
             Assert.Equal(ordersLoaded, context.Entry(customer).Collection(e => e.Orders).IsLoaded);
+
             if (customer.Orders != null)
             {
                 foreach (var order in customer.Orders)

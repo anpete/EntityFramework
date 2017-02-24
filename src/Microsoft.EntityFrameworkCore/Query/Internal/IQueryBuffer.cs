@@ -57,8 +57,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         /// </summary>
         void IncludeCollection(
             int includeId,
-            INavigation navigation,
+            [NotNull] INavigation navigation,
+            [CanBeNull] INavigation inverseNavigation,
+            [NotNull] IEntityType targetEntityType,
             [NotNull] IClrCollectionAccessor clrCollectionAccessor,
+            [CanBeNull] IClrPropertySetter inverseClrPropertySetter,
+            bool tracking,
             [NotNull] object instance,
             [NotNull] Func<IEnumerable<object>> valuesFactory);
 
