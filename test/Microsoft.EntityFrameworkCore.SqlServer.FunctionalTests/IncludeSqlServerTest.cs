@@ -17,7 +17,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public IncludeSqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
 
         public override void Include_list(bool useString)
@@ -58,7 +58,19 @@ ORDER BY [Orders].[CustomerID]",
         [Fact]
         public void Test()
         {
-            base.Include_collection_skip_no_order_by(false);
+            using (var context = CreateContext())
+            {
+                (from o in context.Orders
+                 join c1 in context.Customers.OrderBy(c => c.CustomerID).Skip(10)
+                    on o.CustomerID equals c1.CustomerID
+                 select o).ToList();
+                
+
+                
+            }
+
+
+            //base.Include_collection_skip_no_order_by(false);
         }
 
         public override void Include_collection_skip_no_order_by(bool useString)

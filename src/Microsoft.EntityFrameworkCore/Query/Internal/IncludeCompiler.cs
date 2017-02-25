@@ -154,10 +154,15 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     {
                         AddOrderingsToOuterQuery(queryModel, navigation, includeSpecification.QuerySourceReferenceExpression);
 
+                        var collectionIncludeQueryModel
+                            = BuildCollectionIncludeQueryModel(
+                                queryModel,
+                                navigation,
+                                includeSpecification.QuerySourceReferenceExpression.ReferencedQuerySource);
+                        
                         propertyExpressions.Add(
                             Expression.Lambda<Func<IEnumerable<object>>>(
-                                new SubQueryExpression(
-                                    BuildCollectionIncludeQueryModel(queryModel, navigation, includeSpecification.QuerySourceReferenceExpression))));
+                                new SubQueryExpression(collectionIncludeQueryModel)));
 
                         blockExpressions.Add(
                             BuildCollectionIncludeExpressions(
@@ -229,7 +234,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         }
 
         private static QueryModel BuildCollectionIncludeQueryModel(
-            QueryModel parentQueryModel, INavigation navigation, QuerySourceReferenceExpression outerExpression)
+            QueryModel parentQueryModel, INavigation navigation, IQuerySource outerQuerySource)
         {
             var mainFromClause
                 = new MainFromClause(
@@ -245,24 +250,29 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     mainFromClause,
                     new SelectClause(innerQuerySourceReferenceExpression));
 
-            if (!parentQueryModel.IsIdentityQuery())
+            if (!parentQueryModel.IsIdentityQuery()
+                || parentQueryModel.ResultOperators.Any())
             {
                 var outerQuerySourceIndex
-                    = parentQueryModel.BodyClauses.IndexOf((IBodyClause)outerExpression.ReferencedQuerySource);
+                    = parentQueryModel.BodyClauses.IndexOf(outerQuerySource as IBodyClause);
 
                 var subQueryModel = parentQueryModel.Clone();
 
-                var outerQuerySource
+                var clonedOuterQuerySource
                     = outerQuerySourceIndex > 0
-                        ? (IClause)subQueryModel.BodyClauses[outerQuerySourceIndex]
+                        ? (IQuerySource)subQueryModel.BodyClauses[outerQuerySourceIndex]
                         : subQueryModel.MainFromClause;
 
-                Expression joinPredicate 
-                    =Expression.Equal(
-                    EntityQueryModelVisitor.CreatePropertyExpression(
-                        outerExpression, navigation.ForeignKey.PrincipalKey.Properties[0]),
-                    EntityQueryModelVisitor.CreatePropertyExpression(
-                        innerQuerySourceReferenceExpression, navigation.ForeignKey.Properties[0]));
+                var outerQuerySourceReferenceExpression = new QuerySourceReferenceExpression(clonedOuterQuerySource);
+
+                Expression joinPredicate
+                    = Expression.Equal(
+                        EntityQueryModelVisitor.CreatePropertyExpression(
+                            outerQuerySourceReferenceExpression, 
+                            navigation.ForeignKey.PrincipalKey.Properties[0]),
+                        EntityQueryModelVisitor.CreatePropertyExpression(
+                            innerQuerySourceReferenceExpression, 
+                            navigation.ForeignKey.Properties[0]));
 
                 var whereClause = new WhereClause(joinPredicate);
 
@@ -270,10 +280,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 subQueryModel.SelectClause.Selector = Expression.Constant(1);
                 subQueryModel.ResultOperators.Add(new AnyResultOperator());
                 subQueryModel.ResultTypeOverride = typeof(bool);
-                
+
                 queryModel.BodyClauses.Add(new WhereClause(new SubQueryExpression(subQueryModel)));
             }
-            
+
             var orderByClause = new OrderByClause();
 
             foreach (var property in navigation.ForeignKey.Properties)
@@ -366,14 +376,15 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             CompileIncludes(
                 subQueryModel,
                 includeResultOperators,
-                includeSpecifications: includeSpecifications
+                includeSpecifications
                     .Select(
                         @is =>
                             new IncludeSpecification(
                                 @is.IncludeResultOperator,
                                 innerQuerySourceReferenceExpression,
                                 @is.NavigationPath))
-                    .ToArray(), trackResults: false);
+                    .ToArray(),
+                trackResults: false);
         }
 
         private IEnumerable<IncludeSpecification> CreateIncludeSpecifications(
@@ -419,7 +430,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                     .LogWarning(
                                         CoreEventId.IncludeIgnoredWarning,
                                         () => CoreStrings.LogIgnoredInclude(
-                                            $"{includeResultOperator.QuerySource.ItemName}.{navigationPath.Select(n => n.Name).Join(".")}"));
+                                            $"{includeResultOperator.QuerySource.ItemName}.{navigationPath.Select(n => n.Name).Join(separator: ".")}"));
                             }
 
                             return new IncludeSpecification(
@@ -436,7 +447,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             }
 
                             return !a.NavigationPath.Any(n => n.IsCollection())
-                                   || a.NavigationPath.Length == 1;
+                                   /*|| a.NavigationPath.Length == 1*/;
                         })
                 .ToArray();
         }
