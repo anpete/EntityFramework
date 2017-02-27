@@ -16,7 +16,12 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public IncludeSqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+        }
+
+        public override void Include_collection_on_inner_group_join_clause_with_filter(bool useString)
+        {
+            base.Include_collection_on_inner_group_join_clause_with_filter(useString);
         }
 
         public override void Include_list(bool useString)
