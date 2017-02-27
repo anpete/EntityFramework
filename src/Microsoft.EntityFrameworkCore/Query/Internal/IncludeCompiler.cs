@@ -314,6 +314,14 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                 return false;
                             }
 
+//                            var sequenceType = a.QuerySourceReferenceExpression.Type.TryGetSequenceType();
+//
+//                            if (sequenceType != null
+//                                && _queryCompilationContext.Model.FindEntityType(sequenceType) != null)
+//                            {
+//                                return false;
+//                            }
+
                             return !a.NavigationPath.Any(n => n.IsCollection());
                         })
                 .ToArray();

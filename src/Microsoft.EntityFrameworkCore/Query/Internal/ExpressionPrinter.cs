@@ -495,18 +495,18 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 "TryReadValue"
             };
 
-            switch (node.Method.Name)
-            {
-                case "_InterceptExceptions":
-                    Visit(node.Arguments[0]);
-
-                    return node;
-                case "_TrackEntities":
-                    TrackedQuery = true;
-                    Visit(node.Arguments[0]);
-
-                    return node;
-            }
+//            switch (node.Method.Name)
+//            {
+//                case "_InterceptExceptions":
+//                    Visit(node.Arguments[0]);
+//
+//                    return node;
+//                case "_TrackEntities":
+//                    TrackedQuery = true;
+//                    Visit(node.Arguments[0]);
+//
+//                    return node;
+//            }
 
             if (!EntityQueryModelVisitor.IsPropertyMethod(node.Method))
             {

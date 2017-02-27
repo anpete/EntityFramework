@@ -19,9 +19,10 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
             TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
 
-        public override void Include_collection_on_inner_group_join_clause_with_filter(bool useString)
+        [Fact]
+        public void Include_collection_on_inner_group_join_clause_with_filter()
         {
-            base.Include_collection_on_inner_group_join_clause_with_filter(useString);
+            base.Include_collection_on_inner_group_join_clause_with_filter(false);
         }
 
         public override void Include_list(bool useString)
