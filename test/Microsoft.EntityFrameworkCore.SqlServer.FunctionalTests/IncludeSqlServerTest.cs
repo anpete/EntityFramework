@@ -98,14 +98,14 @@ ORDER BY [c].[CustomerID]
 
 @__p_0: 10
 
-SELECT [Orders].[OrderID], [Orders].[CustomerID], [Orders].[EmployeeID], [Orders].[OrderDate]
-FROM [Orders] AS [Orders]
+SELECT [c.Orders].[OrderID], [c.Orders].[CustomerID], [c.Orders].[EmployeeID], [c.Orders].[OrderDate]
+FROM [Orders] AS [c.Orders]
 INNER JOIN (
     SELECT TOP(@__p_0) [c0].[CustomerID], [c0].[Address], [c0].[City], [c0].[CompanyName], [c0].[ContactName], [c0].[ContactTitle], [c0].[Country], [c0].[Fax], [c0].[Phone], [c0].[PostalCode], [c0].[Region]
     FROM [Customers] AS [c0]
     ORDER BY [c0].[CustomerID]
-) AS [t] ON [Orders].[CustomerID] = [t].[CustomerID]
-ORDER BY [Orders].[CustomerID]",
+) AS [t] ON [c.Orders].[CustomerID] = [t].[CustomerID]
+ORDER BY [c.Orders].[CustomerID]",
                     Sql);
             }
         }
@@ -128,18 +128,15 @@ OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
 @__p_0: 10
 @__p_1: 5
 
-SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
-FROM [Orders] AS [o]
+SELECT [c.Orders].[OrderID], [c.Orders].[CustomerID], [c.Orders].[EmployeeID], [c.Orders].[OrderDate]
+FROM [Orders] AS [c.Orders]
 INNER JOIN (
-    SELECT DISTINCT [t].*
-    FROM (
-        SELECT [c].[CustomerID]
-        FROM [Customers] AS [c]
-        ORDER BY [c].[CustomerID]
-        OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
-    ) AS [t]
-) AS [c0] ON [o].[CustomerID] = [c0].[CustomerID]
-ORDER BY [c0].[CustomerID]",
+    SELECT [c0].[CustomerID], [c0].[Address], [c0].[City], [c0].[CompanyName], [c0].[ContactName], [c0].[ContactTitle], [c0].[Country], [c0].[Fax], [c0].[Phone], [c0].[PostalCode], [c0].[Region]
+    FROM [Customers] AS [c0]
+    ORDER BY [c0].[CustomerID]
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [t] ON [c.Orders].[CustomerID] = [t].[CustomerID]
+ORDER BY [c.Orders].[CustomerID]",
                     Sql);
             }
         }
@@ -156,14 +153,9 @@ FROM [Orders] AS [o]
 LEFT JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[CustomerID]
 ORDER BY [o].[OrderID]
 
-SELECT [o0].[OrderID], [o0].[ProductID], [o0].[Discount], [o0].[Quantity], [o0].[UnitPrice]
-FROM [Order Details] AS [o0]
-WHERE EXISTS (
-    SELECT 1
-    FROM [Orders] AS [o]
-    LEFT JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[CustomerID]
-    WHERE [o0].[OrderID] = [o].[OrderID])
-ORDER BY [o0].[OrderID]",
+SELECT [o.OrderDetails].[OrderID], [o.OrderDetails].[ProductID], [o.OrderDetails].[Discount], [o.OrderDetails].[Quantity], [o.OrderDetails].[UnitPrice]
+FROM [Order Details] AS [o.OrderDetails]
+ORDER BY [o.OrderDetails].[OrderID]",
                     Sql);
             }
         }
