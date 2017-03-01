@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -20,7 +21,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
     ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
     ///     directly from your code. This API may change or be removed in future releases.
     /// </summary>
-    public class QueryBuffer : IQueryBuffer
+    public class QueryBuffer : IQueryBuffer, IDisposable
     {
         private readonly LazyRef<IStateManager> _stateManager;
         private readonly LazyRef<IChangeDetector> _changeDetector;
@@ -31,6 +32,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
         private readonly ConditionalWeakTable<object, object> _valueBuffers
             = new ConditionalWeakTable<object, object>();
+
+        private readonly Dictionary<int, IEnumerator<object>> _includedCollections
+            = new Dictionary<int, IEnumerator<object>>();
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -159,6 +163,130 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     (ValueBuffer)boxedValueBuffer,
                     handledForeignKeys: null); 
         }
+
+        void IDisposable.Dispose()
+        {
+            foreach (var enumerator in _includedCollections.Values)
+            {
+                enumerator.Dispose();
+            }
+        }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual void IncludeCollection(
+            int includeId,
+            INavigation navigation,
+            INavigation inverseNavigation,
+            IEntityType targetEntityType,
+            IClrCollectionAccessor clrCollectionAccessor,
+            IClrPropertySetter inverseClrPropertySetter,
+            bool tracking,
+            object entity,
+            Func<IEnumerable<object>> relatedEntitiesFactory)
+        {
+            if (!_includedCollections.TryGetValue(includeId, out IEnumerator<object> enumerator))
+            {
+                enumerator = relatedEntitiesFactory().GetEnumerator();
+
+                if (!enumerator.MoveNext())
+                {
+                    enumerator.Dispose();
+                    enumerator = null;
+                }
+
+                _includedCollections.Add(includeId, enumerator);
+            }
+
+            if (enumerator == null)
+            {
+                return;
+            }
+
+            var relatedEntities = new List<object>();
+
+            // TODO: This should be done at query compile time and not require a VB unless there are shadow props
+            var keyComparer = CreateIncludeKeyComparer(entity, navigation);
+
+            while (true)
+            {
+                var result = _valueBuffers.TryGetValue(enumerator.Current, out object relatedValueBuffer);
+
+                Debug.Assert(result);
+
+                if (keyComparer.ShouldInclude((ValueBuffer)relatedValueBuffer))
+                {
+                    relatedEntities.Add(enumerator.Current);
+
+                    if (tracking)
+                    {
+                        StartTracking(enumerator.Current, targetEntityType);
+                    }
+
+                    if (inverseNavigation != null)
+                    {
+                        Debug.Assert(inverseClrPropertySetter != null);
+
+                        inverseClrPropertySetter.SetClrValue(enumerator.Current, entity);
+
+                        if (tracking)
+                        {
+                            var internalEntityEntry = _stateManager.Value.TryGetEntry(enumerator.Current);
+
+                            Debug.Assert(internalEntityEntry != null);
+
+                            internalEntityEntry.SetRelationshipSnapshotValue(inverseNavigation, entity);
+                        }
+                    }
+
+                    if (!enumerator.MoveNext())
+                    {
+                        enumerator.Dispose();
+
+                        _includedCollections[includeId] = null;
+
+                        break;
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            clrCollectionAccessor.AddRange(entity, relatedEntities);
+
+            if (tracking)
+            {
+                var internalEntityEntry = _stateManager.Value.TryGetEntry(entity);
+
+                Debug.Assert(internalEntityEntry != null);
+
+                internalEntityEntry.AddRangeToCollectionSnapshot(navigation, relatedEntities);
+                internalEntityEntry.SetIsLoaded(navigation);
+            }
+        }
+
+        private IIncludeKeyComparer CreateIncludeKeyComparer(
+            object entity,
+            INavigation navigation)
+        {
+            var identityMap = GetOrCreateIdentityMap(navigation.ForeignKey.PrincipalKey);
+
+            if (!_valueBuffers.TryGetValue(entity, out object boxedValueBuffer))
+            {
+                var entry = _stateManager.Value.TryGetEntry(entity);
+
+                Debug.Assert(entry != null);
+
+                return identityMap.CreateIncludeKeyComparer(navigation, entry);
+            }
+
+            return identityMap.CreateIncludeKeyComparer(navigation, (ValueBuffer)boxedValueBuffer);
+        }
+
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used

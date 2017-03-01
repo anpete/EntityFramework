@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
@@ -25,6 +26,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
         private QueryModel _queryModel;
         private Expression _selector;
+        private bool _inInclude;
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -113,7 +115,13 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         /// </summary>
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
+            var oldInInclude = _inInclude;
+
+            _inInclude = IncludeCompiler.IsIncludeMethod(node);
+
             var newExpression = base.VisitMethodCall(node);
+
+            _inInclude = oldInInclude;
 
             _queryModelVisitor
                 .BindMethodCallExpression(
@@ -213,7 +221,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                             _selector,
                             querySourceReferenceExpression.ReferencedQuerySource);
 
-                if ((resultQuerySource == null)
+                if ((resultQuerySource == null && !_inInclude)
                     && !(expression.QueryModel.ResultOperators.LastOrDefault() is OfTypeResultOperator))
                 {
                     _querySources[querySourceReferenceExpression.ReferencedQuerySource]--;
