@@ -1390,7 +1390,7 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
                                .OrderBy(c => c.CustomerID)
                                .Take(2)
                            from c2 in context.Set<Customer>()
-                               .Include(c => c.Orders)
+                               /*.Include(c => c.Orders)*/
                                .OrderBy(c => c.CustomerID)
                                .Skip(2)
                                .Take(2)

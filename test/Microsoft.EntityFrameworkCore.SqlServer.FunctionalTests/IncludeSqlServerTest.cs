@@ -2,7 +2,9 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Linq;
 using Microsoft.EntityFrameworkCore.Specification.Tests;
+using Microsoft.EntityFrameworkCore.Specification.Tests.TestModels.Northwind;
 using Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests.Utilities;
 using Xunit;
 using Xunit.Abstractions;
@@ -52,12 +54,6 @@ SELECT [c.Orders].[OrderID], [c.Orders].[CustomerID], [c.Orders].[EmployeeID], [
 FROM [Orders] AS [c.Orders]
 ORDER BY [c.Orders].[CustomerID]",
                 Sql);
-        }
-
-        [Fact]
-        public void Include_collection_skip_no_order_by()
-        {
-            base.Include_collection_skip_no_order_by(false);
         }
         
         public override void Include_collection_skip_no_order_by(bool useString)
@@ -716,6 +712,36 @@ WHERE EXISTS (
     WHERE [o].[CustomerID] = [c2].[CustomerID])
 ORDER BY [o].[CustomerID]",
                 Sql);
+        }
+
+        [Fact]
+        public void Include_duplicate_collection()
+        {
+            //base.Include_collection_on_additional_from_clause(false);
+
+            using (var context = CreateContext())
+            {
+                var q =
+                (from o in context.Set<Order>()
+                 join c3 in
+                 (from c1 in context.Set<Customer>().OrderBy(c => c.CustomerID).Take(5)
+                  from c2 in context.Set<Customer>()
+                  select c2)
+                 on o.CustomerID equals c3.CustomerID
+                 orderby c3.CustomerID
+                 select o
+                ).ToList();
+
+
+//                from orders in context.Orders
+//                    join c1 in (from c2 in (from c in context.Customers orderby c.CustomerID asc).Take(__p_0)
+//                from c2 in context.Customers
+//                select c1)
+//                on Property(c2.Orders, "CustomerID") equals Property(c1, "CustomerID")
+//                order by Property(c2, "CustomerID") asc
+//                    select c2.Order
+
+            }
         }
 
         public override void Include_duplicate_collection(bool useString)

@@ -19,6 +19,7 @@ using Microsoft.EntityFrameworkCore.Query.ResultOperators.Internal;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
+using Remotion.Linq.Clauses.ExpressionVisitors;
 using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing;
 
@@ -200,6 +201,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             var parentQuerySource = parentQuerySourceReferenceExpression.ReferencedQuerySource;
 
+            var parentQuerySourceIndex
+                = parentQueryModel.BodyClauses
+                    .IndexOf(parentQuerySource as IBodyClause);
+
             var parentItemName
                 = parentQuerySource.HasGeneratedItemName()
                     ? navigation.DeclaringEntityType.DisplayName()[0].ToString().ToLowerInvariant()
@@ -208,12 +213,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             QueryModel collectionQueryModel;
 
             if (!parentQueryModel.ResultOperators.Any(
-                r => r is SkipResultOperator || r is TakeResultOperator))
+                r => r is SkipResultOperator || r is TakeResultOperator)
+                && !parentQueryModel.BodyClauses.Any(bc => bc is AdditionalFromClause))
             {
-                var parentQuerySourceIndex
-                    = parentQueryModel.BodyClauses
-                        .IndexOf(parentQuerySource as IBodyClause);
-
                 collectionQueryModel = parentQueryModel.Clone();
 
                 var clonedParentQuerySource
@@ -242,9 +244,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         navigation.ForeignKey.PrincipalKey.Properties[0]);
 
                 collectionQueryModel.BodyClauses.Insert(0, joinClause);
-
                 collectionQueryModel.SelectClause = new SelectClause(joinInnerQuerySourceReferenceExpression);
-
                 collectionQueryModel.ResultTypeOverride
                     = typeof(IQueryable<>).MakeGenericType(joinInnerQuerySourceReferenceExpression.Type);
             }
@@ -265,124 +265,93 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         collectionMainFromClause,
                         new SelectClause(collectionQuerySourceReferenceExpression));
 
+                if (!parentQueryModel.IsIdentityQuery()
+                    || parentQueryModel.ResultOperators.Any())
+                {
+                    var clonedParentQueryModel = parentQueryModel.Clone();
 
+                    var clonedParentQuerySource
+                        = parentQuerySourceIndex > 0
+                            ? (IQuerySource)clonedParentQueryModel.BodyClauses[parentQuerySourceIndex]
+                            : clonedParentQueryModel.MainFromClause;
+
+                    var clonedParentQuerySourceReferenceExpression
+                        = new QuerySourceReferenceExpression(clonedParentQuerySource);
+
+                    clonedParentQueryModel.SelectClause 
+                        = new SelectClause(clonedParentQuerySourceReferenceExpression);
+
+                    clonedParentQueryModel.ResultTypeOverride
+                        = typeof(IQueryable<>).MakeGenericType(clonedParentQuerySourceReferenceExpression.Type);
+
+                    var subQueryExpression = new SubQueryExpression(clonedParentQueryModel);
+
+                    var joinClause
+                        = new JoinClause(
+                            clonedParentQuerySource.ItemName,
+                            clonedParentQuerySource.ItemType,
+                            subQueryExpression,
+                            EntityQueryModelVisitor.CreatePropertyExpression(
+                                collectionQuerySourceReferenceExpression,
+                                navigation.ForeignKey.Properties[0]),
+                            Expression.Constant(null));
+
+                    var joinQuerySourceReferenceExpression = new QuerySourceReferenceExpression(joinClause);
+
+                    joinClause.InnerKeySelector
+                        = EntityQueryModelVisitor.CreatePropertyExpression(
+                            joinQuerySourceReferenceExpression,
+                            navigation.ForeignKey.PrincipalKey.Properties[0]);
+
+                    collectionQueryModel.BodyClauses.Add(joinClause);
+
+                    LiftOrderBy(
+                        querySource: clonedParentQuerySource, 
+                        targetExpression: joinQuerySourceReferenceExpression, 
+                        fromQueryModel: clonedParentQueryModel, 
+                        toQueryModel: collectionQueryModel);
+                }
             }
 
             return collectionQueryModel;
-
-            //
-            //            if (!parentQueryModel.IsIdentityQuery()
-            //                || parentQueryModel.ResultOperators.Any())
-            //            {
-            //                var parentQuerySourceIndex
-            //                    = parentQueryModel.BodyClauses
-            //                        .IndexOf(parentQuerySource as IBodyClause);
-            //
-            //                var clonedParentQueryModel = parentQueryModel.Clone();
-            //
-            //                var clonedParentQuerySource
-            //                    = parentQuerySourceIndex > 0
-            //                        ? (IQuerySource)clonedParentQueryModel.BodyClauses[parentQuerySourceIndex]
-            //                        : clonedParentQueryModel.MainFromClause;
-            //
-            //                var joinClause
-            //                    = new JoinClause(
-            //                        clonedParentQuerySource.ItemName,
-            //                        clonedParentQuerySource.ItemType,
-            //                        subQueryExpression,
-            //                        EntityQueryModelVisitor.CreatePropertyExpression(
-            //                            collectionQuerySourceReferenceExpression,
-            //                            navigation.ForeignKey.Properties[0]),
-            //                        Expression.Constant(null));
-            //
-            //                foreach (var bodyClause in clonedParentQueryModel.BodyClauses)
-            //                {
-            //                    //collectionQueryModel.BodyClauses.Add();
-            //                    collectionQueryModel.BodyClauses.Add(bodyClause);
-            //                }
-
-            //LiftOrderBy(clonedParentQueryModel, collectionQueryModel);
-
-            //                if (clonedParentQueryModel.ResultOperators.Any(
-            //                    r => r is SkipResultOperator || r is TakeResultOperator))
-            //                {
-            //                    if (!clonedParentQueryModel.BodyClauses.Any(bc => bc is OrderByClause))
-            //                    {
-            //                        AppendPrincipalKeyOrderingToQuery(
-            //                            clonedParentQueryModel, 
-            //                            navigation, 
-            //                            new QuerySourceReferenceExpression(clonedParentQuerySource));
-            //                    }
-            //                }
-            //                else
-            //                {
-            //                    foreach (var orderByClause 
-            //                        in clonedParentQueryModel.BodyClauses.OfType<OrderByClause>().ToArray())
-            //                    {
-            //                        clonedParentQueryModel.BodyClauses.Remove(orderByClause);
-            //                    }
-            //                }
-
-            // TODO: Composite keys
-            // TODO: OrderBys
-
-            //                var subQueryExpression = new SubQueryExpression(clonedParentQueryModel);
-            //
-            //                var joinClause
-            //                    = new JoinClause(
-            //                        clonedParentQuerySource.ItemName,
-            //                        clonedParentQuerySource.ItemType,
-            //                        subQueryExpression,
-            //                        EntityQueryModelVisitor.CreatePropertyExpression(
-            //                            collectionQuerySourceReferenceExpression,
-            //                            navigation.ForeignKey.Properties[0]),
-            //                        Expression.Constant(null));
-            //
-            //                var joinInnerQuerySourceReferenceExpression = new QuerySourceReferenceExpression(joinClause);
-            //
-            //                joinClause.InnerKeySelector
-            //                    = EntityQueryModelVisitor.CreatePropertyExpression(
-            //                        joinInnerQuerySourceReferenceExpression,
-            //                        navigation.ForeignKey.PrincipalKey.Properties[0]);
-            //
-            //                collectionQueryModel.BodyClauses.Add(joinClause);
-            //           }
-
-            //            AppendPrincipalKeyOrderingToQuery(parentQueryModel, navigation, parentQuerySourceReferenceExpression);
-            //            AddDependentKeyOrderingToQuery(collectionQueryModel, navigation, collectionQuerySourceReferenceExpression);
         }
 
-        //        private static void LiftOrderBy(QueryModel fromQueryModel, QueryModel toQueryModel)
-        //        {
-        //            var canRemove
-        //                = !fromQueryModel.ResultOperators
-        //                    .Any(r => r is SkipResultOperator || r is TakeResultOperator);
-        //
-        //            foreach (var orderByClause in fromQueryModel.BodyClauses.OfType<OrderByClause>().ToArray())
-        //            {
-        //                if (canRemove)
-        //                {
-        //                    fromQueryModel.BodyClauses.Remove(orderByClause);
-        //                }
-        //            }
-        //        }
+        private static void LiftOrderBy(
+            IQuerySource querySource, Expression targetExpression, QueryModel fromQueryModel, QueryModel toQueryModel)
+        {
+            var canRemove 
+                = !fromQueryModel.ResultOperators
+                    .Any(r => r is SkipResultOperator || r is TakeResultOperator);
 
-        //        private static void AddDependentKeyOrderingToQuery(
-        //            QueryModel queryModel, INavigation navigation, Expression expression)
-        //        {
-        //            var orderByClause = new OrderByClause();
-        //
-        //            foreach (var property in navigation.ForeignKey.Properties)
-        //            {
-        //                orderByClause.Orderings.Add(
-        //                    new Ordering(
-        //                        EntityQueryModelVisitor.CreatePropertyExpression(
-        //                            expression, property),
-        //                        OrderingDirection.Asc));
-        //            }
-        //
-        //            queryModel.BodyClauses.Add(orderByClause);
-        //        }
+            var querySourceMapping = new QuerySourceMapping();
+
+            querySourceMapping.AddMapping(querySource, targetExpression);
+
+            foreach (var orderByClause in fromQueryModel.BodyClauses.OfType<OrderByClause>().ToArray())
+            {
+                var outerOrderByClause = new OrderByClause();
+
+                foreach (var ordering in orderByClause.Orderings)
+                {
+                    outerOrderByClause.Orderings
+                        .Add(
+                            new Ordering(
+                                ReferenceReplacingExpressionVisitor
+                                    .ReplaceClauseReferences(
+                                        ordering.Expression,
+                                        querySourceMapping,
+                                        throwOnUnmappedReferences: false),
+                                ordering.OrderingDirection));
+                }
+
+                toQueryModel.BodyClauses.Add(outerOrderByClause);
+
+                if (canRemove)
+                {
+                    fromQueryModel.BodyClauses.Remove(orderByClause);
+                }
+            }
+        }
 
         private static void AppendPrincipalKeyOrderingToQuery(
             QueryModel queryModel, INavigation navigation, Expression expression)
