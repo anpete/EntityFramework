@@ -54,6 +54,12 @@ ORDER BY [c.Orders].[CustomerID]",
                 Sql);
         }
 
+        [Fact]
+        public void Include_collection_skip_no_order_by()
+        {
+            base.Include_collection_skip_no_order_by(false);
+        }
+        
         public override void Include_collection_skip_no_order_by(bool useString)
         {
             base.Include_collection_skip_no_order_by(useString);
@@ -346,13 +352,13 @@ ORDER BY [c0].[c0_0] DESC, [c0].[CustomerID]",
 FROM [Customers] AS [c]
 ORDER BY [c].[CustomerID]
 
-SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate]
-FROM [Orders] AS [o]
-WHERE EXISTS (
-    SELECT 1
-    FROM [Customers] AS [c]
-    WHERE [o].[CustomerID] = [c].[CustomerID])
-ORDER BY [o].[CustomerID]",
+SELECT [c.Orders].[OrderID], [c.Orders].[CustomerID], [c.Orders].[EmployeeID], [c.Orders].[OrderDate]
+FROM [Orders] AS [c.Orders]
+INNER JOIN (
+    SELECT [c0].[CustomerID], [c0].[Address], [c0].[City], [c0].[CompanyName], [c0].[ContactName], [c0].[ContactTitle], [c0].[Country], [c0].[Fax], [c0].[Phone], [c0].[PostalCode], [c0].[Region]
+    FROM [Customers] AS [c0]
+) AS [t] ON [c.Orders].[CustomerID] = [t].[CustomerID]
+ORDER BY [c.Orders].[CustomerID]",
                 Sql);
         }
 
