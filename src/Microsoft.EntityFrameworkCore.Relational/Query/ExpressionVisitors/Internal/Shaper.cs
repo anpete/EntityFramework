@@ -2,10 +2,12 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Linq;
 using System.Linq.Expressions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Internal;
 using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.ExpressionVisitors;
 
 namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 {
@@ -83,6 +85,23 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             }
 
             return null;
+        }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual void UpdateAccessorExpression(LambdaExpression fullExpression)
+        {
+            if (_accessorExpression != null)
+            {
+                _accessorExpression
+                    = AccessorFindingExpressionVisitor
+                        .FindAccessorLambda(
+                            _accessorExpression, 
+                            fullExpression.Body, 
+                            Expression.Parameter(fullExpression.Body.Type)).Body;
+            }
         }
     }
 }

@@ -201,6 +201,12 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 _innerShaper.SaveAccessorExpression(querySourceMapping);
             }
 
+            public override void UpdateAccessorExpression(LambdaExpression fullExpression)
+            {
+                _outerShaper.UpdateAccessorExpression(fullExpression);
+                _innerShaper.UpdateAccessorExpression(fullExpression);
+            }
+
             public override Expression GetAccessorExpression(IQuerySource querySource)
                 => _outerShaper.GetAccessorExpression(querySource)
                    ?? _innerShaper.GetAccessorExpression(querySource);

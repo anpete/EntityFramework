@@ -207,7 +207,7 @@ namespace Microsoft.EntityFrameworkCore.Internal
                 expression = memberExpression.Expression;
             }
 
-            return expression as TExpression;
+            return (TExpression)expression;
         }
 
         /// <summary>

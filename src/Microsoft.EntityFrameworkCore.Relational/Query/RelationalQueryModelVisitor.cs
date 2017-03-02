@@ -1302,12 +1302,15 @@ namespace Microsoft.EntityFrameworkCore.Query
                     var newSelector
                         = Expression.Lambda(
                             selector.Body,
+                            QueryContextParameter,
                             selector.Parameters.Single());
-//
-//                    var shaperDecorator
-//                        = _createSelectShaperMethodInfo
-//                            .MakeGenericMethod(selector.ReturnType, innerShaper.Type)
-//                            .Invoke(null, new object[] { innerShaper.QuerySource, innerShaper, newSelector.Compile() });
+
+                    var shaperDecorator
+                        = (Shaper)_createSelectShaperDecoratorMethodInfo
+                            .MakeGenericMethod(selector.ReturnType, innerShaper.Type)
+                            .Invoke(null, new object[] { innerShaper.QuerySource, innerShaper, newSelector.Compile() });
+
+                    shaperDecorator.UpdateAccessorExpression((LambdaExpression)selectClause.Selector);
 
                     Expression
                         = Expression.Call(
@@ -1315,38 +1318,57 @@ namespace Microsoft.EntityFrameworkCore.Query
                                 .MakeGenericMethod(selector.ReturnType),
                             shapedQueryMethodCallExpression.Arguments[0],
                             shapedQueryMethodCallExpression.Arguments[1],
-                            Expression.New(
-                                typeof(SelectShaperDecorator<,>)
-                                    .MakeGenericType(selector.ReturnType, innerShaper.Type)
-                                    .GetTypeInfo()
-                                    .DeclaredConstructors
-                                    .Single(),
-                                Expression.Constant(innerShaper.QuerySource),
-                                Expression.Constant(innerShaper),
-                                newSelector));
+                            Expression.Constant(shaperDecorator));
+
+
+                    //                    var newSelector
+                    //                        = Expression.Lambda(
+                    //                            selector.Body,
+                    //                            selector.Parameters.Single());
+                    ////
+                    ////                    var shaperDecorator
+                    ////                        = _createSelectShaperMethodInfo
+                    ////                            .MakeGenericMethod(selector.ReturnType, innerShaper.Type)
+                    ////                            .Invoke(null, new object[] { innerShaper.QuerySource, innerShaper, newSelector.Compile() });
+                    //
+                    //                    Expression
+                    //                        = Expression.Call(
+                    //                            QueryCompilationContext.QueryMethodProvider.ShapedQueryMethod
+                    //                                .MakeGenericMethod(selector.ReturnType),
+                    //                            shapedQueryMethodCallExpression.Arguments[0],
+                    //                            shapedQueryMethodCallExpression.Arguments[1],
+                    //                            Expression.New(
+                    //                                typeof(SelectShaperDecorator<,>)
+                    //                                    .MakeGenericType(selector.ReturnType, innerShaper.Type)
+                    //                                    .GetTypeInfo()
+                    //                                    .DeclaredConstructors
+                    //                                    .Single(),
+                    //                                Expression.Constant(innerShaper.QuerySource),
+                    //                                Expression.Constant(innerShaper),
+                    //                                newSelector));
 
                     RequiresClientProjection = false;
                 }
             }
         }
 
-//        private static readonly MethodInfo _createSelectShaperMethodInfo
-//            = typeof(RelationalQueryModelVisitor).GetTypeInfo()
-//                .GetDeclaredMethod(nameof(CreateSelectShaperDecorator));
-//
-//        [UsedImplicitly]
-//        private static SelectShaperDecorator<TResult, TInner> CreateSelectShaperDecorator<TResult, TInner>(
-//            IQuerySource querySource,
-//            IShaper<TInner> innerShaper, Func<QueryContext, TInner, TResult> selector)
-//            => new SelectShaperDecorator<TResult, TInner>(querySource, innerShaper, selector);
+        private static readonly MethodInfo _createSelectShaperDecoratorMethodInfo
+            = typeof(RelationalQueryModelVisitor).GetTypeInfo()
+                .GetDeclaredMethod(nameof(CreateSelectShaperDecorator));
+
+        [UsedImplicitly]
+        private static SelectShaperDecorator<TResult, TInner> CreateSelectShaperDecorator<TResult, TInner>(
+            IQuerySource querySource,
+            IShaper<TInner> innerShaper, Func<QueryContext, TInner, TResult> selector)
+            => new SelectShaperDecorator<TResult, TInner>(querySource, innerShaper, selector);
 
         private sealed class SelectShaperDecorator<TResult, TInner> : Shaper, IShaper<TResult>
         {
             private readonly IShaper<TInner> _innerShaper;
-            private readonly Func<TInner, TResult> _selector;
+            private readonly Func<QueryContext, TInner, TResult> _selector;
 
             public SelectShaperDecorator(
-                IQuerySource querySource, IShaper<TInner> innerShaper, Func<TInner, TResult> selector)
+                IQuerySource querySource, IShaper<TInner> innerShaper, Func<QueryContext, TInner, TResult> selector)
                 : base(querySource)
             {
                 _innerShaper = innerShaper;
@@ -1354,17 +1376,59 @@ namespace Microsoft.EntityFrameworkCore.Query
             }
 
             public TResult Shape(QueryContext queryContext, ValueBuffer valueBuffer)
-                => _selector(_innerShaper.Shape(queryContext, valueBuffer));
+                => _selector(queryContext, _innerShaper.Shape(queryContext, valueBuffer));
 
             public override bool IsShaperForQuerySource(IQuerySource querySource)
                 => base.IsShaperForQuerySource(querySource)
                    || _innerShaper.IsShaperForQuerySource(querySource);
 
             public override Expression GetAccessorExpression(IQuerySource querySource)
-                => Expression.Default(typeof(Func<,>).MakeGenericType(Type, typeof(object)));
+                => _innerShaper.GetAccessorExpression(querySource);
+
+            public override void SaveAccessorExpression(QuerySourceMapping querySourceMapping) 
+                => _innerShaper.SaveAccessorExpression(querySourceMapping);
+
+            public override void UpdateAccessorExpression(LambdaExpression fullExpression)
+                => _innerShaper.UpdateAccessorExpression(fullExpression);
 
             public override Type Type => typeof(TResult);
         }
+
+        //        private static readonly MethodInfo _createSelectShaperMethodInfo
+        //            = typeof(RelationalQueryModelVisitor).GetTypeInfo()
+        //                .GetDeclaredMethod(nameof(CreateSelectShaperDecorator));
+        //
+        //        [UsedImplicitly]
+        //        private static SelectShaperDecorator<TResult, TInner> CreateSelectShaperDecorator<TResult, TInner>(
+        //            IQuerySource querySource,
+        //            IShaper<TInner> innerShaper, Func<QueryContext, TInner, TResult> selector)
+        //            => new SelectShaperDecorator<TResult, TInner>(querySource, innerShaper, selector);
+
+        //        private sealed class SelectShaperDecorator<TResult, TInner> : Shaper, IShaper<TResult>
+        //        {
+        //            private readonly IShaper<TInner> _innerShaper;
+        //            private readonly Func<TInner, TResult> _selector;
+        //
+        //            public SelectShaperDecorator(
+        //                IQuerySource querySource, IShaper<TInner> innerShaper, Func<TInner, TResult> selector)
+        //                : base(querySource)
+        //            {
+        //                _innerShaper = innerShaper;
+        //                _selector = selector;
+        //            }
+        //
+        //            public TResult Shape(QueryContext queryContext, ValueBuffer valueBuffer)
+        //                => _selector(_innerShaper.Shape(queryContext, valueBuffer));
+        //
+        //            public override bool IsShaperForQuerySource(IQuerySource querySource)
+        //                => base.IsShaperForQuerySource(querySource)
+        //                   || _innerShaper.IsShaperForQuerySource(querySource);
+        //
+        //            public override Expression GetAccessorExpression(IQuerySource querySource)
+        //                => Expression.Default(typeof(Func<,>).MakeGenericType(Type, typeof(object)));
+        //
+        //            public override Type Type => typeof(TResult);
+        //        }
 
         /// <summary>
         ///     Visit a result operator.
