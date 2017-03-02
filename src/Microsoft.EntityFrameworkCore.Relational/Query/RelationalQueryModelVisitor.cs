@@ -1290,56 +1290,63 @@ namespace Microsoft.EntityFrameworkCore.Query
             if (selectMethodCallExpression != null
                 && selectMethodCallExpression.Method.MethodIsClosedFormOf(LinqOperatorProvider.Select))
             {
-                var sequenceMethodCallExpression = selectMethodCallExpression.Arguments[0] as MethodCallExpression;
+                var shapedQueryMethodCallExpression = selectMethodCallExpression.Arguments[0] as MethodCallExpression;
 
-                if (sequenceMethodCallExpression != null
-                    && sequenceMethodCallExpression.Method
+                if (shapedQueryMethodCallExpression != null
+                    && shapedQueryMethodCallExpression.Method
                         .MethodIsClosedFormOf(QueryCompilationContext.QueryMethodProvider.ShapedQueryMethod))
                 {
-                    var innerShaper = (Shaper)((ConstantExpression)sequenceMethodCallExpression.Arguments[2]).Value;
+                    var innerShaper = (Shaper)((ConstantExpression)shapedQueryMethodCallExpression.Arguments[2]).Value;
                     var selector = (LambdaExpression)selectMethodCallExpression.Arguments[1];
 
                     var newSelector
                         = Expression.Lambda(
                             selector.Body,
-                            QueryContextParameter,
                             selector.Parameters.Single());
-
-                    var shaperDecorator
-                        = _createCompositeShaperMethodInfo
-                            .MakeGenericMethod(selector.ReturnType, innerShaper.Type)
-                            .Invoke(null, new object[] { innerShaper.QuerySource, innerShaper, newSelector.Compile() });
+//
+//                    var shaperDecorator
+//                        = _createSelectShaperMethodInfo
+//                            .MakeGenericMethod(selector.ReturnType, innerShaper.Type)
+//                            .Invoke(null, new object[] { innerShaper.QuerySource, innerShaper, newSelector.Compile() });
 
                     Expression
                         = Expression.Call(
                             QueryCompilationContext.QueryMethodProvider.ShapedQueryMethod
                                 .MakeGenericMethod(selector.ReturnType),
-                            sequenceMethodCallExpression.Arguments[0],
-                            sequenceMethodCallExpression.Arguments[1],
-                            Expression.Constant(shaperDecorator));
+                            shapedQueryMethodCallExpression.Arguments[0],
+                            shapedQueryMethodCallExpression.Arguments[1],
+                            Expression.New(
+                                typeof(SelectShaperDecorator<,>)
+                                    .MakeGenericType(selector.ReturnType, innerShaper.Type)
+                                    .GetTypeInfo()
+                                    .DeclaredConstructors
+                                    .Single(),
+                                Expression.Constant(innerShaper.QuerySource),
+                                Expression.Constant(innerShaper),
+                                newSelector));
 
                     RequiresClientProjection = false;
                 }
             }
         }
 
-        private static readonly MethodInfo _createCompositeShaperMethodInfo
-            = typeof(RelationalQueryModelVisitor).GetTypeInfo()
-                .GetDeclaredMethod(nameof(CreateSelectShaperDecorator));
-
-        [UsedImplicitly]
-        private static SelectShaperDecorator<TResult, TInner> CreateSelectShaperDecorator<TResult, TInner>(
-            IQuerySource querySource,
-            IShaper<TInner> innerShaper, Func<QueryContext, TInner, TResult> selector)
-            => new SelectShaperDecorator<TResult, TInner>(querySource, innerShaper, selector);
+//        private static readonly MethodInfo _createSelectShaperMethodInfo
+//            = typeof(RelationalQueryModelVisitor).GetTypeInfo()
+//                .GetDeclaredMethod(nameof(CreateSelectShaperDecorator));
+//
+//        [UsedImplicitly]
+//        private static SelectShaperDecorator<TResult, TInner> CreateSelectShaperDecorator<TResult, TInner>(
+//            IQuerySource querySource,
+//            IShaper<TInner> innerShaper, Func<QueryContext, TInner, TResult> selector)
+//            => new SelectShaperDecorator<TResult, TInner>(querySource, innerShaper, selector);
 
         private sealed class SelectShaperDecorator<TResult, TInner> : Shaper, IShaper<TResult>
         {
             private readonly IShaper<TInner> _innerShaper;
-            private readonly Func<QueryContext, TInner, TResult> _selector;
+            private readonly Func<TInner, TResult> _selector;
 
             public SelectShaperDecorator(
-                IQuerySource querySource, IShaper<TInner> innerShaper, Func<QueryContext, TInner, TResult> selector)
+                IQuerySource querySource, IShaper<TInner> innerShaper, Func<TInner, TResult> selector)
                 : base(querySource)
             {
                 _innerShaper = innerShaper;
@@ -1347,7 +1354,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             }
 
             public TResult Shape(QueryContext queryContext, ValueBuffer valueBuffer)
-                => _selector(queryContext, _innerShaper.Shape(queryContext, valueBuffer));
+                => _selector(_innerShaper.Shape(queryContext, valueBuffer));
 
             public override bool IsShaperForQuerySource(IQuerySource querySource)
                 => base.IsShaperForQuerySource(querySource)
