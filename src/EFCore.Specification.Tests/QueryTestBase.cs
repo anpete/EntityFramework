@@ -3680,6 +3680,25 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
         }
 
         [ConditionalFact]
+        public virtual void GroupBy_simple_element_selector()
+        {
+            AssertQuery<Order>(
+                os => os.Select(o => new { Bar = o }).GroupBy(o => o.Bar.CustomerID, o => new { Foo = o }),
+                entryCount: 830,
+                asserter: (l2oResults, efResults) =>
+                {
+                    var efGroupings = efResults.Cast<IGrouping<string, Order>>().ToList();
+
+                    foreach (IGrouping<string, Order> l2oGrouping in l2oResults)
+                    {
+                        var efGrouping = efGroupings.Single(efg => efg.Key == l2oGrouping.Key);
+
+                        Assert.Equal(l2oGrouping.OrderBy(o => o.OrderID), efGrouping.OrderBy(o => o.OrderID));
+                    }
+                });
+        }
+
+        [ConditionalFact]
         public virtual void GroupBy_simple2()
         {
             AssertQuery<Order>(

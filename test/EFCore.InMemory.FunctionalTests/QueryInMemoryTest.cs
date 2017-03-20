@@ -21,5 +21,10 @@ namespace Microsoft.EntityFrameworkCore.InMemory.FunctionalTests
             // TODO: #4311
             //base.GroupJoin_DefaultIfEmpty3();
         }
+
+        public override void GroupBy_simple_element_selector()
+        {
+            base.GroupBy_simple_element_selector();
+        }
     }
 }
