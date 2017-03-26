@@ -20,7 +20,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         {
             _testOutputHelper = testOutputHelper;
 
-            //TestSqlLoggerFactory.CaptureOutput(_testOutputHelper);
+            TestSqlLoggerFactory.CaptureOutput(_testOutputHelper);
         }
 
         public override void Include_list(bool useString)
@@ -32,14 +32,11 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
 FROM [Products] AS [p]
 ORDER BY [p].[ProductID]
 
-SELECT [o].[OrderID], [o].[ProductID], [o].[Discount], [o].[Quantity], [o].[UnitPrice], [o0].[OrderID], [o0].[CustomerID], [o0].[EmployeeID], [o0].[OrderDate]
-FROM [Order Details] AS [o]
-INNER JOIN [Orders] AS [o0] ON [o].[OrderID] = [o0].[OrderID]
-WHERE EXISTS (
-    SELECT 1
-    FROM [Products] AS [p]
-    WHERE [o].[ProductID] = [p].[ProductID])
-ORDER BY [o].[ProductID]",
+SELECT [p.OrderDetails].[OrderID], [p.OrderDetails].[ProductID], [p.OrderDetails].[Discount], [p.OrderDetails].[Quantity], [p.OrderDetails].[UnitPrice], [p.OrderDetails.Order].[OrderID], [p.OrderDetails.Order].[CustomerID], [p.OrderDetails.Order].[EmployeeID], [p.OrderDetails.Order].[OrderDate]
+FROM [Order Details] AS [p.OrderDetails]
+INNER JOIN [Orders] AS [p.OrderDetails.Order] ON [p.OrderDetails].[OrderID] = [p.OrderDetails.Order].[OrderID]
+INNER JOIN [Products] AS [p0] ON [p.OrderDetails].[ProductID] = [p0].[ProductID]
+ORDER BY [p0].[ProductID]",
                 Sql);
         }
 
@@ -319,16 +316,16 @@ FROM [Orders] AS [o]
 WHERE [o].[OrderID] = 10248
 ORDER BY [o].[OrderID]
 
-SELECT [o0].[OrderID], [o0].[ProductID], [o0].[Discount], [o0].[Quantity], [o0].[UnitPrice], [p].[ProductID], [p].[Discontinued], [p].[ProductName], [p].[UnitPrice], [p].[UnitsInStock]
-FROM [Order Details] AS [o0]
+SELECT [o.OrderDetails].[OrderID], [o.OrderDetails].[ProductID], [o.OrderDetails].[Discount], [o.OrderDetails].[Quantity], [o.OrderDetails].[UnitPrice], [o.OrderDetails.Product].[ProductID], [o.OrderDetails.Product].[Discontinued], [o.OrderDetails.Product].[ProductName], [o.OrderDetails.Product].[UnitPrice], [o.OrderDetails.Product].[UnitsInStock]
+FROM [Order Details] AS [o.OrderDetails]
+INNER JOIN [Products] AS [o.OrderDetails.Product] ON [o.OrderDetails].[ProductID] = [o.OrderDetails.Product].[ProductID]
 INNER JOIN (
-    SELECT DISTINCT TOP(2) [o].[OrderID]
-    FROM [Orders] AS [o]
-    WHERE [o].[OrderID] = 10248
-    ORDER BY [o].[OrderID]
-) AS [o1] ON [o0].[OrderID] = [o1].[OrderID]
-INNER JOIN [Products] AS [p] ON [o0].[ProductID] = [p].[ProductID]
-ORDER BY [o1].[OrderID]",
+    SELECT TOP(1) [o0].*
+    FROM [Orders] AS [o0]
+    WHERE [o0].[OrderID] = 10248
+    ORDER BY [o0].[OrderID]
+) AS [t] ON [o.OrderDetails].[OrderID] = [t].[OrderID]
+ORDER BY [t].[OrderID]",
                 Sql);
         }
 

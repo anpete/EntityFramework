@@ -100,6 +100,78 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             public INavigation[] NavigationPath { get; }
         }
 
+        private IEnumerable<IncludeSpecification> CreateIncludeSpecifications(
+            QueryModel queryModel,
+            IEnumerable<IncludeResultOperator> includeResultOperators)
+        {
+            var querySourceTracingExpressionVisitor
+                = _querySourceTracingExpressionVisitorFactory.Create();
+
+            return includeResultOperators
+                .Select(
+                    includeResultOperator =>
+                        {
+                            var entityType
+                                = _queryCompilationContext.Model
+                                    .FindEntityType(includeResultOperator.PathFromQuerySource.Type);
+
+                            var parts = includeResultOperator.NavigationPropertyPaths.ToArray();
+                            var navigationPath = new INavigation[parts.Length];
+
+                            for (var i = 0; i < parts.Length; i++)
+                            {
+                                navigationPath[i] = entityType.FindNavigation(parts[i]);
+
+                                if (navigationPath[i] == null)
+                                {
+                                    throw new InvalidOperationException(
+                                        CoreStrings.IncludeBadNavigation(parts[i], entityType.DisplayName()));
+                                }
+
+                                entityType = navigationPath[i].GetTargetType();
+                            }
+
+                            var querySourceReferenceExpression
+                                = querySourceTracingExpressionVisitor
+                                    .FindResultQuerySourceReferenceExpression(
+                                        queryModel.SelectClause.Selector,
+                                        includeResultOperator.QuerySource);
+
+                            if (querySourceReferenceExpression == null)
+                            {
+                                _queryCompilationContext.Logger
+                                    .LogWarning(
+                                        CoreEventId.IncludeIgnoredWarning,
+                                        () => CoreStrings.LogIgnoredInclude(
+                                            $"{includeResultOperator.QuerySource.ItemName}.{navigationPath.Select(n => n.Name).Join(".")}"));
+                            }
+
+                            return new IncludeSpecification(
+                                includeResultOperator,
+                                querySourceReferenceExpression,
+                                navigationPath);
+                        })
+                .Where(
+                    a =>
+                        {
+                            if (a.QuerySourceReferenceExpression == null)
+                            {
+                                return false;
+                            }
+
+                            var sequenceType = a.QuerySourceReferenceExpression.Type.TryGetSequenceType();
+
+                            if (sequenceType != null
+                                && _queryCompilationContext.Model.FindEntityType(sequenceType) != null)
+                            {
+                                return false;
+                            }
+
+                            return a.NavigationPath.Count(n => n.IsCollection()) <= 1;
+                        })
+                .ToArray();
+        }
+
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
@@ -169,7 +241,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                 parentOrderings);
 
                         _queryCompilationContext.AddQuerySourceRequiringMaterialization(
-                            ((QuerySourceReferenceExpression)collectionIncludeQueryModel.SelectClause.Selector).ReferencedQuerySource);
+                            ((QuerySourceReferenceExpression)collectionIncludeQueryModel.SelectClause.Selector)
+                                .ReferencedQuerySource);
 
                         propertyExpressions.Add(
                             Expression.Lambda<Func<IEnumerable<object>>>(
@@ -196,6 +269,21 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                 collectionType,
                                 includeCollectionMethodInfo,
                                 cancellationTokenExpression));
+                        
+                        if (includeSpecification.NavigationPath.Length > 1)
+                        {
+                            CompileIncludes(
+                                collectionIncludeQueryModel,
+                                new List<IncludeResultOperator>
+                                {
+                                    new IncludeResultOperator(
+                                        includeSpecification.IncludeResultOperator.NavigationPropertyPaths
+                                            .Skip(1),
+                                        collectionIncludeQueryModel.SelectClause.Selector)
+                                },
+                                trackingQuery,
+                                asyncQuery);
+                        }
                     }
                     else
                     {
@@ -845,79 +933,6 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 arguments);
         }
 
-        private IEnumerable<IncludeSpecification> CreateIncludeSpecifications(
-            QueryModel queryModel,
-            IEnumerable<IncludeResultOperator> includeResultOperators)
-        {
-            var querySourceTracingExpressionVisitor
-                = _querySourceTracingExpressionVisitorFactory.Create();
-
-            return includeResultOperators
-                .Select(
-                    includeResultOperator =>
-                        {
-                            var entityType
-                                = _queryCompilationContext.Model
-                                    .FindEntityType(includeResultOperator.PathFromQuerySource.Type);
-
-                            var parts = includeResultOperator.NavigationPropertyPaths.ToArray();
-                            var navigationPath = new INavigation[parts.Length];
-
-                            for (var i = 0; i < parts.Length; i++)
-                            {
-                                navigationPath[i] = entityType.FindNavigation(parts[i]);
-
-                                if (navigationPath[i] == null)
-                                {
-                                    throw new InvalidOperationException(
-                                        CoreStrings.IncludeBadNavigation(parts[i], entityType.DisplayName()));
-                                }
-
-                                entityType = navigationPath[i].GetTargetType();
-                            }
-
-                            var querySourceReferenceExpression
-                                = querySourceTracingExpressionVisitor
-                                    .FindResultQuerySourceReferenceExpression(
-                                        queryModel.SelectClause.Selector,
-                                        includeResultOperator.QuerySource);
-
-                            if (querySourceReferenceExpression == null)
-                            {
-                                _queryCompilationContext.Logger
-                                    .LogWarning(
-                                        CoreEventId.IncludeIgnoredWarning,
-                                        () => CoreStrings.LogIgnoredInclude(
-                                            $"{includeResultOperator.QuerySource.ItemName}.{navigationPath.Select(n => n.Name).Join(".")}"));
-                            }
-
-                            return new IncludeSpecification(
-                                includeResultOperator,
-                                querySourceReferenceExpression,
-                                navigationPath);
-                        })
-                .Where(
-                    a =>
-                        {
-                            if (a.QuerySourceReferenceExpression == null)
-                            {
-                                return false;
-                            }
-
-                            var sequenceType = a.QuerySourceReferenceExpression.Type.TryGetSequenceType();
-
-                            if (sequenceType != null
-                                && _queryCompilationContext.Model.FindEntityType(sequenceType) != null)
-                            {
-                                return false;
-                            }
-
-                            return !a.NavigationPath.Any(n => n.IsCollection())
-                                   || a.NavigationPath.Length == 1;
-                        })
-                .ToArray();
-        }
-
         private static Expression BuildIncludeExpressions(
             IReadOnlyList<INavigation> navigationPath,
             Expression targetEntityExpression,
@@ -926,6 +941,61 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             int navigationIndex)
         {
             var navigation = navigationPath[navigationIndex];
+
+            if (navigation.IsCollection())
+            {
+//                var collectionIncludeQueryModel
+//                    = BuildCollectionIncludeQueryModel(
+//                        queryModel,
+//                        navigation,
+//                        includeSpecification.QuerySourceReferenceExpression,
+//                        parentOrderings);
+
+//                _queryCompilationContext.AddQuerySourceRequiringMaterialization(
+//                    ((QuerySourceReferenceExpression)collectionIncludeQueryModel.SelectClause.Selector)
+//                    .ReferencedQuerySource);
+//
+//                propertyExpressions.Add(
+//                    Expression.Lambda<Func<IEnumerable<object>>>(
+//                        new SubQueryExpression(collectionIncludeQueryModel)));
+//
+//                var collectionType = typeof(Func<IEnumerable<object>>);
+//                var includeCollectionMethodInfo = _queryBufferIncludeCollectionMethodInfo;
+//
+//                Expression cancellationTokenExpression = null;
+//
+//                if (asyncQuery)
+//                {
+//                    collectionType = typeof(Func<IAsyncEnumerable<object>>);
+//                    includeCollectionMethodInfo = _queryBufferIncludeCollectionAsyncMethodInfo;
+//                    cancellationTokenExpression = _cancellationTokenParameter;
+//                }
+//
+//                blockExpressions.Add(
+//                    BuildCollectionIncludeExpressions(
+//                        navigation,
+//                        entityParameter,
+//                        trackingQuery,
+//                        ref includedIndex,
+//                        collectionType,
+//                        includeCollectionMethodInfo,
+//                        cancellationTokenExpression));
+//
+//                if (includeSpecification.NavigationPath.Length > 1)
+//                {
+//                    CompileIncludes(
+//                        collectionIncludeQueryModel,
+//                        new List<IncludeResultOperator>
+//                        {
+//                            new IncludeResultOperator(
+//                                includeSpecification.IncludeResultOperator.NavigationPropertyPaths
+//                                    .Skip(1),
+//                                collectionIncludeQueryModel.SelectClause.Selector)
+//                        },
+//                        trackingQuery,
+//                        asyncQuery);
+//                }
+            }
 
             var relatedArrayAccessExpression
                 = Expression.ArrayAccess(_includedParameter, Expression.Constant(includedIndex++));
