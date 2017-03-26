@@ -98,78 +98,225 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             public IncludeResultOperator IncludeResultOperator { get; }
             public QuerySourceReferenceExpression QuerySourceReferenceExpression { get; }
             public INavigation[] NavigationPath { get; }
+
+            public override string ToString()
+                => $"{IncludeResultOperator.PathFromQuerySource}.{IncludeResultOperator.NavigationPropertyPaths.Join(".")}";
         }
 
-        private IEnumerable<IncludeSpecification> CreateIncludeSpecifications(
-            QueryModel queryModel,
-            IEnumerable<IncludeResultOperator> includeResultOperators)
+        private abstract class IncludeLoadTreeNodeBase
+        {
+            private readonly List<IncludeLoadTreeNode> _children = new List<IncludeLoadTreeNode>();
+
+            public IEnumerable<IncludeLoadTreeNode> Children => _children;
+
+            protected static void AddLoadPath(
+                IncludeLoadTreeNodeBase node,
+                IReadOnlyList<INavigation> navigationPath,
+                int index)
+            {
+                while (index < navigationPath.Count)
+                {
+                    var navigation = navigationPath[index];
+                    var childNode = node._children.SingleOrDefault(n => n.Navigation == navigation);
+
+                    if (childNode == null)
+                    {
+                        node._children.Add(childNode = new IncludeLoadTreeNode(navigation));
+                    }
+
+                    node = childNode;
+                    index = index + 1;
+                }
+            }
+        }
+
+        private sealed class IncludeLoadTreeNode : IncludeLoadTreeNodeBase
+        {
+            public INavigation Navigation { get; }
+
+            public IncludeLoadTreeNode(INavigation navigation) => Navigation = navigation;
+
+            public void Compile(
+                QueryModel queryModel,
+                bool trackingQuery,
+                bool asyncQuery)
+            {
+                if (navigation.IsCollection())
+                {
+                    blockExpressions.Add(
+                        CompileCollectionInclude(
+                            queryModel,
+                            trackingQuery,
+                            asyncQuery,
+                            navigation,
+                            includeSpecification,
+                            parentOrderings,
+                            entityParameter));
+                }
+                else
+                {
+                    propertyExpressions.AddRange(
+                        includeSpecification.NavigationPath
+                            .Select(
+                                (t, i) =>
+                                    includeSpecification.NavigationPath
+                                        .Take(i + 1)
+                                        .Aggregate(
+                                            (Expression)includeSpecification.QuerySourceReferenceExpression,
+                                            EntityQueryModelVisitor.CreatePropertyExpression)));
+
+                    blockExpressions.Add(
+                        BuildIncludeExpressions(
+                            //                                queryModel,
+                            //                                asyncQuery,
+                            //                                parentOrderings,
+                            //                                includeSpecification,
+                            includeSpecification.NavigationPath,
+                            entityParameter,
+                            trackingQuery,
+                            ref includedIndex,
+                            navigationIndex: 0));
+                }
+            }
+        }
+
+        private sealed class IncludeLoadTree : IncludeLoadTreeNodeBase
+        {
+            private readonly IEntityType _entityType;
+
+            public IncludeLoadTree(
+                QuerySourceReferenceExpression querySourceReferenceExpression, 
+                IEntityType entityType)
+            {
+                QuerySourceReferenceExpression = querySourceReferenceExpression;
+                _entityType = entityType;
+            }
+
+            public QuerySourceReferenceExpression QuerySourceReferenceExpression { get; }
+
+            public void AddLoadPath(IReadOnlyList<INavigation> navigationPath)
+            {
+                AddLoadPath(this, navigationPath, 0);
+            }
+
+            public void Compile(
+                QueryModel queryModel, 
+                bool trackingQuery,
+                bool asyncQuery)
+            {
+                var parentOrderings = new List<Ordering>();
+
+                var compiledIncludes
+                    = new List<(
+                        QuerySourceReferenceExpression querySourceReferenceExpression,
+                        Expression expression)>();
+
+                var entityParameter 
+                    = Expression.Parameter(QuerySourceReferenceExpression.Type, name: "entity");
+
+                //var propertyExpressions = new List<Expression>();
+                var blockExpressions = new List<Expression>();
+
+                if (trackingQuery)
+                {
+                    blockExpressions.Add(
+                        Expression.Call(
+                            Expression.Property(
+                                EntityQueryModelVisitor.QueryContextParameter,
+                                nameof(QueryContext.QueryBuffer)),
+                            _queryBufferStartTrackingMethodInfo,
+                            entityParameter,
+                            Expression.Constant(_entityType)));
+                }
+
+                foreach (var childNode in Children)
+                {
+                    childNode.Compile(queryModel, trackingQuery, asyncQuery);
+                }
+
+                ApplyParentOrderings(queryModel, parentOrderings);
+                ApplyIncludeExpressionsToQueryModel(queryModel, compiledIncludes);
+            }
+        }
+
+        private IEnumerable<IncludeLoadTree> CreateIncludeLoadTrees(
+            ICollection<IncludeResultOperator> includeResultOperators,
+            Expression targetExpression)
         {
             var querySourceTracingExpressionVisitor
                 = _querySourceTracingExpressionVisitorFactory.Create();
 
-            return includeResultOperators
-                .Select(
-                    includeResultOperator =>
-                        {
-                            var entityType
-                                = _queryCompilationContext.Model
-                                    .FindEntityType(includeResultOperator.PathFromQuerySource.Type);
+            var includeLoadTrees = new List<IncludeLoadTree>();
 
-                            var parts = includeResultOperator.NavigationPropertyPaths.ToArray();
-                            var navigationPath = new INavigation[parts.Length];
+            foreach (var includeResultOperator in includeResultOperators.ToArray())
+            {
+                var entityType
+                    = _queryCompilationContext.Model
+                        .FindEntityType(includeResultOperator.PathFromQuerySource.Type);
 
-                            for (var i = 0; i < parts.Length; i++)
-                            {
-                                navigationPath[i] = entityType.FindNavigation(parts[i]);
+                var nextEntityType = entityType;
 
-                                if (navigationPath[i] == null)
-                                {
-                                    throw new InvalidOperationException(
-                                        CoreStrings.IncludeBadNavigation(parts[i], entityType.DisplayName()));
-                                }
+                var parts = includeResultOperator.NavigationPropertyPaths.ToArray();
+                var navigationPath = new INavigation[parts.Length];
 
-                                entityType = navigationPath[i].GetTargetType();
-                            }
+                for (var i = 0; i < parts.Length; i++)
+                {
+                    navigationPath[i] = nextEntityType.FindNavigation(parts[i]);
 
-                            var querySourceReferenceExpression
-                                = querySourceTracingExpressionVisitor
-                                    .FindResultQuerySourceReferenceExpression(
-                                        queryModel.SelectClause.Selector,
-                                        includeResultOperator.QuerySource);
+                    if (navigationPath[i] == null)
+                    {
+                        throw new InvalidOperationException(
+                            CoreStrings.IncludeBadNavigation(parts[i], nextEntityType.DisplayName()));
+                    }
 
-                            if (querySourceReferenceExpression == null)
-                            {
-                                _queryCompilationContext.Logger
-                                    .LogWarning(
-                                        CoreEventId.IncludeIgnoredWarning,
-                                        () => CoreStrings.LogIgnoredInclude(
-                                            $"{includeResultOperator.QuerySource.ItemName}.{navigationPath.Select(n => n.Name).Join(".")}"));
-                            }
+                    nextEntityType = navigationPath[i].GetTargetType();
+                }
 
-                            return new IncludeSpecification(
-                                includeResultOperator,
-                                querySourceReferenceExpression,
-                                navigationPath);
-                        })
-                .Where(
-                    a =>
-                        {
-                            if (a.QuerySourceReferenceExpression == null)
-                            {
-                                return false;
-                            }
+                var querySourceReferenceExpression
+                    = querySourceTracingExpressionVisitor
+                        .FindResultQuerySourceReferenceExpression(
+                            targetExpression,
+                            includeResultOperator.QuerySource);
 
-                            var sequenceType = a.QuerySourceReferenceExpression.Type.TryGetSequenceType();
+                if (querySourceReferenceExpression == null)
+                {
+                    _queryCompilationContext.Logger
+                        .LogWarning(
+                            CoreEventId.IncludeIgnoredWarning,
+                            () => CoreStrings.LogIgnoredInclude(
+                                $"{includeResultOperator.QuerySource.ItemName}.{navigationPath.Select(n => n.Name).Join(".")}"));
 
-                            if (sequenceType != null
-                                && _queryCompilationContext.Model.FindEntityType(sequenceType) != null)
-                            {
-                                return false;
-                            }
+                    continue;
+                }
 
-                            return a.NavigationPath.Count(n => n.IsCollection()) <= 1;
-                        })
-                .ToArray();
+                var sequenceType = querySourceReferenceExpression.Type.TryGetSequenceType();
+
+                if (sequenceType != null
+                    && _queryCompilationContext.Model.FindEntityType(sequenceType) != null
+                    || navigationPath.Any(n => n.IsCollection()))
+                {
+                    continue;
+                }
+
+                var includeLoadTree
+                    = includeLoadTrees
+                        .SingleOrDefault(
+                            t => ReferenceEquals(
+                                t.QuerySourceReferenceExpression, querySourceReferenceExpression));
+
+                if (includeLoadTree == null)
+                {
+                    includeLoadTrees
+                        .Add(includeLoadTree = new IncludeLoadTree(querySourceReferenceExpression, entityType));
+                }
+
+                includeLoadTree.AddLoadPath(navigationPath);
+
+                // TODO: Hack until new Include fully implemented
+                includeResultOperators.Remove(includeResultOperator);
+            }
+
+            return includeLoadTrees;
         }
 
         /// <summary>
@@ -187,193 +334,81 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 return;
             }
 
-            var includeGroupings
-                = CreateIncludeSpecifications(queryModel, includeResultOperators)
-                    .GroupBy(a => a.QuerySourceReferenceExpression);
+            var includeLoadTrees 
+                = CreateIncludeLoadTrees(
+                    includeResultOperators, 
+                    queryModel.SelectClause.Selector);
 
-            var parentOrderings = new List<Ordering>();
-
-            var compiledIncludes
-                = new List<(
-                    QuerySourceReferenceExpression querySourceReferenceExpression,
-                    Expression expression)>();
-
-            foreach (var includeGrouping in includeGroupings)
+            foreach (var includeLoadTree in includeLoadTrees)
             {
-                var entityParameter = Expression.Parameter(includeGrouping.Key.Type, name: "entity");
+                includeLoadTree.Compile(queryModel, trackingQuery, asyncQuery);
+            }
+        }
 
-                var propertyExpressions = new List<Expression>();
-                var blockExpressions = new List<Expression>();
+        private Expression CompileCollectionInclude(
+            QueryModel queryModel,
+            bool trackingQuery,
+            bool asyncQuery,
+            INavigation navigation,
+            IncludeSpecification includeSpecification,
+            ICollection<Ordering> parentOrderings,
+            Expression entityParameter)
+        {
+            var collectionIncludeQueryModel
+                = BuildCollectionIncludeQueryModel(
+                    queryModel,
+                    navigation,
+                    includeSpecification.QuerySourceReferenceExpression,
+                    parentOrderings);
 
-                if (trackingQuery)
-                {
-                    blockExpressions.Add(
-                        Expression.Call(
-                            Expression.Property(
-                                EntityQueryModelVisitor.QueryContextParameter,
-                                nameof(QueryContext.QueryBuffer)),
-                            _queryBufferStartTrackingMethodInfo,
-                            entityParameter,
-                            Expression.Constant(
-                                _queryCompilationContext.Model
-                                    .FindEntityType(entityParameter.Type))));
-                }
+            _queryCompilationContext.AddQuerySourceRequiringMaterialization(
+                ((QuerySourceReferenceExpression)collectionIncludeQueryModel.SelectClause.Selector)
+                .ReferencedQuerySource);
 
-                var includedIndex = 0;
+            Expression collectionLambdaExpression
+                = Expression.Lambda<Func<IEnumerable<object>>>(
+                    new SubQueryExpression(collectionIncludeQueryModel));
 
-                foreach (var includeSpecification in includeGrouping)
-                {
-                    _queryCompilationContext.Logger
-                        .LogDebug(
-                            CoreEventId.IncludingNavigation,
-                            () => CoreStrings.LogIncludingNavigation(
-                                $"{includeSpecification.IncludeResultOperator.PathFromQuerySource}.{includeSpecification.IncludeResultOperator.NavigationPropertyPaths.Join(".")}"));
+            var includeCollectionMethodInfo = _queryBufferIncludeCollectionMethodInfo;
 
-                    var navigation = includeSpecification.NavigationPath[0];
+            Expression cancellationTokenExpression = null;
 
-                    if (navigation.IsCollection())
-                    {
-                        var collectionIncludeQueryModel
-                            = BuildCollectionIncludeQueryModel(
-                                queryModel,
-                                navigation,
-                                includeSpecification.QuerySourceReferenceExpression,
-                                parentOrderings);
+            if (asyncQuery)
+            {
+                collectionLambdaExpression
+                    = Expression.Convert(
+                        collectionLambdaExpression,
+                        typeof(Func<IAsyncEnumerable<object>>));
 
-                        _queryCompilationContext.AddQuerySourceRequiringMaterialization(
-                            ((QuerySourceReferenceExpression)collectionIncludeQueryModel.SelectClause.Selector)
-                                .ReferencedQuerySource);
-
-                        Expression collectionLambdaExpression 
-                            = Expression.Lambda<Func<IEnumerable<object>>>(
-                                new SubQueryExpression(collectionIncludeQueryModel));
-
-                        var includeCollectionMethodInfo = _queryBufferIncludeCollectionMethodInfo;
-
-                        Expression cancellationTokenExpression = null;
-
-                        if (asyncQuery)
-                        {
-                            collectionLambdaExpression
-                                = Expression.Convert(
-                                    collectionLambdaExpression,
-                                    typeof(Func<IAsyncEnumerable<object>>));
-
-                            includeCollectionMethodInfo = _queryBufferIncludeCollectionAsyncMethodInfo;
-                            cancellationTokenExpression = _cancellationTokenParameter;
-                        }
-
-                        blockExpressions.Add(
-                            BuildCollectionIncludeExpressions(
-                                navigation,
-                                entityParameter,
-                                trackingQuery,
-                                collectionLambdaExpression,
-                                includeCollectionMethodInfo,
-                                cancellationTokenExpression));
-                        
-                        if (includeSpecification.NavigationPath.Length > 1)
-                        {
-                            CompileIncludes(
-                                collectionIncludeQueryModel,
-                                new List<IncludeResultOperator>
-                                {
-                                    new IncludeResultOperator(
-                                        includeSpecification.IncludeResultOperator.NavigationPropertyPaths
-                                            .Skip(1),
-                                        collectionIncludeQueryModel.SelectClause.Selector)
-                                },
-                                trackingQuery,
-                                asyncQuery);
-                        }
-                    }
-                    else
-                    {
-                        propertyExpressions.AddRange(
-                            includeSpecification.NavigationPath
-                                .Select(
-                                    (t, i) =>
-                                        includeSpecification.NavigationPath
-                                            .Take(i + 1)
-                                            .Aggregate(
-                                                (Expression)includeSpecification.QuerySourceReferenceExpression,
-                                                EntityQueryModelVisitor.CreatePropertyExpression)));
-
-                        blockExpressions.Add(
-                            BuildIncludeExpressions(
-                                includeSpecification.NavigationPath,
-                                entityParameter,
-                                trackingQuery,
-                                ref includedIndex,
-                                navigationIndex: 0));
-                    }
-
-                    // TODO: Hack until new Include fully implemented
-                    includeResultOperators.Remove(includeSpecification.IncludeResultOperator);
-                }
-
-                Expression includeExpression = null;
-
-                if (asyncQuery)
-                {
-                    var taskExpression = new List<Expression>();
-
-                    foreach (var expression in blockExpressions.ToArray())
-                    {
-                        if (expression.Type == typeof(Task))
-                        {
-                            blockExpressions.Remove(expression);
-                            taskExpression.Add(expression);
-                        }
-                    }
-
-                    if (taskExpression.Count > 0)
-                    {
-                        blockExpressions.Add(
-                            Expression.Call(
-                                _awaitIncludesMethodInfo,
-                                Expression.NewArrayInit(
-                                    typeof(Func<Task>),
-                                    taskExpression.Select(e => Expression.Lambda(e)))));
-
-                        includeExpression
-                            = Expression.Property(
-                                Expression.Call(
-                                    _includeAsyncMethodInfo.MakeGenericMethod(includeGrouping.Key.Type),
-                                    EntityQueryModelVisitor.QueryContextParameter,
-                                    includeGrouping.Key,
-                                    Expression.NewArrayInit(typeof(object), propertyExpressions),
-                                    Expression.Lambda(
-                                        Expression.Block(blockExpressions),
-                                        EntityQueryModelVisitor.QueryContextParameter,
-                                        entityParameter,
-                                        _includedParameter,
-                                        _cancellationTokenParameter),
-                                    _cancellationTokenParameter),
-                                nameof(Task<object>.Result));
-                    }
-                }
-
-                if (includeExpression == null)
-                {
-                    includeExpression
-                        = Expression.Call(
-                            _includeMethodInfo.MakeGenericMethod(includeGrouping.Key.Type),
-                            EntityQueryModelVisitor.QueryContextParameter,
-                            includeGrouping.Key,
-                            Expression.NewArrayInit(typeof(object), propertyExpressions),
-                            Expression.Lambda(
-                                Expression.Block(typeof(void), blockExpressions),
-                                EntityQueryModelVisitor.QueryContextParameter,
-                                entityParameter,
-                                _includedParameter));
-                }
-
-                compiledIncludes.Add((includeGrouping.Key, includeExpression));
+                includeCollectionMethodInfo = _queryBufferIncludeCollectionAsyncMethodInfo;
+                cancellationTokenExpression = _cancellationTokenParameter;
             }
 
-            ApplyParentOrderings(queryModel, parentOrderings);
-            ApplyIncludeExpressionsToQueryModel(queryModel, compiledIncludes);
+            if (includeSpecification.NavigationPath.Length > 1)
+            {
+                CompileIncludes(
+                    collectionIncludeQueryModel,
+                    new List<IncludeResultOperator>
+                    {
+                        new IncludeResultOperator(
+                            includeSpecification
+                                .IncludeResultOperator
+                                .NavigationPropertyPaths
+                                .Skip(1),
+                            collectionIncludeQueryModel.SelectClause.Selector)
+                    },
+                    trackingQuery,
+                    asyncQuery);
+            }
+
+            return
+                BuildCollectionIncludeExpressions(
+                    navigation,
+                    entityParameter,
+                    trackingQuery,
+                    collectionLambdaExpression,
+                    includeCollectionMethodInfo,
+                    cancellationTokenExpression);
         }
 
         private static void ApplyParentOrderings(QueryModel queryModel, List<Ordering> parentOrderings)
@@ -930,69 +965,19 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 arguments);
         }
 
-        private static Expression BuildIncludeExpressions(
+        private Expression BuildIncludeExpressions(
+            //            QueryModel queryModel,
+            //            bool asyncQuery,
+            //            ICollection<Ordering> parentOrderings,
+            //            IncludeSpecification includeSpecification,
             IReadOnlyList<INavigation> navigationPath,
             Expression targetEntityExpression,
             bool trackingQuery,
             ref int includedIndex,
             int navigationIndex)
         {
+            var blockExpressions = new List<Expression>();
             var navigation = navigationPath[navigationIndex];
-
-            if (navigation.IsCollection())
-            {
-//                var collectionIncludeQueryModel
-//                    = BuildCollectionIncludeQueryModel(
-//                        queryModel,
-//                        navigation,
-//                        includeSpecification.QuerySourceReferenceExpression,
-//                        parentOrderings);
-
-//                _queryCompilationContext.AddQuerySourceRequiringMaterialization(
-//                    ((QuerySourceReferenceExpression)collectionIncludeQueryModel.SelectClause.Selector)
-//                    .ReferencedQuerySource);
-//
-//                propertyExpressions.Add(
-//                    Expression.Lambda<Func<IEnumerable<object>>>(
-//                        new SubQueryExpression(collectionIncludeQueryModel)));
-//
-//                var collectionType = typeof(Func<IEnumerable<object>>);
-//                var includeCollectionMethodInfo = _queryBufferIncludeCollectionMethodInfo;
-//
-//                Expression cancellationTokenExpression = null;
-//
-//                if (asyncQuery)
-//                {
-//                    collectionType = typeof(Func<IAsyncEnumerable<object>>);
-//                    includeCollectionMethodInfo = _queryBufferIncludeCollectionAsyncMethodInfo;
-//                    cancellationTokenExpression = _cancellationTokenParameter;
-//                }
-//
-//                blockExpressions.Add(
-//                    BuildCollectionIncludeExpressions(
-//                        navigation,
-//                        entityParameter,
-//                        trackingQuery,
-//                        ref includedIndex,
-//                        collectionType,
-//                        includeCollectionMethodInfo,
-//                        cancellationTokenExpression));
-//
-//                if (includeSpecification.NavigationPath.Length > 1)
-//                {
-//                    CompileIncludes(
-//                        collectionIncludeQueryModel,
-//                        new List<IncludeResultOperator>
-//                        {
-//                            new IncludeResultOperator(
-//                                includeSpecification.IncludeResultOperator.NavigationPropertyPaths
-//                                    .Skip(1),
-//                                collectionIncludeQueryModel.SelectClause.Selector)
-//                        },
-//                        trackingQuery,
-//                        asyncQuery);
-//                }
-            }
 
             var relatedArrayAccessExpression
                 = Expression.ArrayAccess(_includedParameter, Expression.Constant(includedIndex++));
@@ -1006,8 +991,6 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         EntityQueryModelVisitor.QueryContextParameter,
                         nameof(QueryContext.StateManager)),
                     nameof(Lazy<object>.Value));
-
-            var blockExpressions = new List<Expression>();
 
             if (trackingQuery)
             {
@@ -1078,6 +1061,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             {
                 blockExpressions.Add(
                     BuildIncludeExpressions(
+                        //                        queryModel,
+                        //                        asyncQuery,
+                        //                        parentOrderings,
+                        //                        includeSpecification,
                         navigationPath,
                         relatedEntityExpression,
                         trackingQuery,
@@ -1101,7 +1088,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         /// </summary>
         public static bool IsIncludeMethod([NotNull] MethodCallExpression methodCallExpression)
             => methodCallExpression.Method.MethodIsClosedFormOf(_includeMethodInfo)
-              || methodCallExpression.Method.MethodIsClosedFormOf(_includeAsyncMethodInfo);
+               || methodCallExpression.Method.MethodIsClosedFormOf(_includeAsyncMethodInfo);
 
         private static readonly MethodInfo _includeMethodInfo
             = typeof(IncludeCompiler).GetTypeInfo()

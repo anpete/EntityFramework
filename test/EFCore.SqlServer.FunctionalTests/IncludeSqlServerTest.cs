@@ -20,7 +20,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         {
             _testOutputHelper = testOutputHelper;
 
-            TestSqlLoggerFactory.CaptureOutput(_testOutputHelper);
+            //TestSqlLoggerFactory.CaptureOutput(_testOutputHelper);
         }
 
         public override void Include_list(bool useString)
@@ -54,6 +54,11 @@ FROM [Orders] AS [c.Orders]
 INNER JOIN [Customers] AS [c0] ON [c.Orders].[CustomerID] = [c0].[CustomerID]
 ORDER BY [c0].[CustomerID]",
                 Sql);
+        }
+
+        public override void Include_multi_level_reference_then_include_collection_predicate(bool useString)
+        {
+            base.Include_multi_level_reference_then_include_collection_predicate(useString);
         }
 
         public override void Include_collection_with_last(bool useString)
@@ -817,6 +822,11 @@ INNER JOIN (
 ) AS [t6] ON [c2.Orders].[CustomerID] = [t6].[CustomerID]",
                     Sql);
             }
+        }
+
+        public override void Include_multiple_references_then_include_collection_multi_level(bool useString)
+        {
+            base.Include_multiple_references_then_include_collection_multi_level(useString);
         }
 
         public override void Include_duplicate_collection_result_operator(bool useString)
