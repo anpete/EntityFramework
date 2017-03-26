@@ -171,18 +171,21 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         _queryCompilationContext.AddQuerySourceRequiringMaterialization(
                             ((QuerySourceReferenceExpression)collectionIncludeQueryModel.SelectClause.Selector).ReferencedQuerySource);
 
-                        propertyExpressions.Add(
-                            Expression.Lambda<Func<IEnumerable<object>>>(
-                                new SubQueryExpression(collectionIncludeQueryModel)));
+                        Expression collectionLambdaExpression 
+                            = Expression.Lambda<Func<IEnumerable<object>>>(
+                                new SubQueryExpression(collectionIncludeQueryModel));
 
-                        var collectionType = typeof(Func<IEnumerable<object>>);
                         var includeCollectionMethodInfo = _queryBufferIncludeCollectionMethodInfo;
 
                         Expression cancellationTokenExpression = null;
 
                         if (asyncQuery)
                         {
-                            collectionType = typeof(Func<IAsyncEnumerable<object>>);
+                            collectionLambdaExpression
+                                = Expression.Convert(
+                                    collectionLambdaExpression,
+                                    typeof(Func<IAsyncEnumerable<object>>));
+
                             includeCollectionMethodInfo = _queryBufferIncludeCollectionAsyncMethodInfo;
                             cancellationTokenExpression = _cancellationTokenParameter;
                         }
@@ -192,8 +195,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                 navigation,
                                 entityParameter,
                                 trackingQuery,
-                                ref includedIndex,
-                                collectionType,
+                                collectionLambdaExpression,
                                 includeCollectionMethodInfo,
                                 cancellationTokenExpression));
                     }
@@ -250,10 +252,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             = Expression.Property(
                                 Expression.Call(
                                     _includeAsyncMethodInfo.MakeGenericMethod(includeGrouping.Key.Type),
+                                    EntityQueryModelVisitor.QueryContextParameter,
                                     includeGrouping.Key,
                                     Expression.NewArrayInit(typeof(object), propertyExpressions),
                                     Expression.Lambda(
                                         Expression.Block(blockExpressions),
+                                        EntityQueryModelVisitor.QueryContextParameter,
                                         entityParameter,
                                         _includedParameter,
                                         _cancellationTokenParameter),
@@ -267,10 +271,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     includeExpression
                         = Expression.Call(
                             _includeMethodInfo.MakeGenericMethod(includeGrouping.Key.Type),
+                            EntityQueryModelVisitor.QueryContextParameter,
                             includeGrouping.Key,
                             Expression.NewArrayInit(typeof(object), propertyExpressions),
                             Expression.Lambda(
                                 Expression.Block(typeof(void), blockExpressions),
+                                EntityQueryModelVisitor.QueryContextParameter,
                                 entityParameter,
                                 _includedParameter));
                 }
@@ -804,19 +810,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             INavigation navigation,
             Expression targetEntityExpression,
             bool trackingQuery,
-            ref int includedIndex,
-            Type collectionType,
+            Expression relatedCollectionFuncExpression,
             MethodInfo includeCollectionMethodInfo,
             Expression cancellationTokenExpression)
         {
-            var collectionFuncArrayAccessExpression
-                = Expression.ArrayAccess(_includedParameter, Expression.Constant(includedIndex++));
-
-            var relatedCollectionFuncExpression
-                = Expression.Convert(
-                    collectionFuncArrayAccessExpression,
-                    collectionType);
-
             var inverseNavigation = navigation.FindInverse();
 
             var arguments = new List<Expression>
@@ -1042,13 +1039,14 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
         // ReSharper disable once InconsistentNaming
         private static TEntity _Include<TEntity>(
+            QueryContext queryContext,
             TEntity entity,
             object[] included,
-            Action<TEntity, object[]> fixup)
+            Action<QueryContext, TEntity, object[]> fixup)
         {
             if (entity != null)
             {
-                fixup(entity, included);
+                fixup(queryContext, entity, included);
             }
 
             return entity;
@@ -1060,14 +1058,15 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
         // ReSharper disable once InconsistentNaming
         private static async Task<TEntity> _IncludeAsync<TEntity>(
+            QueryContext queryContext,
             TEntity entity,
             object[] included,
-            Func<TEntity, object[], CancellationToken, Task> fixup,
+            Func<QueryContext, TEntity, object[], CancellationToken, Task> fixup,
             CancellationToken cancellationToken)
         {
             if (entity != null)
             {
-                await fixup(entity, included, cancellationToken);
+                await fixup(queryContext, entity, included, cancellationToken);
             }
 
             return entity;

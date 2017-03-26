@@ -639,7 +639,7 @@ namespace Microsoft.EntityFrameworkCore.Query
         {
             protected override Expression VisitMethodCall(MethodCallExpression node)
                 => IncludeCompiler.IsIncludeMethod(node)
-                    ? node.Arguments[0]
+                    ? node.Arguments[1]
                     : base.VisitMethodCall(node);
 
             protected override Expression VisitMember(MemberExpression node)
