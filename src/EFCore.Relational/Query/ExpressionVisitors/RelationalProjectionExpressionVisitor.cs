@@ -2,10 +2,13 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query.Expressions;
+using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Utilities;
@@ -94,6 +97,19 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
         {
             Check.NotNull(expression, nameof(expression));
 
+            if (expression.Type == typeof(CompositeKey))
+            {
+                var propertyCallExpressions
+                    = ((NewArrayExpression)expression.Arguments.Single()).Expressions;
+
+                foreach (var propertyCallExpression in propertyCallExpressions)
+                {
+                    Visit(propertyCallExpression.RemoveConvert());
+                }
+
+                return expression;
+            }
+
             var newNewExpression = base.VisitNew(expression);
 
             var selectExpression = QueryModelVisitor.TryGetQuery(_querySource);
@@ -107,7 +123,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                     if (_sourceExpressionProjectionMapping.ContainsKey(sourceExpression))
                     {
                         var memberInfo = expression.Members?[i]
-                            ?? (expression.Arguments[i] as MemberExpression)?.Member;
+                                         ?? (expression.Arguments[i] as MemberExpression)?.Member;
 
                         if (memberInfo != null)
                         {
@@ -147,6 +163,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                 if (sqlExpression == null)
                 {
                     var qsre = node as QuerySourceReferenceExpression;
+
                     if (qsre == null)
                     {
                         QueryModelVisitor.RequiresClientProjection = true;

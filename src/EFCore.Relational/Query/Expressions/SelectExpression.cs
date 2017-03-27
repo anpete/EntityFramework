@@ -401,7 +401,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
 
             IsProjectStar = true;
 
-            // This code is to preserve the ordering in the result when we add extra ordering like we do for grouping/include
+            // This code is to preserve the ordering in the result when we add 
+            // extra ordering like we do for grouping/include
             foreach (var ordering in subquery.OrderBy.ToList())
             {
                 var expression = ordering.Expression;

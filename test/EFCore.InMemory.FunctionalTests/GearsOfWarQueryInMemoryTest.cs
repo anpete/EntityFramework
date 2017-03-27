@@ -11,7 +11,12 @@ namespace Microsoft.EntityFrameworkCore.InMemory.FunctionalTests
         public GearsOfWarQueryInMemoryTest(GearsOfWarQueryInMemoryFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestLoggerFactory.TestOutputHelper = testOutputHelper;
+            TestLoggerFactory.TestOutputHelper = testOutputHelper;
+        }
+
+        public override void Include_multiple_one_to_one_and_one_to_one_and_one_to_many()
+        {
+            base.Include_multiple_one_to_one_and_one_to_one_and_one_to_many();
         }
     }
 }

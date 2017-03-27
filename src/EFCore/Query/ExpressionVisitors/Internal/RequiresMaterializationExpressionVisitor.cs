@@ -147,6 +147,13 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 }
             });
 
+            if (node.Object?.Type == typeof(CompositeKey)
+                && node.Method.Equals(CompositeKey.GetValueMethodInfo)
+                && node.Object is QuerySourceReferenceExpression querySourceReferenceExpression)
+            {
+                DemoteQuerySource(querySourceReferenceExpression.ReferencedQuerySource);
+            }
+
             foreach (var subQueryExpression in newExpression.Arguments.OfType<SubQueryExpression>())
             {
                 if (subQueryExpression.QueryModel.ResultOperators.LastOrDefault() is IQuerySource querySourceResultOperator)

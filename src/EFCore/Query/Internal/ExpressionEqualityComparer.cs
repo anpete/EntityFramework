@@ -558,7 +558,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             private bool CompareNewArray(NewArrayExpression a, NewArrayExpression b)
                 => CompareExpressionList(a.Expressions, b.Expressions);
 
-            private bool CompareExtension(Expression a, Expression b)
+            private static bool CompareExtension(Expression a, Expression b)
                 => a.Equals(b);
 
             private bool CompareInvocation(InvocationExpression a, InvocationExpression b)

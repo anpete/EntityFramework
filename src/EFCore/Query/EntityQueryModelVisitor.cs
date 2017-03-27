@@ -75,11 +75,23 @@ namespace Microsoft.EntityFrameworkCore.Query
         public static Expression CreatePropertyExpression(
             [NotNull] Expression target,
             [NotNull] IPropertyBase property)
+            => CreatePropertyExpression(target, property.ClrType, property.Name);
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="type"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static Expression CreatePropertyExpression(
+            [NotNull] Expression target,
+            [NotNull] Type type,
+            [NotNull] string name)
             => Expression.Call(
-                null,
-                EF.PropertyMethod.MakeGenericMethod(property.ClrType.MakeNullable()),
+                EF.PropertyMethod.MakeGenericMethod(type.MakeNullable()),
                 target,
-                Expression.Constant(property.Name));
+                Expression.Constant(name));
 
         private readonly IQueryOptimizer _queryOptimizer;
         private readonly INavigationRewritingExpressionVisitorFactory _navigationRewritingExpressionVisitorFactory;
@@ -323,17 +335,19 @@ namespace Microsoft.EntityFrameworkCore.Query
 
             // Rewrite navigations
 
-            new NondeterministicResultCheckingVisitor(QueryCompilationContext.Logger)
-                .VisitQueryModel(queryModel);
+            new NondeterministicResultCheckingVisitor(QueryCompilationContext.Logger).VisitQueryModel(queryModel);
+
+            var navigationRewritingExpressionVisitor = _navigationRewritingExpressionVisitorFactory.Create(this);
+
+            navigationRewritingExpressionVisitor.Rewrite(queryModel, parentQueryModel: null);
 
             new IncludeCompiler(
                     QueryCompilationContext,
-                    _querySourceTracingExpressionVisitorFactory)
+                    _querySourceTracingExpressionVisitorFactory,
+                    navigationRewritingExpressionVisitor)
                 .CompileIncludes(queryModel, includeResultOperators, TrackResults(queryModel), asyncQuery);
 
-            _navigationRewritingExpressionVisitorFactory
-                .Create(this)
-                .Rewrite(queryModel, parentQueryModel: null);
+            //navigationRewritingExpressionVisitor.Rewrite(queryModel, parentQueryModel: null);
 
             // Second pass of optimizations
 
@@ -698,18 +712,21 @@ namespace Microsoft.EntityFrameworkCore.Query
                     .Lambda<Func<QueryContext, TResults>>(
                         _expression, QueryContextParameter);
 
-            var queryExecutor = queryExecutorExpression.Compile();
-
-            QueryCompilationContext.Logger.LogDebug(
-                CoreEventId.QueryPlan,
-                () =>
+            try
+            {
+                return queryExecutorExpression.Compile();
+            }
+            finally
+            {
+                QueryCompilationContext.Logger.LogDebug(
+                    CoreEventId.QueryPlan,
+                    () =>
                     {
-                        var queryPlan = _expressionPrinter.Print(queryExecutorExpression);
+                        var queryPlan = _expressionPrinter.PrintDebug(queryExecutorExpression);
 
                         return queryPlan;
                     });
-
-            return queryExecutor;
+            }
         }
 
         /// <summary>

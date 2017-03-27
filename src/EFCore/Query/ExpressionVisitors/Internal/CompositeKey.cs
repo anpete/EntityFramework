@@ -18,8 +18,17 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public static readonly ConstructorInfo CompositeKeyCtor
-            = typeof(CompositeKey).GetTypeInfo().DeclaredConstructors
+            = typeof(CompositeKey).GetTypeInfo()
+                .DeclaredConstructors
                 .Single(c => c.GetParameters().Length == 1);
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public static readonly MethodInfo GetValueMethodInfo
+            = typeof(CompositeKey).GetTypeInfo()
+                .GetDeclaredMethod(nameof(GetValue));
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -50,12 +59,35 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public override bool Equals(object obj)
-            => _values.SequenceEqual(((CompositeKey)obj)._values);
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            return obj is CompositeKey compositeKey
+                   && _values.SequenceEqual(compositeKey._values);
+        }
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public override int GetHashCode() => 0;
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return _values.Aggregate(
+                    0,
+                    (current, argument)
+                        => current + ((current * 397) ^ (argument?.GetHashCode() ?? 0)));
+            }
+        }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public object GetValue(int index) => _values[index];
     }
 }

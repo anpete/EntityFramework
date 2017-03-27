@@ -353,7 +353,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             if (node.Result != null)
             {
-                AppendLine("return " + node.Result);
+                AppendLine("return " + Visit(node.Result));
             }
 
             _stringBuilder.DecrementIndent();
@@ -728,7 +728,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             if (node is QuerySourceReferenceExpression qsre)
             {
-                StringBuilder.Append(qsre.ReferencedQuerySource.ItemName);
+                StringBuilder.Append(qsre);
             }
             else if (node is NullConditionalExpression nullConditional)
             {

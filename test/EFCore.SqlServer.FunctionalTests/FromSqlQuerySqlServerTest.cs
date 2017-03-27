@@ -314,9 +314,12 @@ ORDER BY [c].[CustomerID]
 SELECT [c.Orders].[OrderID], [c.Orders].[CustomerID], [c.Orders].[EmployeeID], [c.Orders].[OrderDate]
 FROM [Orders] AS [c.Orders]
 INNER JOIN (
-    SELECT * FROM ""Customers""
-) AS [c0] ON [c.Orders].[CustomerID] = [c0].[CustomerID]
-ORDER BY [c0].[CustomerID]",
+    SELECT [c0].[CustomerID]
+    FROM (
+        SELECT * FROM ""Customers""
+    ) AS [c0]
+) AS [t] ON [c.Orders].[CustomerID] = [t].[CustomerID]
+ORDER BY [t].[CustomerID]",
                 Sql);
         }
 
@@ -335,7 +338,7 @@ ORDER BY [c].[CustomerID]
 SELECT [c.Orders].[OrderID], [c.Orders].[CustomerID], [c.Orders].[EmployeeID], [c.Orders].[OrderDate]
 FROM [Orders] AS [c.Orders]
 INNER JOIN (
-    SELECT [c0].*
+    SELECT [c0].[CustomerID]
     FROM (
         SELECT * FROM ""Customers""
     ) AS [c0]
@@ -430,7 +433,7 @@ ORDER BY [c2].[CustomerID]
 SELECT [c2.Orders].[OrderID], [c2.Orders].[CustomerID], [c2.Orders].[EmployeeID], [c2.Orders].[OrderDate]
 FROM [Orders] AS [c2.Orders]
 INNER JOIN (
-    SELECT DISTINCT [c20].*
+    SELECT DISTINCT [c20].[CustomerID]
     FROM (
         SELECT * FROM ""Customers"" WHERE ""CustomerID"" = 'ALFKI'
     ) AS [c10]
@@ -459,7 +462,7 @@ ORDER BY [o].[OrderID]
 SELECT [o.OrderDetails].[OrderID], [o.OrderDetails].[ProductID], [o.OrderDetails].[Discount], [o.OrderDetails].[Quantity], [o.OrderDetails].[UnitPrice]
 FROM [Order Details] AS [o.OrderDetails]
 INNER JOIN (
-    SELECT DISTINCT [o0].*
+    SELECT DISTINCT [o0].[OrderID]
     FROM (
         SELECT * FROM ""Customers"" WHERE ""CustomerID"" = 'ALFKI'
     ) AS [c0]

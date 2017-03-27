@@ -601,8 +601,40 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                 }
             }
 
-            return TryBindMemberOrMethodToAliasExpression(methodCallExpression, (expression, visitor, binder)
-                    => visitor.BindMethodCallExpression(expression, binder))
+            if (methodCallExpression.Object?.Type == typeof(CompositeKey)
+                && methodCallExpression.Method.Equals(CompositeKey.GetValueMethodInfo)
+                && methodCallExpression.Object is QuerySourceReferenceExpression querySourceReferenceExpression)
+            {
+                var selectExpression
+                    = _queryModelVisitor.TryGetQuery(querySourceReferenceExpression.ReferencedQuerySource);
+
+                if (selectExpression != null)
+                {
+                    var projectionIndex
+                        = (int)((ConstantExpression)methodCallExpression.Arguments.Single()).Value;
+
+                    var tableExpression
+                        = selectExpression
+                            .GetTableForQuerySource(
+                                querySourceReferenceExpression.ReferencedQuerySource);
+
+                    if (tableExpression is SelectExpression)
+                    {
+                        return selectExpression.Projection[projectionIndex];
+                    }
+
+                    var subSelectExpression
+                        = (SelectExpression)((JoinExpressionBase)tableExpression)
+                            .TableExpression;
+
+                    return subSelectExpression.Projection[projectionIndex]
+                        .LiftExpressionFromSubquery(tableExpression);
+                }
+            }
+
+            return TryBindMemberOrMethodToAliasExpression(
+                methodCallExpression, 
+                (expression, visitor, binder) => visitor.BindMethodCallExpression(expression, binder))
                 ?? _queryModelVisitor.BindLocalMethodCallExpression(methodCallExpression)
                 ?? _queryModelVisitor.BindMethodToOuterQueryParameter(methodCallExpression);
         }

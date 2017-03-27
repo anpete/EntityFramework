@@ -116,6 +116,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             public GroupJoinClause GroupJoinClause { get; }
             public IEnumerable<IBodyClause> AdditionalBodyClauses { get; }
             public bool DependentToPrincipal { get; }
+            public bool IsInserted { get; set; }
             public QuerySourceReferenceExpression QuerySourceReferenceExpression { get; }
             public readonly List<NavigationJoin> NavigationJoins = new List<NavigationJoin>();
 
@@ -146,12 +147,15 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public NavigationRewritingExpressionVisitor([NotNull] EntityQueryModelVisitor queryModelVisitor, bool navigationExpansionSubquery)
+        public NavigationRewritingExpressionVisitor(
+            [NotNull] EntityQueryModelVisitor queryModelVisitor, bool navigationExpansionSubquery)
         {
             Check.NotNull(queryModelVisitor, nameof(queryModelVisitor));
 
             _queryModelVisitor = queryModelVisitor;
-            _navigationRewritingQueryModelVisitor = new NavigationRewritingQueryModelVisitor(this, _queryModelVisitor, navigationExpansionSubquery);
+
+            _navigationRewritingQueryModelVisitor 
+                = new NavigationRewritingQueryModelVisitor(this, _queryModelVisitor, navigationExpansionSubquery);
         }
 
         /// <summary>
@@ -194,8 +198,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         private void InsertNavigationJoin(NavigationJoin navigationJoin)
         {
             var insertionIndex = 0;
-            var bodyClause = navigationJoin.QuerySource as IBodyClause;
-            if (bodyClause != null)
+
+            if (navigationJoin.QuerySource is IBodyClause bodyClause)
             {
                 insertionIndex = _queryModel.BodyClauses.IndexOf(bodyClause) + 1;
             }
@@ -205,10 +209,16 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             {
                 foreach (var nj in navigationJoin.Iterate())
                 {
-                    _queryModel.BodyClauses.Insert(insertionIndex++, nj.JoinClause ?? (IBodyClause)nj.GroupJoinClause);
-                    foreach (var additionalBodyClause in nj.AdditionalBodyClauses)
+                    if (!nj.IsInserted)
                     {
-                        _queryModel.BodyClauses.Insert(insertionIndex++, additionalBodyClause);
+                        nj.IsInserted = true;
+
+                        _queryModel.BodyClauses.Insert(insertionIndex++, nj.JoinClause ?? (IBodyClause)nj.GroupJoinClause);
+
+                        foreach (var additionalBodyClause in nj.AdditionalBodyClauses)
+                        {
+                            _queryModel.BodyClauses.Insert(insertionIndex++, additionalBodyClause);
+                        }
                     }
                 }
             }
@@ -1120,7 +1130,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             return outerQuerySourceReferenceExpression;
         }
 
-        private JoinClause BuildJoinFromNavigation(
+        private static JoinClause BuildJoinFromNavigation(
             QuerySourceReferenceExpression querySourceReferenceExpression,
             INavigation navigation,
             IEntityType targetEntityType,
@@ -1135,9 +1145,14 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                         : navigation.ForeignKey.PrincipalKey.Properties,
                     addNullCheck: addNullCheckToOuterKeySelector);
 
+            var itemName
+                = querySourceReferenceExpression.ReferencedQuerySource.HasGeneratedItemName()
+                    ? navigation.DeclaringEntityType.DisplayName()[0].ToString().ToLowerInvariant()
+                    : querySourceReferenceExpression.ReferencedQuerySource.ItemName;
+
             var joinClause
                 = new JoinClause(
-                    $"{querySourceReferenceExpression.ReferencedQuerySource.ItemName}.{navigation.Name}", // Interpolation okay; strings
+                    $"{itemName}.{navigation.Name}", // Interpolation okay; strings
                     targetEntityType.ClrType,
                     NullAsyncQueryProvider.Instance.CreateEntityQueryableExpression(targetEntityType.ClrType),
                     outerKeySelector,

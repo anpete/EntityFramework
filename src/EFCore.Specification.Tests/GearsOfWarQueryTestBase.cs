@@ -86,6 +86,18 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
         }
 
         [ConditionalFact]
+        public virtual void Select_multiple_one_to_one_optional_and_one_to_one_required()
+        {
+            using (var context = CreateContext())
+            {
+                var query = context.Tags.Select(t => t.Gear).Select(g => g.Squad);
+                var result = query.ToList();
+
+                Assert.Equal(6, result.Count);
+            }
+        }
+
+        [ConditionalFact]
         public virtual void Include_multiple_one_to_one_and_one_to_one_and_one_to_many()
         {
             using (var context = CreateContext())
