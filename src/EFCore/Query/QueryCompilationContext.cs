@@ -147,6 +147,37 @@ namespace Microsoft.EntityFrameworkCore.Query
         }
 
         /// <summary>
+        ///     Creates cloned annotations targeting a new QueryModel.
+        /// </summary>
+        /// <param name="querySourceMapping">A query source mapping.</param>
+        /// <param name="queryModel">A query model.</param>
+        public virtual void CloneAnnotations(
+            QuerySourceMapping querySourceMapping,
+            QueryModel queryModel)
+        {
+            var clonedAnnotations = new List<IQueryAnnotation>();
+
+            // ReSharper disable once LoopCanBeConvertedToQuery
+            foreach (var annotation
+                in QueryAnnotations.OfType<ICloneableQueryAnnotation>())
+            {
+                if (querySourceMapping.GetExpression(annotation.QuerySource)
+                    is QuerySourceReferenceExpression querySourceReferenceExpression)
+                {
+                    clonedAnnotations.Add(
+                        annotation.Clone(
+                            querySourceReferenceExpression.ReferencedQuerySource, queryModel));
+                }
+            }
+
+            var newAnnotations = QueryAnnotations.ToList();
+
+            newAnnotations.AddRange(clonedAnnotations);
+
+            QueryAnnotations = newAnnotations;
+        }
+
+        /// <summary>
         ///     Gets a value indicating whether this is a tracking query.
         /// </summary>
         /// <value>
