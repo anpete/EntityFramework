@@ -7,9 +7,11 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
+using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
 {
@@ -17,7 +19,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
     {
         private sealed class IncludeLoadTree : IncludeLoadTreeNodeBase
         {
-            public IncludeLoadTree(QuerySourceReferenceExpression querySourceReferenceExpression) 
+            public IncludeLoadTree(QuerySourceReferenceExpression querySourceReferenceExpression)
                 => QuerySourceReferenceExpression = querySourceReferenceExpression;
 
             public QuerySourceReferenceExpression QuerySourceReferenceExpression { get; }
@@ -29,6 +31,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             public Expression Compile(
                 QueryCompilationContext queryCompilationContext,
+                NavigationRewritingExpressionVisitor navigationRewritingExpressionVisitor,
                 QueryModel queryModel,
                 bool trackingQuery,
                 bool asyncQuery,
@@ -63,6 +66,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     blockExpressions.Add(
                         includeLoadTreeNode.BuildIncludeExpressions(
                             queryCompilationContext,
+                            navigationRewritingExpressionVisitor,
                             queryModel,
                             trackingQuery,
                             asyncQuery,
@@ -116,17 +120,43 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     }
                 }
 
-                return includeExpression
-                       ?? Expression.Call(
-                           _includeMethodInfo.MakeGenericMethod(QuerySourceReferenceExpression.Type),
-                           EntityQueryModelVisitor.QueryContextParameter,
-                           QuerySourceReferenceExpression,
-                           Expression.NewArrayInit(typeof(object), propertyExpressions),
-                           Expression.Lambda(
-                               Expression.Block(typeof(void), blockExpressions),
-                               EntityQueryModelVisitor.QueryContextParameter,
-                               entityParameterExpression,
-                               _includedParameter));
+                includeExpression
+                    = includeExpression
+                      ?? Expression.Call(
+                          _includeMethodInfo.MakeGenericMethod(QuerySourceReferenceExpression.Type),
+                          EntityQueryModelVisitor.QueryContextParameter,
+                          QuerySourceReferenceExpression,
+                          Expression.NewArrayInit(typeof(object), propertyExpressions),
+                          Expression.Lambda(
+                              Expression.Block(typeof(void), blockExpressions),
+                              EntityQueryModelVisitor.QueryContextParameter,
+                              entityParameterExpression,
+                              _includedParameter));
+
+                //ApplyIncludeExpressionToQueryModel(queryModel, includeExpression);
+
+                return includeExpression;
+            }
+
+            private void ApplyIncludeExpressionToQueryModel(QueryModel queryModel, Expression expression)
+            {
+                var includeReplacingExpressionVisitor = new IncludeReplacingExpressionVisitor();
+
+                queryModel.SelectClause.TransformExpressions(
+                    e => includeReplacingExpressionVisitor.Replace(
+                        QuerySourceReferenceExpression,
+                        expression,
+                        e));
+
+                foreach (var groupResultOperator
+                    in queryModel.ResultOperators.OfType<GroupResultOperator>())
+                {
+                    groupResultOperator.ElementSelector
+                        = includeReplacingExpressionVisitor.Replace(
+                            QuerySourceReferenceExpression,
+                            expression,
+                            groupResultOperator.ElementSelector);
+                }
             }
         }
     }

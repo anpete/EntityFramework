@@ -66,6 +66,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
         private readonly QueryCompilationContext _queryCompilationContext;
         private readonly IQuerySourceTracingExpressionVisitorFactory _querySourceTracingExpressionVisitorFactory;
+        private readonly NavigationRewritingExpressionVisitor _navigationRewritingExpressionVisitor;
 
         private int _collectionIncludeId;
 
@@ -75,10 +76,33 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         /// </summary>
         public IncludeCompiler(
             [NotNull] QueryCompilationContext queryCompilationContext,
-            [NotNull] IQuerySourceTracingExpressionVisitorFactory querySourceTracingExpressionVisitorFactory)
+            [NotNull] IQuerySourceTracingExpressionVisitorFactory querySourceTracingExpressionVisitorFactory,
+            [NotNull] NavigationRewritingExpressionVisitor navigationRewritingExpressionVisitor)
         {
             _queryCompilationContext = queryCompilationContext;
             _querySourceTracingExpressionVisitorFactory = querySourceTracingExpressionVisitorFactory;
+            _navigationRewritingExpressionVisitor = navigationRewritingExpressionVisitor;
+        }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual void CompileIncludes(
+            [NotNull] QueryModel queryModel,
+            [NotNull] ICollection<IncludeResultOperator> includeResultOperators,
+            bool trackingQuery,
+            bool asyncQuery)
+        {
+            if (queryModel.GetOutputDataInfo() is StreamedScalarValueInfo)
+            {
+                return;
+            }
+
+            var includeLoadTrees
+                = CreateIncludeLoadTrees(includeResultOperators, queryModel.SelectClause.Selector);
+
+            CompileIncludes(queryModel, trackingQuery, asyncQuery, includeLoadTrees);
         }
 
         private IEnumerable<IncludeLoadTree> CreateIncludeLoadTrees(
@@ -140,7 +164,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 }
 
                 if (!(!navigationPath.Any(n => n.IsCollection())
-                        || navigationPath.Length == 1))
+                      || navigationPath.Length == 1))
                 {
                     continue;
                 }
@@ -159,7 +183,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 if (includeLoadTree == null)
                 {
                     includeLoadTrees
-                        .Add(includeLoadTree 
+                        .Add(includeLoadTree
                             = new IncludeLoadTree(querySourceReferenceExpression));
                 }
 
@@ -178,27 +202,6 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             return includeLoadTrees;
         }
 
-        /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public virtual void CompileIncludes(
-            [NotNull] QueryModel queryModel,
-            [NotNull] ICollection<IncludeResultOperator> includeResultOperators,
-            bool trackingQuery,
-            bool asyncQuery)
-        {
-            if (queryModel.GetOutputDataInfo() is StreamedScalarValueInfo)
-            {
-                return;
-            }
-
-            var includeLoadTrees
-                = CreateIncludeLoadTrees(includeResultOperators, queryModel.SelectClause.Selector);
-
-            CompileIncludes(queryModel, trackingQuery, asyncQuery, includeLoadTrees);
-        }
-
         private void CompileIncludes(
             QueryModel queryModel, 
             bool trackingQuery, 
@@ -212,6 +215,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                    let includeExpression
                    = includeLoadTree.Compile(
                        _queryCompilationContext,
+                       _navigationRewritingExpressionVisitor,
                        queryModel,
                        trackingQuery,
                        asyncQuery,

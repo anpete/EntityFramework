@@ -34,6 +34,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         private readonly EntityQueryModelVisitor _queryModelVisitor;
         private readonly List<NavigationJoin> _navigationJoins = new List<NavigationJoin>();
         private readonly NavigationRewritingQueryModelVisitor _navigationRewritingQueryModelVisitor;
+
         private QueryModel _queryModel;
         private QueryModel _parentQueryModel;
 
@@ -55,6 +56,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                     }
                 }
             }
+            
+            public readonly List<NavigationJoin> NavigationJoins = new List<NavigationJoin>();
 
             public NavigationJoin(
                 IQuerySource querySource,
@@ -110,6 +113,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                 QuerySourceReferenceExpression = querySourceReferenceExpression;
             }
 
+            public bool IsInserted { get; set; }
+
             public IQuerySource QuerySource { get; }
             public INavigation Navigation { get; }
             public JoinClause JoinClause { get; }
@@ -117,7 +122,6 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             public IEnumerable<IBodyClause> AdditionalBodyClauses { get; }
             public bool DependentToPrincipal { get; }
             public QuerySourceReferenceExpression QuerySourceReferenceExpression { get; }
-            public readonly List<NavigationJoin> NavigationJoins = new List<NavigationJoin>();
 
             public IEnumerable<NavigationJoin> Iterate()
             {
@@ -194,8 +198,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         private void InsertNavigationJoin(NavigationJoin navigationJoin)
         {
             var insertionIndex = 0;
-            var bodyClause = navigationJoin.QuerySource as IBodyClause;
-            if (bodyClause != null)
+
+            if (navigationJoin.QuerySource is IBodyClause bodyClause)
             {
                 insertionIndex = _queryModel.BodyClauses.IndexOf(bodyClause) + 1;
             }
@@ -205,10 +209,16 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             {
                 foreach (var nj in navigationJoin.Iterate())
                 {
-                    _queryModel.BodyClauses.Insert(insertionIndex++, nj.JoinClause ?? (IBodyClause)nj.GroupJoinClause);
-                    foreach (var additionalBodyClause in nj.AdditionalBodyClauses)
+                    if (!nj.IsInserted)
                     {
-                        _queryModel.BodyClauses.Insert(insertionIndex++, additionalBodyClause);
+                        nj.IsInserted = true;
+
+                        _queryModel.BodyClauses.Insert(insertionIndex++, nj.JoinClause ?? (IBodyClause)nj.GroupJoinClause);
+
+                        foreach (var additionalBodyClause in nj.AdditionalBodyClauses)
+                        {
+                            _queryModel.BodyClauses.Insert(insertionIndex++, additionalBodyClause);
+                        }
                     }
                 }
             }

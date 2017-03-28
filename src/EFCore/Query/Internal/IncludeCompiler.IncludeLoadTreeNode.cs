@@ -28,10 +28,11 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             public Expression BuildIncludeExpressions(
                 QueryCompilationContext queryCompilationContext,
+                NavigationRewritingExpressionVisitor navigationRewritingExpressionVisitor,
                 QueryModel queryModel,
                 bool trackingQuery,
                 bool asyncQuery,
-                QuerySourceReferenceExpression targetQuerySourceReferenceExpression,
+                QuerySourceReferenceExpression parentQuerySourceReferenceExpression,
                 ICollection<Ordering> parentOrderings,
                 Expression entityParameterExpression,
                 ICollection<Expression> propertyExpressions,
@@ -46,22 +47,22 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             queryModel,
                             trackingQuery,
                             asyncQuery,
-                            targetQuerySourceReferenceExpression,
+                            parentQuerySourceReferenceExpression,
                             parentOrderings,
                             entityParameterExpression,
                             ref collectionIncludeId)
                         : BuildReferenceIncludeExpressions(
                             queryCompilationContext,
+                            navigationRewritingExpressionVisitor,
                             queryModel,
                             trackingQuery,
                             asyncQuery,
-                            targetQuerySourceReferenceExpression,
                             parentOrderings,
                             entityParameterExpression,
                             propertyExpressions,
                             ref includedIndex,
                             ref collectionIncludeId,
-                            lastPropertyExpression ?? targetQuerySourceReferenceExpression);
+                            lastPropertyExpression ?? parentQuerySourceReferenceExpression);
             }
 
             private Expression BuildCollectionIncludeExpressions(
@@ -536,22 +537,29 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             private Expression BuildReferenceIncludeExpressions(
                 QueryCompilationContext queryCompilationContext,
+                NavigationRewritingExpressionVisitor navigationRewritingExpressionVisitor,
                 QueryModel queryModel,
                 bool trackingQuery,
                 bool asyncQuery,
-                QuerySourceReferenceExpression targetQuerySourceReferenceExpression,
                 ICollection<Ordering> parentOrderings,
                 Expression targetEntityExpression,
                 ICollection<Expression> propertyExpressions,
                 ref int includedIndex,
                 ref int collectionIncludeId,
-                
                 Expression lastPropertyExpression)
             {
-                propertyExpressions.Add(
-                    lastPropertyExpression
-                        = EntityQueryModelVisitor.CreatePropertyExpression(
-                            lastPropertyExpression, Navigation));
+                var parentQuerySourceReferenceExpression
+                    = (QuerySourceReferenceExpression)navigationRewritingExpressionVisitor
+                        .Visit(
+                            lastPropertyExpression
+                                = EntityQueryModelVisitor.CreatePropertyExpression(
+                                    lastPropertyExpression, Navigation));
+
+                //propertyExpressions.Add(parentQuerySourceReferenceExpression);
+
+                propertyExpressions.Add(lastPropertyExpression);
+
+                //navigationRewritingExpressionVisitor.Rewrite(queryModel, null);
 
                 var relatedArrayAccessExpression
                     = Expression.ArrayAccess(_includedParameter, Expression.Constant(includedIndex++));
@@ -640,10 +648,11 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         includeLoadTreeNode
                             .BuildIncludeExpressions(
                                 queryCompilationContext,
+                                navigationRewritingExpressionVisitor,
                                 queryModel,
                                 trackingQuery,
                                 asyncQuery,
-                                targetQuerySourceReferenceExpression,
+                                parentQuerySourceReferenceExpression,
                                 parentOrderings,
                                 relatedEntityExpression,
                                 propertyExpressions,

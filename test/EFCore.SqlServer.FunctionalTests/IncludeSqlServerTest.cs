@@ -26,6 +26,22 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public override void Include_references_then_include_collection(bool useString)
         {
             base.Include_references_then_include_collection(useString);
+
+//            AssertSql(
+//                @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate], [o.Customer].[CustomerID], [o.Customer].[Address], [o.Customer].[City], [o.Customer].[CompanyName], [o.Customer].[ContactName], [o.Customer].[ContactTitle], [o.Customer].[Country], [o.Customer].[Fax], [o.Customer].[Phone], [o.Customer].[PostalCode], [o.Customer].[Region]
+//FROM [Orders] AS [o]
+//LEFT JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[CustomerID]
+//ORDER BY [o.Customer].[CustomerID]
+//
+//SELECT [o.Customer.Orders].[OrderID], [o.Customer.Orders].[CustomerID], [o.Customer.Orders].[EmployeeID], [o.Customer.Orders].[OrderDate]
+//FROM [Orders] AS [o.Customer.Orders]
+//INNER JOIN (
+//    SELECT DISTINCT [o.Customer0].*
+//    FROM [Orders] AS [o0]
+//    LEFT JOIN [Customers] AS [o.Customer0] ON [o0].[CustomerID] = [o.Customer0].[CustomerID]
+//) AS [t] ON [o.Customer.Orders].[CustomerID] = [t].[CustomerID]
+//ORDER BY [t].[CustomerID]",
+//                Sql);
         }
 
         public override void Include_list(bool useString)

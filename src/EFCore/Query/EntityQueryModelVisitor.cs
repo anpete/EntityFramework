@@ -323,17 +323,17 @@ namespace Microsoft.EntityFrameworkCore.Query
 
             // Rewrite navigations
 
-            new NondeterministicResultCheckingVisitor(QueryCompilationContext.Logger)
-                .VisitQueryModel(queryModel);
+            new NondeterministicResultCheckingVisitor(QueryCompilationContext.Logger).VisitQueryModel(queryModel);
+
+            var navigationRewritingExpressionVisitor = _navigationRewritingExpressionVisitorFactory.Create(this);
 
             new IncludeCompiler(
                     QueryCompilationContext,
-                    _querySourceTracingExpressionVisitorFactory)
+                    _querySourceTracingExpressionVisitorFactory,
+                    navigationRewritingExpressionVisitor)
                 .CompileIncludes(queryModel, includeResultOperators, TrackResults(queryModel), asyncQuery);
 
-            _navigationRewritingExpressionVisitorFactory
-                .Create(this)
-                .Rewrite(queryModel, parentQueryModel: null);
+            navigationRewritingExpressionVisitor.Rewrite(queryModel, parentQueryModel: null);
 
             // Second pass of optimizations
 
@@ -698,18 +698,21 @@ namespace Microsoft.EntityFrameworkCore.Query
                     .Lambda<Func<QueryContext, TResults>>(
                         _expression, QueryContextParameter);
 
-            var queryExecutor = queryExecutorExpression.Compile();
+            try
+            {
+                return queryExecutorExpression.Compile();
+            }
+            finally
+            {
+                QueryCompilationContext.Logger.LogDebug(
+                    CoreEventId.QueryPlan,
+                    () =>
+                        {
+                            var queryPlan = _expressionPrinter.Print(queryExecutorExpression);
 
-            QueryCompilationContext.Logger.LogDebug(
-                CoreEventId.QueryPlan,
-                () =>
-                    {
-                        var queryPlan = _expressionPrinter.Print(queryExecutorExpression);
-
-                        return queryPlan;
-                    });
-
-            return queryExecutor;
+                            return queryPlan;
+                        });
+            }
         }
 
         /// <summary>

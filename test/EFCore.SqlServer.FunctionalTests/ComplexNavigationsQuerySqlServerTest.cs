@@ -21,7 +21,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         {
             _testOutputHelper = testOutputHelper;
 
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
 
         protected override void ClearLog() => TestSqlLoggerFactory.Reset();
