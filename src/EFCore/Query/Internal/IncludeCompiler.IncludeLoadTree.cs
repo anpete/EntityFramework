@@ -35,7 +35,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 ICollection<Ordering> parentOrderings,
                 ref int collectionIncludeId)
             {
-                var entityParameter
+                var entityParameterExpression
                     = Expression.Parameter(QuerySourceReferenceExpression.Type, name: "entity");
 
                 var propertyExpressions = new List<Expression>();
@@ -49,10 +49,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                 EntityQueryModelVisitor.QueryContextParameter,
                                 nameof(QueryContext.QueryBuffer)),
                             _queryBufferStartTrackingMethodInfo,
-                            entityParameter,
+                            entityParameterExpression,
                             Expression.Constant(
                                 queryCompilationContext.Model
-                                    .FindEntityType(entityParameter.Type))));
+                                    .FindEntityType(entityParameterExpression.Type))));
                 }
 
                 var includedIndex = 0;
@@ -68,7 +68,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             asyncQuery,
                             QuerySourceReferenceExpression,
                             parentOrderings,
-                            entityParameter,
+                            entityParameterExpression,
                             propertyExpressions,
                             ref includedIndex,
                             ref collectionIncludeId));
@@ -108,7 +108,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                     Expression.Lambda(
                                         Expression.Block(blockExpressions),
                                         EntityQueryModelVisitor.QueryContextParameter,
-                                        entityParameter,
+                                        entityParameterExpression,
                                         _includedParameter,
                                         _cancellationTokenParameter),
                                     _cancellationTokenParameter),
@@ -125,7 +125,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                            Expression.Lambda(
                                Expression.Block(typeof(void), blockExpressions),
                                EntityQueryModelVisitor.QueryContextParameter,
-                               entityParameter,
+                               entityParameterExpression,
                                _includedParameter));
             }
         }

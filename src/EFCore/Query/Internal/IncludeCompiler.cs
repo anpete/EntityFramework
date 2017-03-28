@@ -140,7 +140,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 }
 
                 if (!(!navigationPath.Any(n => n.IsCollection())
-                      || navigationPath.Length == 1))
+                        || navigationPath.Length == 1))
+                {
+                    continue;
+                }
+
+                if (navigationPath.Count(n => n.IsCollection()) > 1)
                 {
                     continue;
                 }
@@ -191,6 +196,15 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             var includeLoadTrees
                 = CreateIncludeLoadTrees(includeResultOperators, queryModel.SelectClause.Selector);
 
+            CompileIncludes(queryModel, trackingQuery, asyncQuery, includeLoadTrees);
+        }
+
+        private void CompileIncludes(
+            QueryModel queryModel, 
+            bool trackingQuery, 
+            bool asyncQuery, 
+            IEnumerable<IncludeLoadTree> includeLoadTrees)
+        {
             var parentOrderings = new List<Ordering>();
 
             var compiledIncludes
@@ -210,7 +224,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             ApplyIncludeExpressionsToQueryModel(queryModel, compiledIncludes);
         }
 
-        private static void ApplyParentOrderings(QueryModel queryModel, List<Ordering> parentOrderings)
+        private static void ApplyParentOrderings(
+            QueryModel queryModel, IReadOnlyCollection<Ordering> parentOrderings)
         {
             if (parentOrderings.Any())
             {

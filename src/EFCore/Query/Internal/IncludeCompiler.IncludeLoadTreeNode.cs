@@ -31,40 +31,47 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 QueryModel queryModel,
                 bool trackingQuery,
                 bool asyncQuery,
-                QuerySourceReferenceExpression targetExpression,
+                QuerySourceReferenceExpression targetQuerySourceReferenceExpression,
                 ICollection<Ordering> parentOrderings,
-                Expression entityParameter,
+                Expression entityParameterExpression,
                 ICollection<Expression> propertyExpressions,
                 ref int includedIndex,
-                ref int collectionIncludeId)
+                ref int collectionIncludeId,
+                Expression lastPropertyExpression = null)
             {
                 return
                     Navigation.IsCollection()
                         ? BuildCollectionIncludeExpressions(
                             queryCompilationContext,
                             queryModel,
-                            asyncQuery,
-                            targetExpression,
-                            parentOrderings,
-                            entityParameter,
                             trackingQuery,
+                            asyncQuery,
+                            targetQuerySourceReferenceExpression,
+                            parentOrderings,
+                            entityParameterExpression,
                             ref collectionIncludeId)
                         : BuildReferenceIncludeExpressions(
-                            entityParameter,
+                            queryCompilationContext,
+                            queryModel,
                             trackingQuery,
+                            asyncQuery,
+                            targetQuerySourceReferenceExpression,
+                            parentOrderings,
+                            entityParameterExpression,
                             propertyExpressions,
-                            targetExpression,
-                            ref includedIndex);
+                            ref includedIndex,
+                            ref collectionIncludeId,
+                            lastPropertyExpression ?? targetQuerySourceReferenceExpression);
             }
 
             private Expression BuildCollectionIncludeExpressions(
                 QueryCompilationContext queryCompilationContext,
                 QueryModel queryModel,
+                bool trackingQuery, 
                 bool asyncQuery,
-                QuerySourceReferenceExpression targetExpression,
+                QuerySourceReferenceExpression targetQuerySourceReferenceExpression,
                 ICollection<Ordering> parentOrderings,
                 Expression targetEntityExpression,
-                bool trackingQuery,
                 ref int collectionIncludeId)
             {
                 var collectionIncludeQueryModel
@@ -72,7 +79,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         queryCompilationContext,
                         queryModel,
                         Navigation,
-                        targetExpression,
+                        targetQuerySourceReferenceExpression,
                         parentOrderings);
 
                 queryCompilationContext.AddQuerySourceRequiringMaterialization(
@@ -528,11 +535,18 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             }
 
             private Expression BuildReferenceIncludeExpressions(
-                Expression targetEntityExpression,
+                QueryCompilationContext queryCompilationContext,
+                QueryModel queryModel,
                 bool trackingQuery,
+                bool asyncQuery,
+                QuerySourceReferenceExpression targetQuerySourceReferenceExpression,
+                ICollection<Ordering> parentOrderings,
+                Expression targetEntityExpression,
                 ICollection<Expression> propertyExpressions,
-                Expression lastPropertyExpression,
-                ref int includedIndex)
+                ref int includedIndex,
+                ref int collectionIncludeId,
+                
+                Expression lastPropertyExpression)
             {
                 propertyExpressions.Add(
                     lastPropertyExpression
@@ -624,12 +638,18 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 {
                     blockExpressions.Add(
                         includeLoadTreeNode
-                            .BuildReferenceIncludeExpressions(
-                                relatedEntityExpression,
+                            .BuildIncludeExpressions(
+                                queryCompilationContext,
+                                queryModel,
                                 trackingQuery,
+                                asyncQuery,
+                                targetQuerySourceReferenceExpression,
+                                parentOrderings,
+                                relatedEntityExpression,
                                 propertyExpressions,
-                                lastPropertyExpression,
-                                ref includedIndex));
+                                ref includedIndex,
+                                ref collectionIncludeId,
+                                lastPropertyExpression));
                 }
 
                 return

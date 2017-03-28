@@ -23,6 +23,11 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
             //TestSqlLoggerFactory.CaptureOutput(_testOutputHelper);
         }
 
+        public override void Include_references_then_include_collection(bool useString)
+        {
+            base.Include_references_then_include_collection(useString);
+        }
+
         public override void Include_list(bool useString)
         {
             base.Include_list(useString);

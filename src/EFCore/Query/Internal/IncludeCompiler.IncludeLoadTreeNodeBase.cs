@@ -11,8 +11,6 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
     {
         private abstract class IncludeLoadTreeNodeBase
         {
-            protected ICollection<IncludeLoadTreeNode> Children { get; } = new List<IncludeLoadTreeNode>();
-
             protected static void AddLoadPath(
                 IncludeLoadTreeNodeBase node,
                 IReadOnlyList<INavigation> navigationPath,
@@ -32,6 +30,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     index = index + 1;
                 }
             }
+
+            protected ICollection<IncludeLoadTreeNode> Children { get; } = new List<IncludeLoadTreeNode>();
         }
     }
 }
