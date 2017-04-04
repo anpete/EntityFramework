@@ -75,11 +75,34 @@ namespace Microsoft.EntityFrameworkCore.Query
         public static Expression CreatePropertyExpression(
             [NotNull] Expression target,
             [NotNull] IPropertyBase property)
-            => Expression.Call(
-                null,
-                EF.PropertyMethod.MakeGenericMethod(property.ClrType.MakeNullable()),
+        {
+            Check.NotNull(target, nameof(target));
+            Check.NotNull(property, nameof(property));
+
+            return CreatePropertyExpression(target, property.ClrType, property.Name);
+        }
+
+        /// <summary>
+        ///     Creates an expression to access the given property on an given entity.
+        /// </summary>
+        /// <param name="target"> The entity. </param>
+        /// <param name="type"> The property type. </param>
+        /// <param name="name"> The property name. </param>
+        /// <returns></returns>
+        public static Expression CreatePropertyExpression(
+            [NotNull] Expression target,
+            [NotNull] Type type,
+            [NotNull] string name)
+        {
+            Check.NotNull(target, nameof(target));
+            Check.NotNull(type, nameof(type));
+            Check.NotEmpty(name, nameof(name));
+
+            return Expression.Call(
+                EF.PropertyMethod.MakeGenericMethod(type.MakeNullable()),
                 target,
-                Expression.Constant(property.Name));
+                Expression.Constant(name));
+        }
 
         private readonly IQueryOptimizer _queryOptimizer;
         private readonly INavigationRewritingExpressionVisitorFactory _navigationRewritingExpressionVisitorFactory;
@@ -639,7 +662,7 @@ namespace Microsoft.EntityFrameworkCore.Query
         {
             protected override Expression VisitMethodCall(MethodCallExpression node)
                 => IncludeCompiler.IsIncludeMethod(node)
-                    ? node.Arguments[0]
+                    ? node.Arguments[1]
                     : base.VisitMethodCall(node);
 
             protected override Expression VisitMember(MemberExpression node)

@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query.Expressions.Internal;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Utilities;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
@@ -146,6 +147,13 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                     DemoteQuerySource(querySource);
                 }
             });
+
+            if (node.Object?.Type == typeof(AnonymousObject)
+                && node.Method.Equals(AnonymousObject.GetValueMethodInfo)
+                && node.Object is QuerySourceReferenceExpression querySourceReferenceExpression)
+            {
+                DemoteQuerySource(querySourceReferenceExpression.ReferencedQuerySource);
+            }
 
             foreach (var subQueryExpression in newExpression.Arguments.OfType<SubQueryExpression>())
             {
