@@ -2,7 +2,10 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.EntityFrameworkCore.Specification.Tests;
+using Microsoft.EntityFrameworkCore.Specification.Tests.TestModels.Northwind;
 using Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests.Utilities;
 using Xunit;
 using Xunit.Abstractions;
@@ -43,6 +46,20 @@ ORDER BY [o].[ProductID]",
                 Sql);
         }
 
+        public override void Include_reference(bool useString)
+        {
+            base.Include_reference(useString);
+
+            if (!useString)
+            {
+                AssertSql(
+                    @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate], [o.Customer].[CustomerID], [o.Customer].[Address], [o.Customer].[City], [o.Customer].[CompanyName], [o.Customer].[ContactName], [o.Customer].[ContactTitle], [o.Customer].[Country], [o.Customer].[Fax], [o.Customer].[Phone], [o.Customer].[PostalCode], [o.Customer].[Region]
+FROM [Orders] AS [o]
+LEFT JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[CustomerID]",
+                    Sql);
+            }
+        }
+
         public override void Include_collection(bool useString)
         {
             base.Include_collection(useString);
@@ -61,7 +78,7 @@ INNER JOIN (
 ORDER BY [t].[CustomerID]",
                 Sql);
         }
-
+        
         public override void Include_collection_with_last(bool useString)
         {
             base.Include_collection_with_last(useString);
@@ -204,8 +221,9 @@ ORDER BY [o].[OrderID]
 SELECT [o.OrderDetails].[OrderID], [o.OrderDetails].[ProductID], [o.OrderDetails].[Discount], [o.OrderDetails].[Quantity], [o.OrderDetails].[UnitPrice]
 FROM [Order Details] AS [o.OrderDetails]
 INNER JOIN (
-    SELECT [o0].[OrderID]
+    SELECT DISTINCT [o0].[OrderID]
     FROM [Orders] AS [o0]
+    LEFT JOIN [Customers] AS [o.Customer0] ON [o0].[CustomerID] = [o.Customer0].[CustomerID]
 ) AS [t] ON [o.OrderDetails].[OrderID] = [t].[OrderID]
 ORDER BY [t].[OrderID]",
                     Sql);
@@ -376,10 +394,10 @@ SELECT [c.Orders].[OrderID], [c.Orders].[CustomerID], [c.Orders].[EmployeeID], [
 FROM [Orders] AS [c.Orders]
 INNER JOIN (
     SELECT TOP(1) [c0].[CustomerID], (
-        SELECT TOP(1) [oo2].[OrderDate]
-        FROM [Orders] AS [oo2]
-        WHERE [c0].[CustomerID] = [oo2].[CustomerID]
-        ORDER BY [oo2].[OrderDate] DESC
+        SELECT TOP(1) [oo1].[OrderDate]
+        FROM [Orders] AS [oo1]
+        WHERE [c0].[CustomerID] = [oo1].[CustomerID]
+        ORDER BY [oo1].[OrderDate] DESC
     ) AS [c], (
         SELECT TOP(1) [oo0].[OrderDate]
         FROM [Orders] AS [oo0]
@@ -524,10 +542,10 @@ SELECT [c.Orders].[OrderID], [c.Orders].[CustomerID], [c.Orders].[EmployeeID], [
 FROM [Orders] AS [c.Orders]
 INNER JOIN (
     SELECT TOP(1) [c0].[CustomerID], (
-        SELECT TOP(1) [o2].[OrderDate]
-        FROM [Orders] AS [o2]
-        WHERE [c0].[CustomerID] = [o2].[CustomerID]
-        ORDER BY [o2].[EmployeeID]
+        SELECT TOP(1) [o1].[OrderDate]
+        FROM [Orders] AS [o1]
+        WHERE [c0].[CustomerID] = [o1].[CustomerID]
+        ORDER BY [o1].[EmployeeID]
     ) AS [c], (
         SELECT TOP(1) [o0].[OrderDate]
         FROM [Orders] AS [o0]
@@ -1040,20 +1058,6 @@ INNER JOIN (
     ORDER BY [t1].[CustomerID]
 ) AS [t3] ON [c1.Orders].[CustomerID] = [t3].[CustomerID]
 ORDER BY [t3].[CustomerID]",
-                    Sql);
-            }
-        }
-
-        public override void Include_reference(bool useString)
-        {
-            base.Include_reference(useString);
-
-            if (!useString)
-            {
-                AssertSql(
-                    @"SELECT [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate], [o.Customer].[CustomerID], [o.Customer].[Address], [o.Customer].[City], [o.Customer].[CompanyName], [o.Customer].[ContactName], [o.Customer].[ContactTitle], [o.Customer].[Country], [o.Customer].[Fax], [o.Customer].[Phone], [o.Customer].[PostalCode], [o.Customer].[Region]
-FROM [Orders] AS [o]
-LEFT JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[CustomerID]",
                     Sql);
             }
         }

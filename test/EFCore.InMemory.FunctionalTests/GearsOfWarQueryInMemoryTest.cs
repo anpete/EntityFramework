@@ -13,5 +13,10 @@ namespace Microsoft.EntityFrameworkCore.InMemory.FunctionalTests
         {
             //TestLoggerFactory.TestOutputHelper = testOutputHelper;
         }
+
+        public override void Include_on_GroupJoin_SelectMany_DefaultIfEmpty_with_coalesce_result3()
+        {
+            base.Include_on_GroupJoin_SelectMany_DefaultIfEmpty_with_coalesce_result3();
+        }
     }
 }

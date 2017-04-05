@@ -32,6 +32,7 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
                     throw new InvalidOperationException(SqlServerStrings.TransientExceptionDetected, ex);
                 }
 
+
                 throw;
             }
         }

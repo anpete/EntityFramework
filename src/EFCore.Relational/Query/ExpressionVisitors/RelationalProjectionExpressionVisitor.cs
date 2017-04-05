@@ -96,22 +96,21 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
         protected override Expression VisitNew(NewExpression newExpression)
         {
             Check.NotNull(newExpression, nameof(newExpression));
-
-            var newNewExpression = base.VisitNew(newExpression);
-            if (expression.Type == typeof(AnonymousObject))
+            
+            if (newExpression.Type == typeof(AnonymousObject))
             {
                 var propertyCallExpressions
-                    = ((NewArrayExpression)expression.Arguments.Single()).Expressions;
+                    = ((NewArrayExpression)newExpression.Arguments.Single()).Expressions;
 
                 foreach (var propertyCallExpression in propertyCallExpressions)
                 {
                     Visit(propertyCallExpression.RemoveConvert());
                 }
 
-                return expression;
+                return newExpression;
             }
 
-            var newNewExpression = base.VisitNew(expression);
+            var newNewExpression = base.VisitNew(newExpression);
 
             var selectExpression = QueryModelVisitor.TryGetQuery(_querySource);
 
