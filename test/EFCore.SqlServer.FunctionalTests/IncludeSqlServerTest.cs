@@ -961,14 +961,14 @@ FROM [Customers] AS [c]
 WHERE [c].[CustomerID] = N'ALFKI'
 ORDER BY [c].[City], [c].[CustomerID]
 
-SELECT [c.Orders0].[OrderID], [c.Orders0].[CustomerID], [c.Orders0].[EmployeeID], [c.Orders0].[OrderDate]
-FROM [Orders] AS [c.Orders0]
+SELECT [c.Orders].[OrderID], [c.Orders].[CustomerID], [c.Orders].[EmployeeID], [c.Orders].[OrderDate]
+FROM [Orders] AS [c.Orders]
 INNER JOIN (
-    SELECT [c1].[CustomerID], [c1].[City]
-    FROM [Customers] AS [c1]
-    WHERE [c1].[CustomerID] = N'ALFKI'
-) AS [t0] ON [c.Orders0].[CustomerID] = [t0].[CustomerID]
-ORDER BY [t0].[City], [t0].[CustomerID]",
+    SELECT [c0].[CustomerID], [c0].[City]
+    FROM [Customers] AS [c0]
+    WHERE [c0].[CustomerID] = N'ALFKI'
+) AS [t] ON [c.Orders].[CustomerID] = [t].[CustomerID]
+ORDER BY [t].[City], [t].[CustomerID]",
                 Sql);
         }
 
