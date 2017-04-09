@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Linq;
 using Microsoft.EntityFrameworkCore.Specification.Tests;
 using Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests.Utilities;
 using Xunit;
@@ -74,6 +75,15 @@ INNER JOIN (
 ) AS [t] ON [c.Orders].[CustomerID] = [t].[CustomerID]
 ORDER BY [t].[CustomerID]",
                 Sql);
+        }
+
+        [Fact]
+        public void Include_collection_then_reference()
+        {
+            using (var context = CreateContext())
+            {
+                context.Products.Include(p => p.OrderDetails).ThenInclude(od => od.Order).ToList();
+            }
         }
 
         public override void Include_collection_with_last(bool useString)

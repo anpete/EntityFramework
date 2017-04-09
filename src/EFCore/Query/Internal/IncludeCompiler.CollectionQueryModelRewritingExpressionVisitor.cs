@@ -89,8 +89,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 collectionQueryModel.BodyClauses.Clear();
 
-                _queryCompilationContext.AddQuerySourceRequiringMaterialization(
-                    ((QuerySourceReferenceExpression)collectionQueryModel.SelectClause.Selector).ReferencedQuerySource);
+//                _queryCompilationContext.AddQuerySourceRequiringMaterialization(
+//                    ((QuerySourceReferenceExpression)collectionQueryModel.SelectClause.Selector).ReferencedQuerySource);
 
                 var parentQuerySourceReferenceExpression
                     = querySourceReferenceFindingExpressionTreeVisitor.QuerySourceReferenceExpression;

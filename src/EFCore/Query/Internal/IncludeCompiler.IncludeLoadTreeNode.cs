@@ -40,6 +40,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             public INavigation Navigation { get; }
 
             public void Compile(
+                QueryCompilationContext queryCompilationContext,
                 Expression targetQuerySourceReferenceExpression,
                 Expression entityParameter,
                 ICollection<Expression> propertyExpressions,
@@ -60,11 +61,27 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             Expression.Property(
                                 targetQuerySourceReferenceExpression,
                                 Navigation.PropertyInfo));
+                    
+                    queryCompilationContext.AddQuerySourceRequiringMaterialization(mainFromClause);
+
+                    var querySourceReferenceExpression
+                        = new QuerySourceReferenceExpression(mainFromClause);
 
                     var collectionQueryModel
                         = new QueryModel(
                             mainFromClause,
-                            new SelectClause(new QuerySourceReferenceExpression(mainFromClause)));
+                            new SelectClause(querySourceReferenceExpression));
+
+                    foreach (var includeLoadTreeNode in Children)
+                    {
+                        includeLoadTreeNode.Compile(
+                            queryCompilationContext,
+                            collectionQueryModel,
+                            trackingQuery,
+                            asyncQuery,
+                            ref collectionIncludeId,
+                            querySourceReferenceExpression);
+                    }
 
                     Expression collectionLambdaExpression
                         = Expression.Lambda<Func<IEnumerable<object>>>(
