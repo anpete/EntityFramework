@@ -9,6 +9,9 @@ using System.Reflection;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Remotion.Linq;
+using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.Expressions;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
 {
@@ -36,11 +39,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             public INavigation Navigation { get; }
 
-            public void Compile(
-                Expression targetQuerySourceReferenceExpression,
+            public Expression Compile(
+                Expression targetExpression,
                 Expression entityParameter,
                 ICollection<Expression> propertyExpressions,
-                ICollection<Expression> blockExpressions,
                 bool trackingQuery,
                 bool asyncQuery,
                 ref int includedIndex,
@@ -48,11 +50,28 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             {
                 if (Navigation.IsCollection())
                 {
+                    var mainFromClause 
+                        = new MainFromClause(
+                            "a",
+                            Navigation.GetTargetType().ClrType,
+                            Expression.Property(
+                                targetExpression,
+                                Navigation.PropertyInfo));
+
+                    var collectionQueryModel
+                        = new QueryModel(
+                            mainFromClause, 
+                            new SelectClause(new QuerySourceReferenceExpression(mainFromClause)));
+
+                    //                    Expression collectionLambdaExpression
+                    //                        = Expression.Lambda<Func<IEnumerable<object>>>(
+                    //                            Expression.Property(
+                    //                                targetExpression,
+                    //                                Navigation.PropertyInfo));
+
                     Expression collectionLambdaExpression
                         = Expression.Lambda<Func<IEnumerable<object>>>(
-                            Expression.Property(
-                                targetQuerySourceReferenceExpression,
-                                Navigation.PropertyInfo));
+                            new SubQueryExpression(collectionQueryModel));
 
                     var includeCollectionMethodInfo = _queryBufferIncludeCollectionMethodInfo;
 
@@ -69,7 +88,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         cancellationTokenExpression = _cancellationTokenParameter;
                     }
 
-                    blockExpressions.Add(
+                    return
                         BuildCollectionIncludeExpressions(
                             Navigation,
                             entityParameter,
@@ -77,25 +96,27 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             collectionLambdaExpression,
                             includeCollectionMethodInfo,
                             cancellationTokenExpression,
-                            ref collectionIncludeId));
+                            ref collectionIncludeId);
                 }
-                else
-                {
-                    blockExpressions.Add(
-                        Compile(
-                            propertyExpressions,
-                            entityParameter,
-                            trackingQuery,
-                            ref includedIndex,
-                            targetQuerySourceReferenceExpression));
-                }
+
+                return
+                    Compile(
+                        propertyExpressions,
+                        entityParameter,
+                        trackingQuery,
+                        asyncQuery,
+                        ref includedIndex,
+                        ref collectionIncludeId,
+                        targetExpression);
             }
 
             private Expression Compile(
                 ICollection<Expression> propertyExpressions,
                 Expression targetEntityExpression,
                 bool trackingQuery,
+                bool asyncQuery,
                 ref int includedIndex,
+                ref int collectionIncludeId,
                 Expression lastPropertyExpression)
             {
                 propertyExpressions.Add(
@@ -186,13 +207,23 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 // ReSharper disable once LoopCanBeConvertedToQuery
                 foreach (var includeLoadTreeNode in Children)
                 {
+                    //                    blockExpressions.Add(
+                    //                        includeLoadTreeNode.Compile(
+                    //                            propertyExpressions,
+                    //                            relatedEntityExpression,
+                    //                            trackingQuery,
+                    //                            ref includedIndex,
+                    //                            lastPropertyExpression));
+
                     blockExpressions.Add(
                         includeLoadTreeNode.Compile(
-                            propertyExpressions,
+                            lastPropertyExpression,
                             relatedEntityExpression,
+                            propertyExpressions,
                             trackingQuery,
+                            asyncQuery,
                             ref includedIndex,
-                            lastPropertyExpression));
+                            ref collectionIncludeId));
                 }
 
                 return

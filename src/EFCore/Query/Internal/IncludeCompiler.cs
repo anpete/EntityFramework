@@ -115,7 +115,14 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 }
 
                 if (!(!navigationPath.Any(n => n.IsCollection())
-                      || navigationPath.Length == 1))
+                     || navigationPath.Length == 1))
+                {
+                    continue;
+                }
+
+                if (!(!navigationPath.Any(n => n.IsCollection())
+                      || navigationPath.Count(n => n.IsCollection()) == 1
+                        && navigationPath.Last().IsCollection()))
                 {
                     continue;
                 }
@@ -128,7 +135,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 if (includeLoadTree == null)
                 {
-                    includeLoadTrees.Add(includeLoadTree = new IncludeLoadTree(querySourceReferenceExpression));
+                    includeLoadTrees.Add(
+                        includeLoadTree = new IncludeLoadTree(querySourceReferenceExpression));
                 }
 
                 includeLoadTree.AddLoadPath(navigationPath);

@@ -58,17 +58,18 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 var includedIndex = 0;
 
+                // ReSharper disable once LoopCanBeConvertedToQuery
                 foreach (var includeLoadTreeNode in Children)
                 {
-                    includeLoadTreeNode.Compile(
-                        QuerySourceReferenceExpression,
-                        entityParameter,
-                        propertyExpressions,
-                        blockExpressions,
-                        trackingQuery,
-                        asyncQuery,
-                        ref includedIndex,
-                        ref collectionIncludeId);
+                    blockExpressions.Add(
+                        includeLoadTreeNode.Compile(
+                            QuerySourceReferenceExpression,
+                            entityParameter,
+                            propertyExpressions,
+                            trackingQuery,
+                            asyncQuery,
+                            ref includedIndex,
+                            ref collectionIncludeId));
                 }
 
                 Expression includeExpression = null;
