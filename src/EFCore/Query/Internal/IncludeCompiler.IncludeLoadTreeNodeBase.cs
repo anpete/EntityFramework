@@ -179,7 +179,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             }
 
             private static readonly MethodInfo _awaitIncludesMethodInfo
-                = typeof(IncludeLoadTree).GetTypeInfo()
+                = typeof(IncludeLoadTreeNodeBase).GetTypeInfo()
                     .GetDeclaredMethod(nameof(_AwaitIncludes));
 
             // ReSharper disable once InconsistentNaming
