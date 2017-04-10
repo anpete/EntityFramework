@@ -5,7 +5,6 @@ using System;
 using System.Data.Common;
 using System.Data.SqlClient;
 using Microsoft.EntityFrameworkCore.Specification.Tests;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests

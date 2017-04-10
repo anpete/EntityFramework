@@ -156,6 +156,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
                 if (_offset != null)
                 {
                     PushDownSubquery();
+                    ExplodeStarProjection();
                 }
 
                 if (value && _orderBy.Any(o => !_projection.Contains(o.Expression, _expressionEqualityComparer)))
@@ -182,6 +183,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
                 if (value != null && _limit != null)
                 {
                     PushDownSubquery();
+                    ExplodeStarProjection();
                     LiftOrderBy();
                 }
 
@@ -205,6 +207,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
                     && value != null)
                 {
                     PushDownSubquery();
+                    ExplodeStarProjection();
                     LiftOrderBy();
                 }
 
