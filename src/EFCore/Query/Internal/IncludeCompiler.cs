@@ -117,6 +117,11 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 if (!(!navigationPath.Any(n => n.IsCollection())
                       || navigationPath.Length == 1))
                 {
+                    //continue;
+                }
+
+                if (navigationPath.Count(n => n.IsCollection()) > 1)
+                {
                     continue;
                 }
 

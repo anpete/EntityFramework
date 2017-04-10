@@ -84,10 +84,13 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 var querySourceReferenceFindingExpressionTreeVisitor
                     = new QuerySourceReferenceFindingExpressionTreeVisitor();
 
-                collectionQueryModel.BodyClauses.Single()
-                    .TransformExpressions(querySourceReferenceFindingExpressionTreeVisitor.Visit);
+                var whereClause = collectionQueryModel.BodyClauses
+                    .OfType<WhereClause>()
+                    .Single();
 
-                collectionQueryModel.BodyClauses.Clear();
+                whereClause.TransformExpressions(querySourceReferenceFindingExpressionTreeVisitor.Visit);
+
+                collectionQueryModel.BodyClauses.Remove(whereClause);
 
                 var parentQuerySourceReferenceExpression
                     = querySourceReferenceFindingExpressionTreeVisitor.QuerySourceReferenceExpression;
