@@ -89,25 +89,25 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 if (asyncQuery)
                 {
-                    var taskExpression = new List<Expression>();
+                    var taskExpressions = new List<Expression>();
 
                     foreach (var expression in blockExpressions.ToArray())
                     {
                         if (expression.Type == typeof(Task))
                         {
                             blockExpressions.Remove(expression);
-                            taskExpression.Add(expression);
+                            taskExpressions.Add(expression);
                         }
                     }
 
-                    if (taskExpression.Count > 0)
+                    if (taskExpressions.Count > 0)
                     {
                         blockExpressions.Add(
                             Expression.Call(
-                                _awaitIncludesMethodInfo,
+                                _awaitTasksMethodInfo,
                                 Expression.NewArrayInit(
                                     typeof(Func<Task>),
-                                    taskExpression.Select(e => Expression.Lambda(e)))));
+                                    taskExpressions.Select(e => Expression.Lambda(e)))));
 
                         includeExpression
                             = Expression.Property(
@@ -178,12 +178,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         e));
             }
 
-            private static readonly MethodInfo _awaitIncludesMethodInfo
+            private static readonly MethodInfo _awaitTasksMethodInfo
                 = typeof(IncludeLoadTreeNodeBase).GetTypeInfo()
-                    .GetDeclaredMethod(nameof(_AwaitIncludes));
+                    .GetDeclaredMethod(nameof(_AwaitTasks));
 
             // ReSharper disable once InconsistentNaming
-            private static async Task _AwaitIncludes(IReadOnlyList<Func<Task>> taskFactories)
+            private static async Task _AwaitTasks(IReadOnlyList<Func<Task>> taskFactories)
             {
                 // ReSharper disable once ForCanBeConvertedToForeach
                 for (var i = 0; i < taskFactories.Count; i++)

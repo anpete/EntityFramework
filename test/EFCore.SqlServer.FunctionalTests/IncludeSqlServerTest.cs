@@ -341,7 +341,6 @@ INNER JOIN (
     FROM [Orders] AS [o0]
     LEFT JOIN [Customers] AS [o.Customer0] ON [o0].[CustomerID] = [o.Customer0].[CustomerID]
     WHERE [o0].[OrderID] = 10248
-    ORDER BY [o.Customer0].[CustomerID]
 ) AS [t] ON [o.Customer.Orders].[CustomerID] = [t].[CustomerID]
 ORDER BY [t].[CustomerID]",
                 Sql);

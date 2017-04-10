@@ -21,5 +21,10 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         {
             return base.Include_duplicate_reference();
         }
+
+        public override Task Include_references_and_collection_multi_level()
+        {
+            return base.Include_references_and_collection_multi_level();
+        }
     }
 }
