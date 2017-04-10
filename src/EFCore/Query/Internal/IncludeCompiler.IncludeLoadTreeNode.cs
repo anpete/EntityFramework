@@ -63,11 +63,25 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                 Navigation.PropertyInfo));
 
                     queryCompilationContext.AddQuerySourceRequiringMaterialization(mainFromClause);
-                    
+
+                    var querySourceReferenceExpression
+                        = new QuerySourceReferenceExpression(mainFromClause);
+
                     var collectionQueryModel
                         = new QueryModel(
                             mainFromClause,
-                            new SelectClause(new QuerySourceReferenceExpression(mainFromClause)));
+                            new SelectClause(querySourceReferenceExpression));
+
+                    if (Children.Count > 0)
+                    {
+                        Compile(
+                            queryCompilationContext,
+                            collectionQueryModel,
+                            trackingQuery,
+                            asyncQuery,
+                            ref collectionIncludeId,
+                            querySourceReferenceExpression);
+                    }
 
                     Expression collectionLambdaExpression
                         = Expression.Lambda<Func<IEnumerable<object>>>(
@@ -102,19 +116,25 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 {
                     blockExpressions.Add(
                         Compile(
+                            queryCompilationContext,
                             propertyExpressions,
                             entityParameter,
                             trackingQuery,
+                            asyncQuery,
                             ref includedIndex,
+                            ref collectionIncludeId,
                             targetQuerySourceReferenceExpression));
                 }
             }
 
             private Expression Compile(
+                QueryCompilationContext queryCompilationContext,
                 ICollection<Expression> propertyExpressions,
                 Expression targetEntityExpression,
                 bool trackingQuery,
+                bool asyncQuery,
                 ref int includedIndex,
+                ref int collectionIncludeId,
                 Expression lastPropertyExpression)
             {
                 propertyExpressions.Add(
@@ -205,13 +225,16 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 // ReSharper disable once LoopCanBeConvertedToQuery
                 foreach (var includeLoadTreeNode in Children)
                 {
-                    blockExpressions.Add(
-                        includeLoadTreeNode.Compile(
-                            propertyExpressions,
-                            relatedEntityExpression,
-                            trackingQuery,
-                            ref includedIndex,
-                            lastPropertyExpression));
+                    includeLoadTreeNode.Compile(
+                        queryCompilationContext,
+                        lastPropertyExpression,
+                        relatedEntityExpression,
+                        propertyExpressions,
+                        blockExpressions,
+                        trackingQuery,
+                        asyncQuery,
+                        ref includedIndex,
+                        ref collectionIncludeId);
                 }
 
                 return

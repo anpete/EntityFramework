@@ -2,14 +2,23 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using Microsoft.EntityFrameworkCore.Specification.Tests;
+using Xunit.Abstractions;
 
 namespace Microsoft.EntityFrameworkCore.InMemory.FunctionalTests
 {
-    public class ComplexNavigationsQueryInMemoryTest : ComplexNavigationsQueryTestBase<InMemoryTestStore, ComplexNavigationsQueryInMemoryFixture>
+    public class ComplexNavigationsQueryInMemoryTest 
+        : ComplexNavigationsQueryTestBase<InMemoryTestStore, ComplexNavigationsQueryInMemoryFixture>
     {
-        public ComplexNavigationsQueryInMemoryTest(ComplexNavigationsQueryInMemoryFixture fixture)
+        public ComplexNavigationsQueryInMemoryTest(
+            ComplexNavigationsQueryInMemoryFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
+            //TestLoggerFactory.TestOutputHelper = testOutputHelper;
+        }
+
+        public override void Complex_multi_include_with_order_by_and_paging()
+        {
+            base.Complex_multi_include_with_order_by_and_paging();
         }
     }
 }

@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Specification.Tests.TestModels.Northwind;
 using Microsoft.EntityFrameworkCore.Specification.Tests.TestUtilities.Xunit;
 using Xunit;
+// ReSharper disable InconsistentNaming
 
 // ReSharper disable StringStartsWithIsCultureSpecific
 
@@ -279,6 +280,39 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
                         ordersLoaded: true,
                         orderDetailsLoaded: false,
                         productLoaded: false);
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public virtual void Include_collection_then_reference(bool useString)
+        {
+            using (var context = CreateContext())
+            {
+                var products
+                    = useString
+                        ? context.Products
+                            .Include("OrderDetails.Order")
+                            .ToList()
+                        : context.Products
+                            .Include(p => p.OrderDetails)
+                            .ThenInclude(od => od.Order)
+                            .ToList();
+
+                Assert.Equal(77, products.Count);
+                Assert.Equal(2155, products.SelectMany(p => p.OrderDetails).Count());
+                Assert.Equal(2155, products.SelectMany(p => p.OrderDetails).Count(od => od.Order != null));
+                Assert.Equal(77 + 2155 + 830, context.ChangeTracker.Entries().Count());
+
+                foreach (var product in products)
+                {
+                    CheckIsLoaded(
+                        context,
+                        product,
+                        orderDetailsLoaded: true,
+                        orderLoaded: true);
                 }
             }
         }

@@ -84,10 +84,13 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 var querySourceReferenceFindingExpressionTreeVisitor
                     = new QuerySourceReferenceFindingExpressionTreeVisitor();
 
-                collectionQueryModel.BodyClauses.Single()
-                    .TransformExpressions(querySourceReferenceFindingExpressionTreeVisitor.Visit);
+                var whereClause = collectionQueryModel.BodyClauses
+                    .OfType<WhereClause>()
+                    .Single();
 
-                collectionQueryModel.BodyClauses.Clear();
+                whereClause.TransformExpressions(querySourceReferenceFindingExpressionTreeVisitor.Visit);
+
+                collectionQueryModel.BodyClauses.Remove(whereClause);
 
                 var parentQuerySourceReferenceExpression
                     = querySourceReferenceFindingExpressionTreeVisitor.QuerySourceReferenceExpression;
@@ -406,12 +409,18 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                 Expression.Constant(subQueryProjection.Count)),
                             principalKeyProperty.ClrType.MakeNullable()));
 
+                    var propertyExpression
+                        = EntityQueryModelVisitor
+                            .CreatePropertyExpression(
+                                parentQuerySourceReferenceExpression,
+                                principalKeyProperty);
+
                     subQueryProjection.Add(
                         Expression.Convert(
-                            EntityQueryModelVisitor
-                                .CreatePropertyExpression(
-                                    parentQuerySourceReferenceExpression,
-                                    principalKeyProperty),
+                            new NullConditionalExpression(
+                                parentQuerySourceReferenceExpression,
+                                parentQuerySourceReferenceExpression,
+                                propertyExpression),
                             typeof(object)));
                 }
 
@@ -430,7 +439,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             }
 
             // TODO: Unify this with other versions
-            private static Expression CreateKeyAccessExpression(Expression target, IReadOnlyList<IProperty> properties)
+            private static Expression CreateKeyAccessExpression(
+                Expression target, IReadOnlyList<IProperty> properties)
                 => properties.Count == 1
                     ? EntityQueryModelVisitor
                         .CreatePropertyExpression(target, properties[0])
@@ -465,6 +475,16 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     var newExpression
                         = CloningExpressionVisitor
                             .AdjustExpressionAfterCloning(ordering.Expression, querySourceMapping);
+
+                    if (newExpression is MethodCallExpression methodCallExpression
+                        && EntityQueryModelVisitor.IsPropertyMethod(methodCallExpression.Method))
+                    {
+                        newExpression
+                            = new NullConditionalExpression(
+                                methodCallExpression.Arguments[0],
+                                methodCallExpression.Arguments[0],
+                                methodCallExpression);
+                    }
 
                     orderByClause.Orderings
                         .Add(new Ordering(newExpression, ordering.OrderingDirection));
@@ -523,7 +543,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         {
                             projectionIndex
                                 = subQueryProjection
-                                    .FindIndex(e => _expressionEqualityComparer.Equals(e.RemoveConvert(), ordering.Expression));
+                                    .FindIndex(e => 
+                                        _expressionEqualityComparer
+                                         .Equals(e.RemoveConvert(), ordering.Expression));
                         }
 
                         if (projectionIndex == -1)
@@ -538,7 +560,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                 targetExpression,
                                 AnonymousObject.GetValueMethodInfo,
                                 Expression.Constant(projectionIndex));
-
+                        
                         outerOrderByClause.Orderings
                             .Add(new Ordering(newExpression, ordering.OrderingDirection));
                     }
@@ -556,7 +578,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             {
                 public QuerySourceReferenceExpression QuerySourceReferenceExpression { get; private set; }
 
-                protected override Expression VisitQuerySourceReference(QuerySourceReferenceExpression querySourceReferenceExpression)
+                protected override Expression VisitQuerySourceReference(
+                    QuerySourceReferenceExpression querySourceReferenceExpression)
                 {
                     if (QuerySourceReferenceExpression == null)
                     {

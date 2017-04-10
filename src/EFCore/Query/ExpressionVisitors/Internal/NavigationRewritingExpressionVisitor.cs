@@ -1120,10 +1120,10 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             return outerQuerySourceReferenceExpression;
         }
 
-        private JoinClause BuildJoinFromNavigation(
+        private static JoinClause BuildJoinFromNavigation(
             QuerySourceReferenceExpression querySourceReferenceExpression,
             INavigation navigation,
-            IEntityType targetEntityType,
+            ITypeBase targetEntityType,
             bool addNullCheckToOuterKeySelector,
             out QuerySourceReferenceExpression innerQuerySourceReferenceExpression)
         {
@@ -1135,9 +1135,14 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
                         : navigation.ForeignKey.PrincipalKey.Properties,
                     addNullCheck: addNullCheckToOuterKeySelector);
 
+            var itemName
+                = querySourceReferenceExpression.ReferencedQuerySource.HasGeneratedItemName()
+                    ? navigation.DeclaringEntityType.DisplayName()[0].ToString().ToLowerInvariant()
+                    : querySourceReferenceExpression.ReferencedQuerySource.ItemName;
+
             var joinClause
                 = new JoinClause(
-                    $"{querySourceReferenceExpression.ReferencedQuerySource.ItemName}.{navigation.Name}", // Interpolation okay; strings
+                    $"{itemName}.{navigation.Name}",
                     targetEntityType.ClrType,
                     NullAsyncQueryProvider.Instance.CreateEntityQueryableExpression(targetEntityType.ClrType),
                     outerKeySelector,
