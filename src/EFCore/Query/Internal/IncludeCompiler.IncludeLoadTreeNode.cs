@@ -95,17 +95,14 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         mainFromClause,
                         new SelectClause(querySourceReferenceExpression));
 
-                if (Children.Count > 0)
-                {
-                    Compile(
-                        queryCompilationContext,
-                        collectionQueryModel,
-                        trackingQuery,
-                        asyncQuery,
-                        ref collectionIncludeId,
-                        querySourceReferenceExpression);
-                }
-
+                Compile(
+                    queryCompilationContext,
+                    collectionQueryModel,
+                    trackingQuery,
+                    asyncQuery,
+                    ref collectionIncludeId,
+                    querySourceReferenceExpression);
+                
                 Expression collectionLambdaExpression
                     = Expression.Lambda<Func<IEnumerable<object>>>(
                         new SubQueryExpression(collectionQueryModel));
