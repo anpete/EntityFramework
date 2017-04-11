@@ -958,52 +958,52 @@ namespace Microsoft.EntityFrameworkCore.Query
 
             base.VisitSelectClause(selectClause, queryModel);
 
-            if (Expression is MethodCallExpression methodCallExpression
-                && methodCallExpression.Method.MethodIsClosedFormOf(LinqOperatorProvider.Select))
-            {
-                var shapedQuery = methodCallExpression.Arguments[0] as MethodCallExpression;
-
-                if (IsShapedQueryExpression(shapedQuery))
-                {
-                    shapedQuery = UnwrapShapedQueryExpression(shapedQuery);
-
-                    var oldShaper = ExtractShaper(shapedQuery, 0);
-
-                    var matchingIncludes
-                        = from i in QueryCompilationContext.QueryAnnotations.OfType<IncludeResultOperator>()
-                          where oldShaper.IsShaperForQuerySource(i.QuerySource)
-                          select i;
-
-                    if (!matchingIncludes.Any())
-                    {
-                        var materializer = (LambdaExpression)methodCallExpression.Arguments[1];
-                        var qsreFinder = new QuerySourceReferenceFindingExpressionVisitor();
-
-                        qsreFinder.Visit(materializer.Body);
-
-                        if (!qsreFinder.FoundAny)
-                        {
-                            Shaper newShaper = null;
-
-                            if (selectClause.Selector is QuerySourceReferenceExpression querySourceReferenceExpression)
-                            {
-                                newShaper = oldShaper.Unwrap(querySourceReferenceExpression.ReferencedQuerySource);
-                            }
-
-                            newShaper = newShaper ?? ProjectionShaper.Create(oldShaper, materializer);
-
-                            Expression =
-                                Expression.Call(
-                                    shapedQuery.Method
-                                        .GetGenericMethodDefinition()
-                                        .MakeGenericMethod(Expression.Type.GetSequenceType()),
-                                    shapedQuery.Arguments[0],
-                                    shapedQuery.Arguments[1],
-                                    Expression.Constant(newShaper));
-                        }
-                    }
-                }
-            }
+//            if (Expression is MethodCallExpression methodCallExpression
+//                && methodCallExpression.Method.MethodIsClosedFormOf(LinqOperatorProvider.Select))
+//            {
+//                var shapedQuery = methodCallExpression.Arguments[0] as MethodCallExpression;
+//
+//                if (IsShapedQueryExpression(shapedQuery))
+//                {
+//                    shapedQuery = UnwrapShapedQueryExpression(shapedQuery);
+//
+//                    var oldShaper = ExtractShaper(shapedQuery, 0);
+//
+//                    var matchingIncludes
+//                        = from i in QueryCompilationContext.QueryAnnotations.OfType<IncludeResultOperator>()
+//                          where oldShaper.IsShaperForQuerySource(i.QuerySource)
+//                          select i;
+//
+//                    if (!matchingIncludes.Any())
+//                    {
+//                        var materializer = (LambdaExpression)methodCallExpression.Arguments[1];
+//                        var qsreFinder = new QuerySourceReferenceFindingExpressionVisitor();
+//
+//                        qsreFinder.Visit(materializer.Body);
+//
+//                        if (!qsreFinder.FoundAny)
+//                        {
+//                            Shaper newShaper = null;
+//
+//                            if (selectClause.Selector is QuerySourceReferenceExpression querySourceReferenceExpression)
+//                            {
+//                                newShaper = oldShaper.Unwrap(querySourceReferenceExpression.ReferencedQuerySource);
+//                            }
+//
+//                            newShaper = newShaper ?? ProjectionShaper.Create(oldShaper, materializer);
+//
+//                            Expression =
+//                                Expression.Call(
+//                                    shapedQuery.Method
+//                                        .GetGenericMethodDefinition()
+//                                        .MakeGenericMethod(Expression.Type.GetSequenceType()),
+//                                    shapedQuery.Arguments[0],
+//                                    shapedQuery.Arguments[1],
+//                                    Expression.Constant(newShaper));
+//                        }
+//                    }
+//                }
+//            }
         }
 
         private class QuerySourceReferenceFindingExpressionVisitor : ExpressionVisitorBase

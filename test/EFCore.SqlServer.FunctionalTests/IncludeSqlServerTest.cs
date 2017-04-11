@@ -2,6 +2,8 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Linq;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Specification.Tests;
 using Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests.Utilities;
 using Xunit;
@@ -20,7 +22,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         {
             _testOutputHelper = testOutputHelper;
 
-            //TestSqlLoggerFactory.CaptureOutput(_testOutputHelper);
+            TestSqlLoggerFactory.CaptureOutput(_testOutputHelper);
         }
 
         public override void Include_list(bool useString)
@@ -715,6 +717,51 @@ INNER JOIN (
 ) AS [o1] ON [o0].[OrderID] = [o1].[OrderID]
 ORDER BY [o1].[CustomerID], [o1].[OrderID]",
                 Sql);
+        }
+
+        [Fact]
+        public void Test()
+        {
+            using (var context = CreateContext())
+            {
+                var query
+                    = from c_Orders_OrderDetails in context.OrderDetails
+                      join _c_Orders in
+                      (from c_Orders in context.Orders
+                       join _c in
+                       from c in context.Customers
+                       select new AnonymousObject(new object[] { EF.Property<string>(c, "CustomerID") })
+                       on EF.Property<string>(c_Orders, "CustomerID") equals (string)_c.GetValue(0)
+                       select new AnonymousObject(
+                           new[]
+                           {
+                               EF.Property<int>(c_Orders, "OrderID"),
+                               _c.GetValue(0)
+                           })).Distinct()
+                      on EF.Property<int>(c_Orders_OrderDetails, "OrderID") equals (int?)_c_Orders.GetValue(0)
+                      orderby _c_Orders.GetValue(1), _c_Orders.GetValue(0)
+                      select c_Orders_OrderDetails;
+
+                query.ToList();
+
+                /*
+                from OrderDetail c.Orders.OrderDetails in DbSet<OrderDetail>
+                    join AnonymousObject _c.Orders in 
+                (from Order c.Orders in DbSet<Order>
+                    join AnonymousObject _c in 
+                from Customer c in DbSet < Customer >
+                    select new AnonymousObject(new object[] { (object)EF.Property(?[c] ?, "CustomerID") })
+                on Property([c.Orders], "CustomerID") equals(string) object[_c].GetValue(0)
+                select new AnonymousObject(new object[]
+                {
+                    (object) EF.Property(?[c.Orders]?, "OrderID"), 
+                    (object)object[_c].GetValue(0)
+                })).Distinct()
+                on Property([c.Orders.OrderDetails], "OrderID") equals(Nullable<int>) object[_c.Orders].GetValue(0)
+                order by object[_c.Orders].GetValue(1) asc, object[_c.Orders].GetValue(0) asc
+                select[c.Orders.OrderDetails]
+                */
+            }
         }
 
         public override void Include_collection_when_projection(bool useString)

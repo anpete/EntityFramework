@@ -116,7 +116,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 if (navigationPath.Count(n => n.IsCollection()) > 1)
                 {
-                    continue;
+                    //continue;
                 }
 
                 var includeLoadTree
@@ -179,7 +179,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         public virtual void RewriteCollectionQueries([NotNull] QueryModel queryModel)
         {
             var collectionQueryModelRewritingExpressionVisitor
-                = new CollectionQueryModelRewritingExpressionVisitor(_queryCompilationContext, queryModel);
+                = new CollectionQueryModelRewritingExpressionVisitor(_queryCompilationContext, queryModel, this);
 
             queryModel.TransformExpressions(collectionQueryModelRewritingExpressionVisitor.Visit);
 
