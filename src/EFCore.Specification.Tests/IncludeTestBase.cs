@@ -148,13 +148,13 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
                         ? context.Set<Customer>()
                             .Include("Orders.OrderDetails")
                             .Where(c => c.CustomerID.StartsWith("W"))
-                            .OrderByDescending(c => c.Orders.OrderByDescending(oo => oo.OrderDate).FirstOrDefault().OrderDate)
+                            .OrderByDescending(c => c.Orders.OrderByDescending(o => o.OrderDate).FirstOrDefault().OrderDate)
                             .FirstOrDefault()
                         : context.Set<Customer>()
                             .Include(c => c.Orders)
                             .ThenInclude(o => o.OrderDetails)
                             .Where(c => c.CustomerID.StartsWith("W"))
-                            .OrderByDescending(c => c.Orders.OrderByDescending(oo => oo.OrderDate).FirstOrDefault().OrderDate)
+                            .OrderByDescending(c => c.Orders.OrderByDescending(o => o.OrderDate).FirstOrDefault().OrderDate)
                             .FirstOrDefault();
 
                 Assert.NotNull(customer);

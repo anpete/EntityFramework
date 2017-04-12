@@ -11,12 +11,12 @@ namespace Microsoft.EntityFrameworkCore.InMemory.FunctionalTests
         public IncludeInMemoryTest(NorthwindQueryInMemoryFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            TestLoggerFactory.TestOutputHelper = testOutputHelper;
+            //TestLoggerFactory.TestOutputHelper = testOutputHelper;
         }
 
-        public override void Include_collection_then_include_collection(bool useString)
+        public override void Then_include_collection_order_by_collection_column(bool useString)
         {
-            base.Include_collection_then_include_collection(useString);
+            base.Then_include_collection_order_by_collection_column(useString);
         }
     }
 }

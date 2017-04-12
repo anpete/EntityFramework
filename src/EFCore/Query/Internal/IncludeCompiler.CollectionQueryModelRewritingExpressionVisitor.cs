@@ -536,6 +536,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         {
                             projectionIndex = subQueryProjection.Count;
 
+                            //var e = CloningExpressionVisitor.AdjustExpressionAfterCloning(ordering.Expression, new QuerySourceMapping());
+
                             subQueryProjection.Add(Expression.Convert(ordering.Expression, typeof(object)));
                         }
 

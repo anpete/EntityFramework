@@ -116,7 +116,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 if (navigationPath.Count(n => n.IsCollection()) > 1)
                 {
-                    //continue;
+                    continue;
                 }
 
                 var includeLoadTree
