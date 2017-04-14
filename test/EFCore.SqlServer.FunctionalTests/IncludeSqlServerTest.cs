@@ -1,9 +1,12 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System.Linq;
 using Microsoft.EntityFrameworkCore.Specification.Tests;
+using Microsoft.EntityFrameworkCore.Specification.Tests.TestModels.Northwind;
 using Microsoft.EntityFrameworkCore.Specification.Tests.TestUtilities;
 using Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests.Utilities;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
@@ -19,7 +22,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         {
             _testOutputHelper = testOutputHelper;
 
-            //TestSqlLoggerFactory.CaptureOutput(_testOutputHelper);
+            TestSqlLoggerFactory.CaptureOutput(_testOutputHelper);
         }
 
         public override void Include_list(bool useString)
@@ -549,6 +552,57 @@ INNER JOIN (
     ORDER BY [c0].[CustomerID]
 ) AS [t] ON [c.Orders].[CustomerID] = [t].[CustomerID]
 ORDER BY [t].[CustomerID]");
+        }
+
+        [Fact]
+        public void Test()
+        {
+            using (var context = CreateContext())
+            {
+                (from c in context.Set<Customer>()
+                 join o in (from o1 in context.Set<Order>() select Include(o1, o1.Customer))             //.Include(o => o.Customer)
+                 on c.CustomerID equals o.CustomerID into g
+                 where c.CustomerID == "ALFKI"
+                 select new { c, g })
+                    .ToList();
+
+
+//                (from c in context.Set<Customer>()
+//                    join o in context.Set<Order>().Include("OrderDetails").Include("Customer")
+//                    on c.CustomerID equals o.CustomerID into g
+//                    where c.CustomerID == "ALFKI"
+//                    select new { c, g })
+//                    .ToList();
+            }
+                
+        }
+
+        private static Order Include(Order o1, Customer o1Customer)
+        {
+            return o1;
+        }
+
+        public override void Include_collection_on_inner_group_join_clause_with_filter(bool useString)
+        {
+            base.Include_collection_on_inner_group_join_clause_with_filter(useString);
+
+            AssertSql(
+                @"SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region], [o].[OrderID], [o].[CustomerID], [o].[EmployeeID], [o].[OrderDate], [c0].[CustomerID], [c0].[Address], [c0].[City], [c0].[CompanyName], [c0].[ContactName], [c0].[ContactTitle], [c0].[Country], [c0].[Fax], [c0].[Phone], [c0].[PostalCode], [c0].[Region]
+FROM [Customers] AS [c]
+LEFT JOIN [Orders] AS [o] ON [c].[CustomerID] = [o].[CustomerID]
+LEFT JOIN [Customers] AS [c0] ON [o].[CustomerID] = [c0].[CustomerID]
+WHERE [c].[CustomerID] = N'ALFKI'
+ORDER BY [c].[CustomerID], [o].[OrderID]",
+                //
+                @"SELECT [o0].[OrderID], [o0].[ProductID], [o0].[Discount], [o0].[Quantity], [o0].[UnitPrice]
+FROM [Order Details] AS [o0]
+INNER JOIN (
+    SELECT DISTINCT [c].[CustomerID], [o].[OrderID]
+    FROM [Customers] AS [c]
+    LEFT JOIN [Orders] AS [o] ON [c].[CustomerID] = [o].[CustomerID]
+    WHERE [c].[CustomerID] = N'ALFKI'
+) AS [o1] ON [o0].[OrderID] = [o1].[OrderID]
+ORDER BY [o1].[CustomerID], [o1].[OrderID]");
         }
 
         public override void Include_collection_principal_already_tracked_as_no_tracking(bool useString)

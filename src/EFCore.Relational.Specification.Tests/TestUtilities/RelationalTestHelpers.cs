@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Xunit;
@@ -14,6 +15,7 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests.TestUtilities
         private const string FileLineEnding = @"
 ";
 
+        [DebuggerStepThrough]
         public static void AssertBaseline(ITestOutputHelper testOutputHelper, bool assertOrder, params string[] expected)
         {
             var sqlStatements = TestSqlLoggerFactory.SqlStatements

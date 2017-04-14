@@ -92,7 +92,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     && (_queryCompilationContext.Model.FindEntityType(sequenceType) != null
                     || _queryCompilationContext.Model.IsDelegatedIdentityEntityType(sequenceType)))
                 {
-                    continue;
+                    //continue;
                 }
 
                 var includeLoadTree
