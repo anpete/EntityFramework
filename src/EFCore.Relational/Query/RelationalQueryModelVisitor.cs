@@ -1339,20 +1339,20 @@ namespace Microsoft.EntityFrameworkCore.Query
 
             var outerShaper = ExtractShaper(outerShapedQuery, 0);
             var innerShaper = ExtractShaper(innerShapedQuery, previousProjectionCount);
-
-            if (innerShaper.Type == typeof(AnonymousObject))
-            {
-                Expression = outerShapedQuery;
-                CurrentParameter = previousParameter;
-
-                foreach (var mapping in previousMapping)
-                {
-                    QueryCompilationContext.QuerySourceMapping
-                        .ReplaceMapping(mapping.Key, mapping.Value);
-                }
-            }
-            else
-            {
+//
+//            if (innerShaper.Type == typeof(AnonymousObject))
+//            {
+//                Expression = outerShapedQuery;
+//                CurrentParameter = previousParameter;
+//
+//                foreach (var mapping in previousMapping)
+//                {
+//                    QueryCompilationContext.QuerySourceMapping
+//                        .ReplaceMapping(mapping.Key, mapping.Value);
+//                }
+//            }
+//            else
+//            {
                 var materializerLambda = (LambdaExpression)joinMethodCallExpression.Arguments.Last();
                 var materializer = materializerLambda.Compile();
 
@@ -1372,7 +1372,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                         outerShapedQuery.Arguments[0],
                         outerShapedQuery.Arguments[1],
                         Expression.Constant(compositeShaper));
-            }
+            //}
 
             return true;
         }

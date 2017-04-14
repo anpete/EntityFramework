@@ -150,7 +150,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
             if (AnonymousObject.IsGetValueExpression(node , out QuerySourceReferenceExpression querySourceReferenceExpression))
             {
-                DemoteQuerySource(querySourceReferenceExpression.ReferencedQuerySource);
+                //DemoteQuerySource(querySourceReferenceExpression.ReferencedQuerySource);
             }
 
             foreach (var subQueryExpression in newExpression.Arguments.OfType<SubQueryExpression>())

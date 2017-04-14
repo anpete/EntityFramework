@@ -1,9 +1,13 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System.Linq;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Relational.Tests.TestUtilities;
 using Microsoft.EntityFrameworkCore.Specification.Tests;
+using Microsoft.EntityFrameworkCore.Specification.Tests.TestModels.Northwind;
 using Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests.Utilities;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
@@ -15,7 +19,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public IncludeSqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestSqlLoggerFactory.CaptureOutput(_testOutputHelper);
+            TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
         }
 
         public override void Include_list(bool useString)
@@ -610,6 +614,35 @@ INNER JOIN (
     WHERE [c0].[CustomerID] = N'ALFKI'
 ) AS [t] ON [c.Orders].[CustomerID] = [t].[CustomerID]
 ORDER BY [t].[CustomerID]");
+        }
+
+        [Fact]
+        public void Test()
+        {
+            using (var context = CreateContext())
+            {
+                (from c_Orders_OrderDetails in context.OrderDetails
+                 join _c_Orders in
+                     (from c_Orders in context.Orders
+                      join _c in
+                          (from c in context.Customers
+                           select new AnonymousObject(
+                               new[]
+                               {
+                                   (object)EF.Property<string>(c, "CustomerID")
+                               })
+                          )
+                      on EF.Property<string>(c_Orders, "CustomerID") equals (string)_c.GetValue(0)
+                      select new AnonymousObject(
+                          new[]
+                          {
+                              EF.Property<int>(c_Orders, "OrderID"),
+                              _c.GetValue(0)
+                          })
+                     )
+                 on EF.Property<int?>(c_Orders_OrderDetails, "OrderID") equals (int?)_c_Orders.GetValue(0)
+                 select c_Orders_OrderDetails).ToList();
+            }
         }
 
         public override void Include_collection_then_include_collection(bool useString)

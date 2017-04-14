@@ -95,10 +95,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     continue;
                 }
 
-                if (navigationPath.Count(n => n.IsCollection()) > 1)
-                {
-                    continue;
-                }
+//                if (navigationPath.Count(n => n.IsCollection()) > 1)
+//                {
+//                    continue;
+//                }
 
                 var includeLoadTree
                     = includeLoadTrees
@@ -160,7 +160,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         public virtual void RewriteCollectionQueries([NotNull] QueryModel queryModel)
         {
             var collectionQueryModelRewritingExpressionVisitor
-                = new CollectionQueryModelRewritingExpressionVisitor(_queryCompilationContext, queryModel);
+                = new CollectionQueryModelRewritingExpressionVisitor(_queryCompilationContext, queryModel, this);
 
             queryModel.TransformExpressions(collectionQueryModelRewritingExpressionVisitor.Visit);
 
