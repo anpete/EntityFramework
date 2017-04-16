@@ -109,8 +109,8 @@ namespace Microsoft.EntityFrameworkCore.Query
         /// </value>
         public virtual bool RequiresClientSelectMany
         {
-            get { return _requiresClientSelectMany || RequiresClientEval; }
-            set { _requiresClientSelectMany = value; }
+            get => _requiresClientSelectMany || RequiresClientEval;
+            set => _requiresClientSelectMany = value;
         }
 
         /// <summary>
@@ -121,8 +121,8 @@ namespace Microsoft.EntityFrameworkCore.Query
         /// </value>
         public virtual bool RequiresClientJoin
         {
-            get { return _requiresClientJoin || RequiresClientEval; }
-            set { _requiresClientJoin = value; }
+            get => _requiresClientJoin || RequiresClientEval;
+            set => _requiresClientJoin = value;
         }
 
         /// <summary>
@@ -133,8 +133,8 @@ namespace Microsoft.EntityFrameworkCore.Query
         /// </value>
         public virtual bool RequiresClientFilter
         {
-            get { return _requiresClientFilter || RequiresClientEval; }
-            set { _requiresClientFilter = value; }
+            get => _requiresClientFilter || RequiresClientEval;
+            set => _requiresClientFilter = value;
         }
 
         /// <summary>
@@ -145,8 +145,8 @@ namespace Microsoft.EntityFrameworkCore.Query
         /// </value>
         public virtual bool RequiresClientOrderBy
         {
-            get { return _requiresClientOrderBy || RequiresClientEval; }
-            set { _requiresClientOrderBy = value; }
+            get => _requiresClientOrderBy || RequiresClientEval;
+            set => _requiresClientOrderBy = value;
         }
 
         /// <summary>
@@ -157,8 +157,8 @@ namespace Microsoft.EntityFrameworkCore.Query
         /// </value>
         public virtual bool RequiresClientProjection
         {
-            get { return _requiresClientProjection || RequiresClientEval; }
-            set { _requiresClientProjection = value; }
+            get => _requiresClientProjection || RequiresClientEval;
+            set => _requiresClientProjection = value;
         }
 
         /// <summary>
@@ -169,8 +169,8 @@ namespace Microsoft.EntityFrameworkCore.Query
         /// </value>
         public virtual bool RequiresClientResultOperator
         {
-            get { return _unflattenedGroupJoinClauses.Any() || _requiresClientResultOperator || RequiresClientEval; }
-            set { _requiresClientResultOperator = value; }
+            get => _unflattenedGroupJoinClauses.Any() || _requiresClientResultOperator || RequiresClientEval;
+            set => _requiresClientResultOperator = value;
         }
 
         /// <summary>
@@ -692,6 +692,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             var subQueryModel = subQueryExpression.QueryModel;
 
             var queryModelMapping = new Dictionary<QueryModel, QueryModel>();
+
             subQueryModel.PopulateQueryModelMapping(queryModelMapping);
 
             subQueryModelVisitor.VisitSubQueryModel(subQueryModel);

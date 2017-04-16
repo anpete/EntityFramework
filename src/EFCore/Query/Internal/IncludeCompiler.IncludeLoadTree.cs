@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Remotion.Linq;
+using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
@@ -29,13 +30,44 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 bool asyncQuery,
                 ref int collectionIncludeId)
             {
+                var querySourceReferenceExpression = QuerySourceReferenceExpression;
+
+                if (querySourceReferenceExpression.ReferencedQuerySource is GroupJoinClause groupJoinClause)
+                {
+                    var joinClause = groupJoinClause.JoinClause;
+
+                    queryModel = (joinClause.InnerSequence as SubQueryExpression)?.QueryModel;
+
+                    if (queryModel == null)
+                    {
+                        var mainFromClause
+                            = new MainFromClause(joinClause.ItemName, joinClause.ItemType, joinClause.InnerSequence);
+
+                        querySourceReferenceExpression = new QuerySourceReferenceExpression(mainFromClause);
+
+                        queryModel
+                            = new QueryModel(
+                                mainFromClause,
+                                new SelectClause(querySourceReferenceExpression));
+
+                        groupJoinClause.JoinClause.InnerSequence = new SubQueryExpression(queryModel);
+                    }
+                    else
+                    {
+                        querySourceReferenceExpression
+                            = (QuerySourceReferenceExpression)queryModel.SelectClause.Selector;
+                    }
+
+                    trackingQuery = false;
+                }
+
                 Compile(
                     queryCompilationContext,
                     queryModel,
                     trackingQuery,
                     asyncQuery,
                     ref collectionIncludeId,
-                    QuerySourceReferenceExpression);
+                    querySourceReferenceExpression);
             }
         }
     }

@@ -554,33 +554,27 @@ INNER JOIN (
 ORDER BY [t].[CustomerID]");
         }
 
-        [Fact]
-        public void Test()
-        {
-            using (var context = CreateContext())
-            {
-                (from c in context.Set<Customer>()
-                 join o in (from o1 in context.Set<Order>() select Include(o1, o1.Customer))             //.Include(o => o.Customer)
-                 on c.CustomerID equals o.CustomerID into g
-                 where c.CustomerID == "ALFKI"
-                 select new { c, g })
-                    .ToList();
-
-
-//                (from c in context.Set<Customer>()
-//                    join o in context.Set<Order>().Include("OrderDetails").Include("Customer")
-//                    on c.CustomerID equals o.CustomerID into g
-//                    where c.CustomerID == "ALFKI"
-//                    select new { c, g })
+//        [Fact]
+//        public void Test()
+//        {
+//            using (var context = CreateContext())
+//            {
+//                var results =
+//                    (from c in context.Set<Customer>()
+//                     join o in context.Set<Order>().Include(o => o.OrderDetails)
+//                     on c.CustomerID equals o.CustomerID into g
+//                     where c.CustomerID == "ALFKI"
+//                     select new { c, g/*, Foo = g.Select(o => new { o.Customer, o.OrderDetails }).ToList()*/ })
 //                    .ToList();
-            }
-                
-        }
-
-        private static Order Include(Order o1, Customer o1Customer)
-        {
-            return o1;
-        }
+//
+//                //                (from c in context.Set<Customer>()
+//                //                    join o in context.Set<Order>().Include("OrderDetails").Include("Customer")
+//                //                    on c.CustomerID equals o.CustomerID into g
+//                //                    where c.CustomerID == "ALFKI"
+//                //                    select new { c, g })
+//                //                    .ToList();
+//            }
+//        }
 
         public override void Include_collection_on_inner_group_join_clause_with_filter(bool useString)
         {

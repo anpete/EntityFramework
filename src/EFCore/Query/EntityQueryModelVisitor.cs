@@ -315,9 +315,19 @@ namespace Microsoft.EntityFrameworkCore.Query
 
             includeCompiler.CompileIncludes(queryModel, includeResultOperators, TrackResults(queryModel), asyncQuery);
 
+            QueryCompilationContext.Logger
+                .LogDebug(
+                    CoreEventId.OptimizedQueryModel,
+                    () => CoreStrings.LogOptimizedQueryModel(Environment.NewLine, queryModel.Print()));
+
             _navigationRewritingExpressionVisitorFactory
                 .Create(this)
                 .Rewrite(queryModel, parentQueryModel: null);
+
+            QueryCompilationContext.Logger
+                .LogDebug(
+                    CoreEventId.OptimizedQueryModel,
+                    () => CoreStrings.LogOptimizedQueryModel(Environment.NewLine, queryModel.Print()));
 
             includeCompiler.RewriteCollectionQueries(queryModel);
 
