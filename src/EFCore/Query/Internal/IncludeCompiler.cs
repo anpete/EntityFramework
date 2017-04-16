@@ -13,11 +13,11 @@ using Microsoft.EntityFrameworkCore.Extensions.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
 using Microsoft.EntityFrameworkCore.Query.ResultOperators.Internal;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Clauses.StreamedData;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
@@ -90,7 +90,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 if (sequenceType != null
                     && (_queryCompilationContext.Model.FindEntityType(sequenceType) != null
-                    || _queryCompilationContext.Model.IsDelegatedIdentityEntityType(sequenceType)))
+                        || _queryCompilationContext.Model.IsDelegatedIdentityEntityType(sequenceType)))
                 {
                     continue;
                 }
@@ -157,7 +157,13 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             var collectionQueryModelRewritingExpressionVisitor
                 = new CollectionQueryModelRewritingExpressionVisitor(_queryCompilationContext, queryModel, this);
 
-            queryModel.TransformExpressions(collectionQueryModelRewritingExpressionVisitor.Visit);
+            queryModel.SelectClause.TransformExpressions(collectionQueryModelRewritingExpressionVisitor.Visit);
+
+            foreach (var groupResultOperator
+                in queryModel.ResultOperators.OfType<GroupResultOperator>())
+            {
+                groupResultOperator.TransformExpressions(collectionQueryModelRewritingExpressionVisitor.Visit);
+            }
 
             ApplyParentOrderings(queryModel, collectionQueryModelRewritingExpressionVisitor.ParentOrderings);
         }

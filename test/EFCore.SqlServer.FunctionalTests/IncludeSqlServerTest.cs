@@ -1,9 +1,12 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System.Linq;
 using Microsoft.EntityFrameworkCore.Specification.Tests;
+using Microsoft.EntityFrameworkCore.Specification.Tests.TestModels.Northwind;
 using Microsoft.EntityFrameworkCore.Specification.Tests.TestUtilities;
 using Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests.Utilities;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
@@ -19,7 +22,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         {
             _testOutputHelper = testOutputHelper;
 
-            //TestSqlLoggerFactory.CaptureOutput(_testOutputHelper);
+            TestSqlLoggerFactory.CaptureOutput(_testOutputHelper);
         }
 
         public override void Include_list(bool useString)
@@ -574,6 +577,33 @@ INNER JOIN (
     ORDER BY [c0].[CustomerID]
 ) AS [t] ON [c.Orders].[CustomerID] = [t].[CustomerID]
 ORDER BY [t].[CustomerID]");
+        }
+        
+        [Fact]
+        public void Test()
+        {
+            using (var context = CreateContext())
+            {
+                var results =
+                    (from c in context.Set<Customer>()
+                     join o in context.Set<Order>()
+                     on c.CustomerID equals o.CustomerID into g
+                     where c.CustomerID == "ALFKI"
+                     select new { c, G = g.Select(o => _Include(o, o.Customer)).ToList() })
+                    .ToList();
+        
+                //                (from c in context.Set<Customer>()
+                //                    join o in context.Set<Order>().Include("OrderDetails").Include("Customer")
+                //                    on c.CustomerID equals o.CustomerID into g
+                //                    where c.CustomerID == "ALFKI"
+                //                    select new { c, g })
+                //                    .ToList();
+            }
+        }
+
+        private static object _Include(object o, object nav)
+        {
+            return o;
         }
 
         public override void Include_collection_with_filter(bool useString)
