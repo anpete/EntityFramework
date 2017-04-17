@@ -13,11 +13,11 @@ using Microsoft.EntityFrameworkCore.Extensions.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
 using Microsoft.EntityFrameworkCore.Query.ResultOperators.Internal;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Clauses.StreamedData;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
@@ -54,71 +54,6 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         {
             _queryCompilationContext = queryCompilationContext;
             _querySourceTracingExpressionVisitorFactory = querySourceTracingExpressionVisitorFactory;
-        }
-
-        private IEnumerable<IncludeLoadTree> CreateIncludeLoadTrees(
-            ICollection<IncludeResultOperator> includeResultOperators,
-            Expression targetExpression)
-        {
-            var querySourceTracingExpressionVisitor
-                = _querySourceTracingExpressionVisitorFactory.Create();
-
-            var includeLoadTrees = new List<IncludeLoadTree>();
-
-            foreach (var includeResultOperator in includeResultOperators.ToArray())
-            {
-                var navigationPath = includeResultOperator.GetNavigationPath(_queryCompilationContext);
-
-                var querySourceReferenceExpression
-                    = querySourceTracingExpressionVisitor
-                        .FindResultQuerySourceReferenceExpression(
-                            targetExpression,
-                            includeResultOperator.QuerySource);
-
-                if (querySourceReferenceExpression == null)
-                {
-                    _queryCompilationContext.Logger
-                        .LogWarning(
-                            CoreEventId.IncludeIgnoredWarning,
-                            () => CoreStrings.LogIgnoredInclude(
-                                $"{includeResultOperator.QuerySource.ItemName}.{navigationPath.Select(n => n.Name).Join(".")}"));
-
-                    continue;
-                }
-
-                var sequenceType = querySourceReferenceExpression.Type.TryGetSequenceType();
-
-                if (sequenceType != null
-                    && (_queryCompilationContext.Model.FindEntityType(sequenceType) != null
-                    || _queryCompilationContext.Model.IsDelegatedIdentityEntityType(sequenceType)))
-                {
-                    continue;
-                }
-
-                var includeLoadTree
-                    = includeLoadTrees
-                        .SingleOrDefault(
-                            t => ReferenceEquals(
-                                t.QuerySourceReferenceExpression, querySourceReferenceExpression));
-
-                if (includeLoadTree == null)
-                {
-                    includeLoadTrees.Add(includeLoadTree = new IncludeLoadTree(querySourceReferenceExpression));
-                }
-
-                includeLoadTree.AddLoadPath(navigationPath);
-
-                _queryCompilationContext.Logger
-                    .LogDebug(
-                        CoreEventId.IncludingNavigation,
-                        () => CoreStrings.LogIncludingNavigation(
-                            $"{includeResultOperator.PathFromQuerySource}.{includeResultOperator.NavigationPropertyPaths.Join(".")}"));
-
-                // TODO: Hack until new Include fully implemented
-                includeResultOperators.Remove(includeResultOperator);
-            }
-
-            return includeLoadTrees;
         }
 
         /// <summary>
@@ -158,8 +93,73 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 = new CollectionQueryModelRewritingExpressionVisitor(_queryCompilationContext, queryModel, this);
 
             queryModel.TransformExpressions(collectionQueryModelRewritingExpressionVisitor.Visit);
-
+            
             ApplyParentOrderings(queryModel, collectionQueryModelRewritingExpressionVisitor.ParentOrderings);
+        }
+
+        private IEnumerable<IncludeLoadTree> CreateIncludeLoadTrees(
+            ICollection<IncludeResultOperator> includeResultOperators,
+            Expression targetExpression)
+        {
+            var querySourceTracingExpressionVisitor
+                = _querySourceTracingExpressionVisitorFactory.Create();
+
+            var includeLoadTrees = new List<IncludeLoadTree>();
+
+            foreach (var includeResultOperator in includeResultOperators.ToArray())
+            {
+                var navigationPath = includeResultOperator.GetNavigationPath(_queryCompilationContext);
+
+                var querySourceReferenceExpression
+                    = querySourceTracingExpressionVisitor
+                        .FindResultQuerySourceReferenceExpression(
+                            targetExpression,
+                            includeResultOperator.QuerySource);
+
+                if (querySourceReferenceExpression == null)
+                {
+                    _queryCompilationContext.Logger
+                        .LogWarning(
+                            CoreEventId.IncludeIgnoredWarning,
+                            () => CoreStrings.LogIgnoredInclude(
+                                $"{includeResultOperator.QuerySource.ItemName}.{navigationPath.Select(n => n.Name).Join(".")}"));
+
+                    continue;
+                }
+
+                var sequenceType = querySourceReferenceExpression.Type.TryGetSequenceType();
+
+                if (sequenceType != null
+                    && (_queryCompilationContext.Model.FindEntityType(sequenceType) != null
+                        || _queryCompilationContext.Model.IsDelegatedIdentityEntityType(sequenceType)))
+                {
+                    //continue;
+                }
+
+                var includeLoadTree
+                    = includeLoadTrees
+                        .SingleOrDefault(
+                            t => ReferenceEquals(
+                                t.QuerySourceReferenceExpression, querySourceReferenceExpression));
+
+                if (includeLoadTree == null)
+                {
+                    includeLoadTrees.Add(includeLoadTree = new IncludeLoadTree(querySourceReferenceExpression));
+                }
+
+                includeLoadTree.AddLoadPath(navigationPath);
+
+                _queryCompilationContext.Logger
+                    .LogDebug(
+                        CoreEventId.IncludingNavigation,
+                        () => CoreStrings.LogIncludingNavigation(
+                            $"{includeResultOperator.PathFromQuerySource}.{includeResultOperator.NavigationPropertyPaths.Join(".")}"));
+
+                // TODO: Hack until new Include fully implemented
+                includeResultOperators.Remove(includeResultOperator);
+            }
+
+            return includeLoadTrees;
         }
 
         private static void ApplyParentOrderings(

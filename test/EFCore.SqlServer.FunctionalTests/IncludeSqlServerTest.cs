@@ -1,9 +1,13 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.EntityFrameworkCore.Specification.Tests;
+using Microsoft.EntityFrameworkCore.Specification.Tests.TestModels.Northwind;
 using Microsoft.EntityFrameworkCore.Specification.Tests.TestUtilities;
 using Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests.Utilities;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
@@ -20,6 +24,48 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
             _testOutputHelper = testOutputHelper;
 
             //TestSqlLoggerFactory.CaptureOutput(_testOutputHelper);
+        }
+
+        [Fact]
+        public void Test()
+        {
+            using (var context = CreateContext())
+            {
+                //                var results =
+                //                    (from c in context.Set<Customer>()
+                //                     join o in context.Set<Order>()
+                //                     on c.CustomerID equals o.CustomerID into g
+                //                     where c.CustomerID == "ALFKI"
+                //                     select new { c, g = _Include(g, g.Select(i => i.Customer).ToList()) })
+                //                    .ToList();
+
+                //                var results =
+                //                    (from c in context.Set<Customer>()
+                //                     join o in(from a in context.Set<Order>() select new { a, a.OrderDetails })
+                //                     on c.CustomerID equals o.a.CustomerID into g
+                //                     where c.CustomerID == "ALFKI"
+                //                     select new { c, g/* = _Include(g, g.Select(i => i.OrderDetails).ToList())*/ })
+                //                    .ToList();
+
+                var results
+                    =
+                (from c in context.Set<Customer>()
+                 join o in context.Set<Order>().Include("OrderDetails")//.Include("Customer")
+                 on c.CustomerID equals o.CustomerID into g
+                 where c.CustomerID == "ALFKI"
+                 select new { c, g })
+                    .ToList();
+            }
+        }
+
+        public override void Include_collection_on_group_join_clause_with_filter(bool useString)
+        {
+            base.Include_collection_on_group_join_clause_with_filter(useString);
+        }
+
+        public override void Include_collection_on_inner_group_join_clause_with_filter(bool useString)
+        {
+            base.Include_collection_on_inner_group_join_clause_with_filter(useString);
         }
 
         public override void Include_list(bool useString)

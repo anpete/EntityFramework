@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -517,7 +518,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Expressions
                 table = joinTable.TableExpression;
             }
 
-            var projectedExpressionToSearch = table is SelectExpression subquerySelectExpression
+            Debug.Assert(table != null);
+
+            var projectedExpressionToSearch 
+                = table is SelectExpression subquerySelectExpression
                 ? (Expression)subquerySelectExpression.BindProperty(property, querySource)
                     .LiftExpressionFromSubquery(table)
                 : new ColumnExpression(_relationalAnnotationProvider.For(property).ColumnName, property, table);

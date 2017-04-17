@@ -168,7 +168,20 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                         if (QueryModelVisitor.ParentQueryModelVisitor != null
                             && selectExpression.HandlesQuerySource(qsre.ReferencedQuerySource))
                         {
-                            selectExpression.ProjectStarTable = selectExpression.GetTableForQuerySource(qsre.ReferencedQuerySource);
+                            selectExpression.ProjectStarTable 
+                                = selectExpression.GetTableForQuerySource(qsre.ReferencedQuerySource);
+                        }
+                    }
+                    else if (expression is MethodCallExpression methodCallExpression
+                        && IncludeCompiler.IsIncludeMethod(methodCallExpression))
+                    {
+                        qsre = (QuerySourceReferenceExpression)methodCallExpression.Arguments[1];
+
+                        if (QueryModelVisitor.ParentQueryModelVisitor != null
+                            && selectExpression.HandlesQuerySource(qsre.ReferencedQuerySource))
+                        {
+                            selectExpression.ProjectStarTable 
+                                = selectExpression.GetTableForQuerySource(qsre.ReferencedQuerySource);
                         }
                     }
                     else

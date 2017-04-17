@@ -50,7 +50,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 QuerySourceReferenceExpression targetQuerySourceReferenceExpression)
             {
                 var entityParameter
-                    = Expression.Parameter(targetQuerySourceReferenceExpression.Type, name: "entity");
+                    = Expression.Parameter(
+                        targetQuerySourceReferenceExpression.Type, 
+                        name: targetQuerySourceReferenceExpression.ReferencedQuerySource.ItemName);
 
                 var propertyExpressions = new List<Expression>();
                 var blockExpressions = new List<Expression>();
@@ -86,7 +88,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             ref collectionIncludeId));
                 }
 
-                if (blockExpressions.Count > 0)
+                if (blockExpressions.Count > 1
+                    || blockExpressions.Count == 1
+                    && !trackingQuery)
                 {
                     AwaitTaskExpressions(asyncQuery, blockExpressions);
 

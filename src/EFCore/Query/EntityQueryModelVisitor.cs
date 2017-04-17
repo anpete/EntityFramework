@@ -318,6 +318,11 @@ namespace Microsoft.EntityFrameworkCore.Query
             _navigationRewritingExpressionVisitorFactory
                 .Create(this)
                 .Rewrite(queryModel, parentQueryModel: null);
+            
+            QueryCompilationContext.Logger
+                .LogDebug(
+                    CoreEventId.OptimizedQueryModel,
+                    () => CoreStrings.LogOptimizedQueryModel(Environment.NewLine, queryModel.Print()));
 
             includeCompiler.RewriteCollectionQueries(queryModel);
 
@@ -570,7 +575,6 @@ namespace Microsoft.EntityFrameworkCore.Query
                 MethodInfo trackingMethod;
 
                 if (isGrouping)
-
                 {
                     trackingMethod
                         = LinqOperatorProvider.TrackGroupedEntities
@@ -679,7 +683,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                     CoreEventId.QueryPlan,
                     () =>
                         {
-                            var queryPlan = _expressionPrinter.Print(queryExecutorExpression);
+                            var queryPlan = _expressionPrinter.PrintDebug(queryExecutorExpression);
 
                             return queryPlan;
                         });

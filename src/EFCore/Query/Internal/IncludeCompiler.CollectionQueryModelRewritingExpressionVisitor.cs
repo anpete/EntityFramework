@@ -89,9 +89,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 var querySourceReferenceFindingExpressionTreeVisitor
                     = new QuerySourceReferenceFindingExpressionTreeVisitor();
 
-                var whereClause = collectionQueryModel.BodyClauses
-                    .OfType<WhereClause>()
-                    .Single();
+                var whereClause 
+                    = collectionQueryModel.BodyClauses
+                        .OfType<WhereClause>()
+                        .Single();
 
                 whereClause.TransformExpressions(querySourceReferenceFindingExpressionTreeVisitor.Visit);
 
@@ -110,6 +111,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 var querySourceMapping = new QuerySourceMapping();
                 var clonedParentQueryModel = _parentQueryModel.Clone(querySourceMapping);
+
+                var includeRemovingExpressionVisitor = new IncludeRemovingExpressionVisitor();
+
+                clonedParentQueryModel.TransformExpressions(includeRemovingExpressionVisitor.Visit);
 
                 _queryCompilationContext.CloneAnnotations(querySourceMapping, clonedParentQueryModel);
 
@@ -172,6 +177,28 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         Expression.NewArrayInit(
                             typeof(object),
                             subQueryProjection));
+            }
+
+            private class IncludeRemovingExpressionVisitor : RelinqExpressionVisitor
+            {
+                protected override Expression VisitMethodCall(MethodCallExpression node)
+                    => IsIncludeMethod(node)
+                        ? node.Arguments[1]
+                        : base.VisitMethodCall(node);
+
+                protected override Expression VisitMember(MemberExpression node)
+                {
+                    var newExpression = Visit(node.Expression);
+
+                    return newExpression != node.Expression ? newExpression : node;
+                }
+
+                protected override Expression VisitSubQuery(SubQueryExpression subQueryExpression)
+                {
+                    subQueryExpression.QueryModel.TransformExpressions(Visit);
+
+                    return subQueryExpression;
+                }
             }
 
             private static void BuildParentOrderings(
