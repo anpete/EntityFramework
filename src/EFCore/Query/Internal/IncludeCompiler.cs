@@ -94,7 +94,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             queryModel.TransformExpressions(collectionQueryModelRewritingExpressionVisitor.Visit);
             
-            ApplyParentOrderings(queryModel, collectionQueryModelRewritingExpressionVisitor.ParentOrderings);
+            //ApplyParentOrderings(queryModel, collectionQueryModelRewritingExpressionVisitor.ParentOrderings);
         }
 
         private IEnumerable<IncludeLoadTree> CreateIncludeLoadTrees(

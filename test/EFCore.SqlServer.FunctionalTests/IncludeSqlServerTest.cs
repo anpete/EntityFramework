@@ -23,7 +23,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         {
             _testOutputHelper = testOutputHelper;
 
-            //TestSqlLoggerFactory.CaptureOutput(_testOutputHelper);
+            TestSqlLoggerFactory.CaptureOutput(_testOutputHelper);
         }
 
         [Fact]
