@@ -12,13 +12,13 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
 {
     public class GearsOfWarQuerySqlServerTest : GearsOfWarQueryTestBase<SqlServerTestStore, GearsOfWarQuerySqlServerFixture>
     {
-        private readonly ITestOutputHelper _testOutputHelper;
+        private readonly GearsOfWarQuerySqlServerFixture _fixture;
 
         public GearsOfWarQuerySqlServerTest(GearsOfWarQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            _testOutputHelper = testOutputHelper;
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            _fixture = fixture;
+            _fixture.TestSqlLoggerFactory.Clear();
         }
 
         public override void Entity_equality_empty()
@@ -402,7 +402,7 @@ FROM [CogTag] AS [t]");
 FROM [Gear] AS [g]
 LEFT JOIN [CogTag] AS [g.Tag] ON ([g].[Nickname] = [g.Tag].[GearNickName]) AND ([g].[SquadId] = [g.Tag].[GearSquadId])
 WHERE [g].[Discriminator] IN (N'Officer', N'Gear') AND ([g.Tag].[Id] IS NOT NULL AND [g.Tag].[Id] IN (",
-                TestSqlLoggerFactory.SqlStatements[1]);
+                _fixture.TestSqlLoggerFactory.SqlStatements[1]);
         }
 
         public override void Include_where_list_contains_navigation2()
@@ -419,7 +419,7 @@ FROM [Gear] AS [g]
 LEFT JOIN [CogTag] AS [g.Tag] ON ([g].[Nickname] = [g.Tag].[GearNickName]) AND ([g].[SquadId] = [g.Tag].[GearSquadId])
 INNER JOIN [City] AS [g.CityOfBirth] ON [g].[CityOrBirthName] = [g.CityOfBirth].[Name]
 WHERE [g].[Discriminator] IN (N'Officer', N'Gear') AND ([g.CityOfBirth].[Location] IS NOT NULL AND [g.Tag].[Id] IN (",
-                TestSqlLoggerFactory.SqlStatements[1]);
+                _fixture.TestSqlLoggerFactory.SqlStatements[1]);
         }
 
         public override void Navigation_accessed_twice_outside_and_inside_subquery()
@@ -435,7 +435,7 @@ FROM [CogTag] AS [t]");
 FROM [Gear] AS [g]
 LEFT JOIN [CogTag] AS [g.Tag] ON ([g].[Nickname] = [g.Tag].[GearNickName]) AND ([g].[SquadId] = [g.Tag].[GearSquadId])
 WHERE [g].[Discriminator] IN (N'Officer', N'Gear') AND ([g.Tag].[Id] IS NOT NULL AND [g.Tag].[Id] IN (",
-                TestSqlLoggerFactory.SqlStatements[1]);
+                _fixture.TestSqlLoggerFactory.SqlStatements[1]);
         }
 
         public override void Include_with_join_multi_level()
@@ -2631,16 +2631,13 @@ FROM [Weapon] AS [w]
 WHERE @_outer_FullName = [w].[OwnerFullName]");
         }
 
-        protected override void ClearLog() => TestSqlLoggerFactory.Reset();
-
         private void AssertSql(params string[] expected)
-        {
-            RelationalTestHelpers.AssertBaseline(_testOutputHelper, /*assertOrder:*/ true, expected);
-        }
+            => _fixture.TestSqlLoggerFactory.AssertBaseline(expected);
 
         private void AssertContainsSql(params string[] expected)
-        {
-            RelationalTestHelpers.AssertBaseline(_testOutputHelper, /*assertOrder:*/ false, expected);
-        }
+            => _fixture.TestSqlLoggerFactory.AssertBaseline(expected, assertOrder: false);
+
+        protected override void ClearLog()
+            => _fixture.TestSqlLoggerFactory.Clear();
     }
 }

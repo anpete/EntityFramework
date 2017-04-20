@@ -11,6 +11,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
 {
     public class SqlExecutorSqlServerTest : SqlExecutorTestBase<NorthwindQuerySqlServerFixture>
     {
+        private readonly NorthwindQuerySqlServerFixture _fixture;
+
         public override void Executes_stored_procedure()
         {
             base.Executes_stored_procedure();
@@ -45,6 +47,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         public SqlExecutorSqlServerTest(NorthwindQuerySqlServerFixture fixture)
             : base(fixture)
         {
+            _fixture = fixture;
+            _fixture.TestSqlLoggerFactory.Clear();
         }
 
         protected override DbParameter CreateDbParameter(string name, object value)
@@ -63,6 +67,6 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
         private const string FileLineEnding = @"
 ";
 
-        private static string Sql => TestSqlLoggerFactory.Sql.Replace(Environment.NewLine, FileLineEnding);
+        private string Sql => _fixture.TestSqlLoggerFactory.Sql.Replace(Environment.NewLine, FileLineEnding);
     }
 }

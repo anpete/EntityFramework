@@ -10,9 +10,13 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
 {
     public class PropertyEntrySqlServerTest : PropertyEntryTestBase<SqlServerTestStore, F1SqlServerFixture>
     {
+        private readonly F1SqlServerFixture _fixture;
+
         public PropertyEntrySqlServerTest(F1SqlServerFixture fixture)
             : base(fixture)
         {
+            _fixture = fixture;
+            _fixture.TestSqlLoggerFactory.Clear();
         }
 
         public override void Property_entry_original_value_is_set()
@@ -35,6 +39,6 @@ SELECT @@ROWCOUNT;",
         private const string FileLineEnding = @"
 ";
 
-        private static string Sql => TestSqlLoggerFactory.Sql.Replace(Environment.NewLine, FileLineEnding);
+        private string Sql => _fixture.TestSqlLoggerFactory.Sql.Replace(Environment.NewLine, FileLineEnding);
     }
 }

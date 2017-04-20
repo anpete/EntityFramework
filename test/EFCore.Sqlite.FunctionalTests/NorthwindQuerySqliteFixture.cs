@@ -17,7 +17,8 @@ namespace Microsoft.EntityFrameworkCore.Sqlite.FunctionalTests
         private readonly DbContextOptions _options;
 
         private readonly SqliteTestStore _testStore = SqliteNorthwindContext.GetSharedStore();
-        private readonly TestSqlLoggerFactory _testSqlLoggerFactory = new TestSqlLoggerFactory();
+
+        public TestSqlLoggerFactory TestSqlLoggerFactory { get; } = new TestSqlLoggerFactory();
 
         public NorthwindQuerySqliteFixture()
         {
@@ -30,7 +31,7 @@ namespace Microsoft.EntityFrameworkCore.Sqlite.FunctionalTests
                     .UseInternalServiceProvider((additionalServices ?? new ServiceCollection())
                         .AddEntityFrameworkSqlite()
                         .AddSingleton(TestModelSource.GetFactory(OnModelCreating))
-                        .AddSingleton<ILoggerFactory>(_testSqlLoggerFactory)
+                        .AddSingleton<ILoggerFactory>(TestSqlLoggerFactory)
                         .BuildServiceProvider()))
                 .UseSqlite(
                     _testStore.ConnectionString,
@@ -49,6 +50,6 @@ namespace Microsoft.EntityFrameworkCore.Sqlite.FunctionalTests
 
         public void Dispose() => _testStore.Dispose();
 
-        public override CancellationToken CancelQuery() => _testSqlLoggerFactory.CancelQuery();
+        public override CancellationToken CancelQuery() => TestSqlLoggerFactory.CancelQuery();
     }
 }

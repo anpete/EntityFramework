@@ -13,9 +13,13 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
 {
     public abstract class FindSqlServerTest : FindTestBase<SqlServerTestStore, FindSqlServerTest.FindSqlServerFixture>
     {
+        private readonly FindSqlServerFixture _fixture;
+
         protected FindSqlServerTest(FindSqlServerFixture fixture)
             : base(fixture)
         {
+            _fixture = fixture;
+            _fixture.TestSqlLoggerFactory.Clear();
         }
 
         public class FindSqlServerTestSet : FindSqlServerTest
@@ -316,18 +320,19 @@ WHERE [e].[Id] = @__get_Item_0", Sql);
         public override void Dispose()
         {
             base.Dispose();
-            TestSqlLoggerFactory.Reset();
         }
 
         private const string FileLineEnding = @"
 ";
 
-        private static string Sql => TestSqlLoggerFactory.Sql.Replace(Environment.NewLine, FileLineEnding);
+        private string Sql => _fixture.TestSqlLoggerFactory.Sql.Replace(Environment.NewLine, FileLineEnding);
 
         public class FindSqlServerFixture : FindFixtureBase
         {
             private const string DatabaseName = "FindTest";
             private readonly DbContextOptions _options;
+
+            public TestSqlLoggerFactory TestSqlLoggerFactory { get; } = new TestSqlLoggerFactory();
 
             public FindSqlServerFixture()
             {
@@ -352,8 +357,6 @@ WHERE [e].[Id] = @__get_Item_0", Sql);
                         {
                             context.Database.EnsureCreated();
                             Seed(context);
-
-                            TestSqlLoggerFactory.Reset();
                         }
                     });
             }

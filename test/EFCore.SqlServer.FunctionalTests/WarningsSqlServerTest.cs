@@ -10,9 +10,13 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
 {
     public class WarningsSqlServerTest : WarningsTestBase<WarningsSqlServerFixture>
     {
+        private readonly WarningsSqlServerFixture _fixture;
+
         public WarningsSqlServerTest(WarningsSqlServerFixture fixture)
             : base(fixture)
         {
+            _fixture = fixture;
+            _fixture.TestSqlLoggerFactory.Clear();
         }
 
         public override void Does_not_throw_for_top_level_single()
@@ -30,7 +34,7 @@ WHERE [x].[OrderID] = 10248",
         {
             base.Paging_operation_without_orderby_issues_warning();
 
-            Assert.True(TestSqlLoggerFactory.Log.Contains(CoreStrings.RowLimitingOperationWithoutOrderBy(
+            Assert.True(_fixture.TestSqlLoggerFactory.Log.Contains(CoreStrings.RowLimitingOperationWithoutOrderBy(
                 "(from Customer <generated>_2 in DbSet<Customer> select [<generated>_2]).Skip(__p_0).Take(__p_1)")));
         }
 
@@ -38,7 +42,7 @@ WHERE [x].[OrderID] = 10248",
         {
             base.FirstOrDefault_without_orderby_and_filter_issues_warning_subquery();
 
-            Assert.True(TestSqlLoggerFactory.Log.Contains(CoreStrings.FirstWithoutOrderByAndFilter(
+            Assert.True(_fixture.TestSqlLoggerFactory.Log.Contains(CoreStrings.FirstWithoutOrderByAndFilter(
                 "(from Order <generated>_1 in [c].Orders select [<generated>_1].OrderID).FirstOrDefault()")));
         }
 
@@ -46,7 +50,7 @@ WHERE [x].[OrderID] = 10248",
         {
             base.FirstOrDefault_without_orderby_but_with_filter_doesnt_issue_warning();
 
-            Assert.False(TestSqlLoggerFactory.Log.Contains(CoreStrings.FirstWithoutOrderByAndFilter(
+            Assert.False(_fixture.TestSqlLoggerFactory.Log.Contains(CoreStrings.FirstWithoutOrderByAndFilter(
                 @"(from Customer c in DbSet<Customer> where c.CustomerID == ""ALFKI"" select c).FirstOrDefault()")));
         }
 
@@ -54,13 +58,13 @@ WHERE [x].[OrderID] = 10248",
         {
             base.Single_SingleOrDefault_without_orderby_doesnt_issue_warning();
 
-            Assert.False(TestSqlLoggerFactory.Log.Contains(CoreStrings.FirstWithoutOrderByAndFilter(
+            Assert.False(_fixture.TestSqlLoggerFactory.Log.Contains(CoreStrings.FirstWithoutOrderByAndFilter(
                 @"(from Customer c in DbSet<Customer> where c.CustomerID == ""ALFKI"" select c).Single()")));
         }
 
         private const string FileLineEnding = @"
 ";
 
-        private static string Sql => TestSqlLoggerFactory.Sql.Replace(Environment.NewLine, FileLineEnding);
+        private string Sql => _fixture.TestSqlLoggerFactory.Sql.Replace(Environment.NewLine, FileLineEnding);
     }
 }

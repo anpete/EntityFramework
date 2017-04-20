@@ -10,6 +10,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
 {
     public class FromSqlSprocQuerySqlServerTest : FromSqlSprocQueryTestBase<NorthwindSprocQuerySqlServerFixture>
     {
+        private readonly NorthwindSprocQuerySqlServerFixture _fixture;
+
         public override void From_sql_queryable_stored_procedure()
         {
             base.From_sql_queryable_stored_procedure();
@@ -138,7 +140,8 @@ FROM (
             NorthwindSprocQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            _fixture = fixture;
+            _fixture.TestSqlLoggerFactory.Clear();
         }
 
         protected override string TenMostExpensiveProductsSproc => "[dbo].[Ten Most Expensive Products]";
@@ -148,6 +151,6 @@ FROM (
         private const string FileLineEnding = @"
 ";
 
-        private static string Sql => TestSqlLoggerFactory.Sql.Replace(Environment.NewLine, FileLineEnding);
+        private string Sql => _fixture.TestSqlLoggerFactory.Sql.Replace(Environment.NewLine, FileLineEnding);
     }
 }

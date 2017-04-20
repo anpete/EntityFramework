@@ -11,14 +11,14 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
     public class InheritanceRelationshipsQuerySqlServerTest
         : InheritanceRelationshipsQueryTestBase<SqlServerTestStore, InheritanceRelationshipsQuerySqlServerFixture>
     {
-        private readonly ITestOutputHelper _testOutputHelper;
+        private readonly InheritanceRelationshipsQuerySqlServerFixture _fixture;
 
         public InheritanceRelationshipsQuerySqlServerTest(
             InheritanceRelationshipsQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            _testOutputHelper = testOutputHelper;
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            _fixture = fixture;
+            _fixture.TestSqlLoggerFactory.Clear();
         }
 
         public override void Include_reference_with_inheritance1()
@@ -924,13 +924,6 @@ ORDER BY [t].[Id]");
         }
 
         private void AssertSql(params string[] expected)
-        {
-            RelationalTestHelpers.AssertBaseline(_testOutputHelper, /*assertOrder:*/ true, expected);
-        }
-
-        private void AssertContainsSql(params string[] expected)
-        {
-            RelationalTestHelpers.AssertBaseline(_testOutputHelper, /*assertOrder:*/ false, expected);
-        }
+            => _fixture.TestSqlLoggerFactory.AssertBaseline(expected);
     }
 }

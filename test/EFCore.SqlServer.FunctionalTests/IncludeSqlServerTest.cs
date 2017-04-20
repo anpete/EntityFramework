@@ -12,14 +12,13 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
     {
         private bool SupportsOffset => TestEnvironment.GetFlag(nameof(SqlServerCondition.SupportsOffset)) ?? true;
 
-        private readonly ITestOutputHelper _testOutputHelper;
+        private readonly NorthwindQuerySqlServerFixture _fixture;
 
         public IncludeSqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            _testOutputHelper = testOutputHelper;
-
-            //TestSqlLoggerFactory.CaptureOutput(_testOutputHelper);
+            _fixture = fixture;
+            _fixture.TestSqlLoggerFactory.Clear();
         }
 
         public override void Include_list(bool useString)
@@ -1357,11 +1356,13 @@ INNER JOIN (
 ORDER BY [t].[c], [t].[CustomerID]");
         }
 
-        protected override void ClearLog() => TestSqlLoggerFactory.Reset();
-
         private void AssertSql(params string[] expected)
-        {
-            RelationalTestHelpers.AssertBaseline(_testOutputHelper, /*assertOrder:*/ true, expected);
-        }
+            => _fixture.TestSqlLoggerFactory.AssertBaseline(expected);
+
+        private void AssertContainsSql(params string[] expected)
+            => _fixture.TestSqlLoggerFactory.AssertBaseline(expected, assertOrder: false);
+
+        protected override void ClearLog()
+            => _fixture.TestSqlLoggerFactory.Clear();
     }
 }

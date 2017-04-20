@@ -17,10 +17,13 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
 {
     public class AsyncQuerySqlServerTest : AsyncQueryTestBase<NorthwindQuerySqlServerFixture>
     {
+        private readonly NorthwindQuerySqlServerFixture _fixture;
+
         public AsyncQuerySqlServerTest(NorthwindQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            _fixture = fixture;
+            _fixture.TestSqlLoggerFactory.Clear();
         }
 
         public override async Task ToList_on_nav_in_projection_is_async()
@@ -36,7 +39,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
                     FROM [Customers] AS [c]
                     WHERE [c].[CustomerID] = N'ALFKI', 
                 shaper: BufferedEntityShaper<Customer>), 
-            selector: (Customer c | CancellationToken Param_0) => Task<<>f__AnonymousType3<Customer, List<Order>>> _ExecuteAsync(
+            selector: (Customer c | CancellationToken ct) => Task<<>f__AnonymousType3<Customer, List<Order>>> _ExecuteAsync(
                 taskFactories: new Func<Task<object>>[]{ () => Task<object> _ToObjectTask(Task<List<Order>> ToList((IAsyncEnumerable<Order>) EnumerableAdapter<Order> _ToEnumerable(IAsyncEnumerable<Order> _InjectParameters(
                                     queryContext: queryContext, 
                                     source: IAsyncEnumerable<Order> _ShapedQuery(
@@ -54,7 +57,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
                     c, 
                     (List<Order>) results[0]
                 )))",
-                TestSqlLoggerFactory.Log);
+                _fixture.TestSqlLoggerFactory.Log);
         }
 
         [ConditionalFact]

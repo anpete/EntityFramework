@@ -13,10 +13,13 @@ namespace Microsoft.EntityFrameworkCore.Sqlite.FunctionalTests
 {
     public class QuerySqliteTest : QueryTestBase<NorthwindQuerySqliteFixture>
     {
+        private readonly NorthwindQuerySqliteFixture _fixture;
+
         public QuerySqliteTest(NorthwindQuerySqliteFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            _fixture = fixture;
+            _fixture.TestSqlLoggerFactory.Clear();
         }
 
         public override void Take_Skip()
@@ -127,6 +130,6 @@ WHERE ""p"".""ProductID"" < 40",
         private const string FileLineEnding = @"
 ";
 
-        private static string Sql => TestSqlLoggerFactory.Sql.Replace(Environment.NewLine, FileLineEnding);
+        private string Sql => _fixture.TestSqlLoggerFactory.Sql.Replace(Environment.NewLine, FileLineEnding);
     }
 }

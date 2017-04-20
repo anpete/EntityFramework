@@ -13,20 +13,20 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
 {
     public class RowNumberPagingTest : QueryTestBase<NorthwindRowNumberPagingQuerySqlServerFixture>, IDisposable
     {
-        private readonly ITestOutputHelper _testOutputHelper;
+        private readonly NorthwindRowNumberPagingQuerySqlServerFixture _fixture;
 
         public RowNumberPagingTest(NorthwindRowNumberPagingQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            _testOutputHelper = testOutputHelper;
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            _fixture = fixture;
+            _fixture.TestSqlLoggerFactory.Clear();
         }
 
         public void Dispose()
         {
             //Assert for all tests that OFFSET or FETCH is never used
-            Assert.All(TestSqlLoggerFactory.SqlStatements, t => Assert.DoesNotContain("OFFSET", t));
-            Assert.All(TestSqlLoggerFactory.SqlStatements, t => Assert.DoesNotContain("FETCH", t));
+            Assert.All(_fixture.TestSqlLoggerFactory.SqlStatements, t => Assert.DoesNotContain("OFFSET", t));
+            Assert.All(_fixture.TestSqlLoggerFactory.SqlStatements, t => Assert.DoesNotContain("FETCH", t));
         }
 
         public override void Skip()
@@ -492,16 +492,13 @@ LEFT JOIN [Orders] AS [o] ON [t].[CustomerID] = [o].[CustomerID]
 ORDER BY [t].[City], [t].[CustomerID]");
         }
 
-        protected override void ClearLog() => TestSqlLoggerFactory.Reset();
-
         private void AssertSql(params string[] expected)
-        {
-            RelationalTestHelpers.AssertBaseline(_testOutputHelper, /*assertOrder:*/ true, expected);
-        }
+            => _fixture.TestSqlLoggerFactory.AssertBaseline(expected);
 
         private void AssertContainsSql(params string[] expected)
-        {
-            RelationalTestHelpers.AssertBaseline(_testOutputHelper, /*assertOrder:*/ false, expected);
-        }
+            => _fixture.TestSqlLoggerFactory.AssertBaseline(expected, assertOrder: false);
+
+        protected override void ClearLog()
+            => _fixture.TestSqlLoggerFactory.Clear();
     }
 }

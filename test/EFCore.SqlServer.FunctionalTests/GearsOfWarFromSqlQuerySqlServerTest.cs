@@ -10,6 +10,15 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
 {
     public class GearsOfWarFromSqlQuerySqlServerTest : GearsOfWarFromSqlQueryTestBase<SqlServerTestStore, GearsOfWarQuerySqlServerFixture>
     {
+        private readonly GearsOfWarQuerySqlServerFixture _fixture;
+
+        public GearsOfWarFromSqlQuerySqlServerTest(GearsOfWarQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
+            : base(fixture)
+        {
+            _fixture = fixture;
+            _fixture.TestSqlLoggerFactory.Clear();
+        }
+
         public override void From_sql_queryable_simple_columns_out_of_order()
         {
             base.From_sql_queryable_simple_columns_out_of_order();
@@ -19,13 +28,9 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
                 Sql);
         }
 
-        public GearsOfWarFromSqlQuerySqlServerTest(GearsOfWarQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
-            : base(fixture)
-        {
-        }
+        protected override void ClearLog()
+            => _fixture.TestSqlLoggerFactory.Clear();
 
-        protected override void ClearLog() => TestSqlLoggerFactory.Reset();
-
-        private static string Sql => TestSqlLoggerFactory.Sql;
+        private string Sql => _fixture.TestSqlLoggerFactory.Sql;
     }
 }

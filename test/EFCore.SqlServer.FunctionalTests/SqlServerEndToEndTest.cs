@@ -463,13 +463,13 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
                     Assert.Equal(EntityState.Unchanged, db.Entry(toAdd).State);
                     Assert.DoesNotContain(toDelete, db.ChangeTracker.Entries().Select(e => e.Entity));
 
-                    Assert.Equal(3, TestSqlLoggerFactory.SqlStatements.Count);
-                    Assert.Contains("SELECT", TestSqlLoggerFactory.SqlStatements[0]);
-                    Assert.Contains("SELECT", TestSqlLoggerFactory.SqlStatements[1]);
-                    Assert.Contains("@p0: " + deletedId, TestSqlLoggerFactory.SqlStatements[2]);
-                    Assert.Contains("DELETE", TestSqlLoggerFactory.SqlStatements[2]);
-                    Assert.Contains("UPDATE", TestSqlLoggerFactory.SqlStatements[2]);
-                    Assert.Contains("INSERT", TestSqlLoggerFactory.SqlStatements[2]);
+                    Assert.Equal(3, _fixture.TestSqlLoggerFactory.SqlStatements.Count);
+                    Assert.Contains("SELECT", _fixture.TestSqlLoggerFactory.SqlStatements[0]);
+                    Assert.Contains("SELECT", _fixture.TestSqlLoggerFactory.SqlStatements[1]);
+                    Assert.Contains("@p0: " + deletedId, _fixture.TestSqlLoggerFactory.SqlStatements[2]);
+                    Assert.Contains("DELETE", _fixture.TestSqlLoggerFactory.SqlStatements[2]);
+                    Assert.Contains("UPDATE", _fixture.TestSqlLoggerFactory.SqlStatements[2]);
+                    Assert.Contains("INSERT", _fixture.TestSqlLoggerFactory.SqlStatements[2]);
 
                     var rows = await testDatabase.ExecuteScalarAsync<int>(
                         $@"SELECT Count(*) FROM [dbo].[Blog] WHERE Id = {updatedId} AND Name = 'Blog is Updated'");

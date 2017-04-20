@@ -208,7 +208,6 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
                     using (var context = CreateContext())
                     {
                         context.Database.EnsureCreated();
-                        TestSqlLoggerFactory.Reset();
                     }
                 });
         }

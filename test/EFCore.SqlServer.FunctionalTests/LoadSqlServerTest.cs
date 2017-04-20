@@ -14,9 +14,13 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
     public class LoadSqlServerTest
         : LoadTestBase<SqlServerTestStore, LoadSqlServerTest.LoadSqlServerFixture>
     {
+        private readonly LoadSqlServerFixture _fixture;
+
         public LoadSqlServerTest(LoadSqlServerFixture fixture)
             : base(fixture)
         {
+            _fixture = fixture;
+            _fixture.TestSqlLoggerFactory.Clear();
         }
 
         [Theory]
@@ -1535,15 +1539,9 @@ WHERE 0 = 1",
             }
         }
 
-        public override void Dispose()
-        {
-            base.Dispose();
-            TestSqlLoggerFactory.Reset();
-        }
+        public override void ClearLog() => _fixture.TestSqlLoggerFactory.Clear();
 
-        public override void ClearLog() => TestSqlLoggerFactory.Reset();
-
-        public override void RecordLog() => Sql = TestSqlLoggerFactory.Sql.Replace(Environment.NewLine, FileLineEnding);
+        public override void RecordLog() => Sql = _fixture.TestSqlLoggerFactory.Sql.Replace(Environment.NewLine, FileLineEnding);
 
         private const string FileLineEnding = @"
 ";
@@ -1554,6 +1552,8 @@ WHERE 0 = 1",
         {
             private const string DatabaseName = "LoadTest";
             private readonly DbContextOptions _options;
+
+            public TestSqlLoggerFactory TestSqlLoggerFactory { get; } = new TestSqlLoggerFactory();
 
             public LoadSqlServerFixture()
             {
@@ -1578,7 +1578,6 @@ WHERE 0 = 1",
                         {
                             context.Database.EnsureCreated();
                             Seed(context);
-                            TestSqlLoggerFactory.Reset();
                         }
                     });
             }

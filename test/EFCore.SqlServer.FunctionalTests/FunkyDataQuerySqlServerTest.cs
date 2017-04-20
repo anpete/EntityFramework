@@ -11,10 +11,13 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
 {
     public class FunkyDataQuerySqlServerTest : FunkyDataQueryTestBase<SqlServerTestStore, FunkyDataQuerySqlServerFixture>
     {
+        private readonly FunkyDataQuerySqlServerFixture _fixture;
+
         public FunkyDataQuerySqlServerTest(FunkyDataQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            _fixture = fixture;
+            _fixture.TestSqlLoggerFactory.Clear();
         }
 
         public override void String_ends_with_equals_nullable_column()
@@ -47,11 +50,12 @@ END <> [c].[NullableBool]) OR [c].[NullableBool] IS NULL",
                 Sql);
         }
 
-        protected override void ClearLog() => TestSqlLoggerFactory.Reset();
+        protected override void ClearLog()
+            => _fixture.TestSqlLoggerFactory.Clear();
 
         private const string FileLineEnding = @"
 ";
 
-        private static string Sql => TestSqlLoggerFactory.Sql.Replace(Environment.NewLine, FileLineEnding);
+        private string Sql => _fixture.TestSqlLoggerFactory.Sql.Replace(Environment.NewLine, FileLineEnding);
     }
 }

@@ -13,19 +13,16 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests
     public class ComplexNavigationsQuerySqlServerTest
         : ComplexNavigationsQueryTestBase<SqlServerTestStore, ComplexNavigationsQuerySqlServerFixture>
     {
-        private readonly ITestOutputHelper _testOutputHelper;
+        private readonly ComplexNavigationsQuerySqlServerFixture _fixture;
 
         public ComplexNavigationsQuerySqlServerTest(
             ComplexNavigationsQuerySqlServerFixture fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            _testOutputHelper = testOutputHelper;
-            
-            //TestSqlLoggerFactory.CaptureOutput(testOutputHelper);
+            _fixture = fixture;
+            _fixture.TestSqlLoggerFactory.Clear();
         }
-
-        protected override void ClearLog() => TestSqlLoggerFactory.Reset();
-
+        
         private bool SupportsOffset => TestEnvironment.GetFlag(nameof(SqlServerCondition.SupportsOffset)) ?? true;
 
         public override void Entity_equality_empty()
@@ -2758,13 +2755,12 @@ WHERE EXISTS (
         }
 
         private void AssertSql(params string[] expected)
-        {
-            RelationalTestHelpers.AssertBaseline(_testOutputHelper, /*assertOrder:*/ true, expected);
-        }
+            => _fixture.TestSqlLoggerFactory.AssertBaseline(expected);
 
         private void AssertContainsSql(params string[] expected)
-        {
-            RelationalTestHelpers.AssertBaseline(_testOutputHelper, /*assertOrder:*/ false, expected);
-        }
+            => _fixture.TestSqlLoggerFactory.AssertBaseline(expected, assertOrder: false);
+
+        protected override void ClearLog()
+            => _fixture.TestSqlLoggerFactory.Clear();
     }
 }

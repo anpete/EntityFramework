@@ -930,7 +930,8 @@ namespace Microsoft.EntityFrameworkCore.Query
                             Expression.Lambda(
                                 asyncSelector,
                                 CurrentParameter,
-                                taskLiftingExpressionVisitor.CancellationTokenParameter));
+                                taskLiftingExpressionVisitor.CancellationTokenParameter
+                                    ?? Expression.Parameter(typeof(CancellationToken), name: "ct")));
             }
         }
 
