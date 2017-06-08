@@ -40,7 +40,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public virtual List<IQueryAnnotation> CollectionNavigationIncludeResultOperators { get; }
+        public virtual ICollection<IQueryAnnotation> CollectionNavigationIncludeResultOperators { get; }
             = new List<IQueryAnnotation>();
 
         /// <summary>
@@ -107,12 +107,13 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             return expression;
         }
 
-        private Expression BuildCollectionAccessorExpression(
-            ParameterExpression parameter, 
+        private static Expression BuildCollectionAccessorExpression(
+            Expression parameter, 
             IEnumerable<IPropertyBase> navigations)
         {
-            Expression result = parameter;
-            Expression memberExpression = parameter;
+            var result = parameter;
+            var memberExpression = parameter;
+
             foreach (var navigation in navigations)
             {
                 memberExpression = memberExpression.MakeMemberAccess(navigation.PropertyInfo);

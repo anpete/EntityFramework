@@ -32,6 +32,16 @@ FROM [Level1] AS [l1]");
         }
 
         [Fact]
+        public override void Simple_owned_level1_convention()
+        {
+            base.Simple_owned_level1_convention();
+
+            AssertSql(
+                @"SELECT [l1].[Id], [l1].[Date], [l1].[Name], [l1].[Id], [l1].[OneToOne_Required_PK_Date], [l1].[OneToOne_Required_PK_Level1_Optional_Id], [l1].[OneToOne_Required_PK_Level1_Required_Id], [l1].[OneToOne_Required_PK_Name], [l1].[OneToOne_Required_PK_OneToOne_Optional_PK_InverseId]
+FROM [Level1] AS [l1]");
+        }
+
+        [Fact]
         public override void Simple_owned_level1_level2()
         {
             base.Simple_owned_level1_level2();

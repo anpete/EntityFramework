@@ -65,6 +65,7 @@ namespace Microsoft.EntityFrameworkCore.Query
         private readonly QueryCompilationContext _queryCompilationContext;
 
         private readonly FilterApplyingExpressionVisitor _filterApplyingExpressionVisitor;
+        private readonly EagerLoadingExpressionVisitor _eagerLoadingExpressionVisitor;
 
         private Expression _expression;
         private ParameterExpression _currentParameter;
@@ -104,6 +105,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             LinqOperatorProvider = queryCompilationContext.LinqOperatorProvider;
 
             _filterApplyingExpressionVisitor = new FilterApplyingExpressionVisitor(_queryCompilationContext);
+            _eagerLoadingExpressionVisitor = new EagerLoadingExpressionVisitor(_queryCompilationContext);
         }
 
         /// <summary>
@@ -233,13 +235,15 @@ namespace Microsoft.EntityFrameworkCore.Query
         /// <summary>
         /// Rewrites collection navigation projections so that they can be handled by the Include pipeline.
         /// </summary>
-        /// <param name="queryModel"> The query. </param>
-        protected virtual void RewriteProjectedCollectionNavigationsToIncludes([NotNull] QueryModel queryModel)
+        /// <param name="selectClause"> The projection. </param>
+        protected virtual void RewriteProjectedCollectionNavigationsToIncludes([NotNull] SelectClause selectClause)
         {
-            Check.NotNull(queryModel, nameof(queryModel));
+            Check.NotNull(selectClause, nameof(selectClause));
 
             var collectionNavigationIncludeRewriter = new CollectionNavigationIncludeExpressionRewriter(this);
-            queryModel.SelectClause.Selector = collectionNavigationIncludeRewriter.Visit(queryModel.SelectClause.Selector);
+            
+            selectClause.Selector = collectionNavigationIncludeRewriter.Visit(selectClause.Selector);
+
             _queryCompilationContext.AddAnnotations(collectionNavigationIncludeRewriter.CollectionNavigationIncludeResultOperators);
         }
 
@@ -273,8 +277,10 @@ namespace Microsoft.EntityFrameworkCore.Query
             new NondeterministicResultCheckingVisitor(QueryCompilationContext.Logger).VisitQueryModel(queryModel);
 
             // Rewrite includes/navigations
+            
+            queryModel.TransformExpressions(_eagerLoadingExpressionVisitor.Visit);
 
-            RewriteProjectedCollectionNavigationsToIncludes(queryModel);
+            RewriteProjectedCollectionNavigationsToIncludes(queryModel.SelectClause);
 
             var includeCompiler = new IncludeCompiler(QueryCompilationContext, _querySourceTracingExpressionVisitorFactory);
 
