@@ -22,7 +22,6 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         private DeleteBehavior? _deleteBehavior;
         private bool? _isUnique;
         private bool? _isOwnership;
-        private bool? _isEager;
 
         private ConfigurationSource _configurationSource;
         private ConfigurationSource? _foreignKeyPropertiesConfigurationSource;
@@ -32,7 +31,6 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         private ConfigurationSource? _deleteBehaviorConfigurationSource;
         private ConfigurationSource? _principalEndConfigurationSource;
         private ConfigurationSource? _isOwnershipConfigurationSource;
-        private ConfigurationSource? _isEagerConfigurationSource;
         private ConfigurationSource? _dependentToPrincipalConfigurationSource;
         private ConfigurationSource? _principalToDependentConfigurationSource;
 
@@ -396,7 +394,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         public virtual bool IsRequired
         {
             get { return !Properties.Any(p => p.IsNullable); }
-            set => SetIsRequired(value, ConfigurationSource.Explicit);
+            set { SetIsRequired(value, ConfigurationSource.Explicit); }
         }
 
         /// <summary>
@@ -456,8 +454,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         /// </summary>
         public virtual DeleteBehavior DeleteBehavior
         {
-            get => _deleteBehavior ?? DefaultDeleteBehavior;
-            set => SetDeleteBehavior(value, ConfigurationSource.Explicit);
+            get { return _deleteBehavior ?? DefaultDeleteBehavior; }
+            set { SetDeleteBehavior(value, ConfigurationSource.Explicit); }
         }
 
         /// <summary>
@@ -491,8 +489,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         /// </summary>
         public virtual bool IsOwnership
         {
-            get => _isOwnership ?? DefaultIsOwnership;
-            set => SetIsOwnership(value, ConfigurationSource.Explicit);
+            get { return _isOwnership ?? DefaultIsOwnership; }
+            set { SetIsOwnership(value, ConfigurationSource.Explicit); }
         }
 
         /// <summary>
@@ -505,7 +503,12 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             _isOwnership = ownership;
             UpdateIsOwnershipConfigurationSource(configurationSource);
 
-            return isChanging ? DeclaringEntityType.Model.ConventionDispatcher.OnForeignKeyOwnershipChanged(Builder)?.Metadata : this;
+            if (isChanging)
+            {
+                return DeclaringEntityType.Model.ConventionDispatcher.OnForeignKeyOwnershipChanged(Builder)?.Metadata;
+            }
+
+            return this;
         }
 
         private static bool DefaultIsOwnership => false;
@@ -514,44 +517,14 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
+        public virtual ConfigurationSource? GetIsOwnershipConfigurationSource() => _isOwnershipConfigurationSource;
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
         public virtual void UpdateIsOwnershipConfigurationSource(ConfigurationSource configurationSource)
             => _isOwnershipConfigurationSource = configurationSource.Max(_isOwnershipConfigurationSource);
-
-        /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public virtual bool IsEager
-        {
-            get => _isEager ?? DefaultIsEager;
-            set => SetIsEager(value, ConfigurationSource.Explicit);
-        }
-
-        /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public virtual ForeignKey SetIsEager(bool eager, ConfigurationSource configurationSource)
-        {
-            _isEager = eager;
-            UpdateIsEagerConfigurationSource(configurationSource);
-
-            return this;
-        }
-        /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public virtual void UpdateIsEagerConfigurationSource(ConfigurationSource configurationSource)
-            => _isEagerConfigurationSource = configurationSource.Max(_isEagerConfigurationSource);
-
-        private static bool DefaultIsEager => false;
-
-        /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public virtual ConfigurationSource? GetIsOwnershipConfigurationSource() => _isOwnershipConfigurationSource;
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used

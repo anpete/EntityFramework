@@ -62,12 +62,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata
         ///     accessed via the navigation from the principal entity.
         /// </summary>
         bool IsOwnership { get; }
-        
-        /// <summary>
-        ///     Gets or sets a value indicating whether this relationship should be eager-loaded by default.
-        /// </summary>
-        bool IsEager { get; }
-        
+
         /// <summary>
         ///     Gets a value indicating how a delete operation is applied to dependent entities in the relationship when the
         ///     principal is deleted or the relationship is severed.

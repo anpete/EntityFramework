@@ -278,7 +278,7 @@ namespace Microsoft.EntityFrameworkCore.Query
 
             // Rewrite includes/navigations
             
-            queryModel.TransformExpressions(_eagerLoadingExpressionVisitor.Visit);
+            _eagerLoadingExpressionVisitor.Visit(queryModel.SelectClause.Selector);
 
             RewriteProjectedCollectionNavigationsToIncludes(queryModel.SelectClause);
 

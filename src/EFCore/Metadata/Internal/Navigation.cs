@@ -19,7 +19,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         // Warning: Never access these fields directly as access needs to be thread-safe
         private IClrCollectionAccessor _collectionAccessor;
         private PropertyIndexes _indexes;
-
+        
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
@@ -47,6 +47,12 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public virtual ForeignKey ForeignKey { get; }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual bool IsEager { get; set; }
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -81,12 +87,10 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         {
             var sourceClrType = sourceType.ClrType;
             var navigationProperty = sourceClrType?.GetPropertiesInHierarchy(navigationName).FirstOrDefault();
-            if (!IsCompatible(navigationName, navigationProperty, sourceType, targetType, null, shouldThrow))
-            {
-                return null;
-            }
-
-            return navigationProperty;
+            
+            return !IsCompatible(navigationName, navigationProperty, sourceType, targetType, null, shouldThrow) 
+                ? null 
+                : navigationProperty;
         }
 
         /// <summary>

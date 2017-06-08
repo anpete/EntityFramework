@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -34,34 +33,40 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         /// </summary>
         protected override Expression VisitQuerySourceReference(QuerySourceReferenceExpression querySourceReferenceExpression)
         {
-            if (_queryCompilationContext.QuerySourceRequiresMaterialization(querySourceReferenceExpression.ReferencedQuerySource))
-            {
-                var entityType = _queryCompilationContext.Model.FindEntityType(querySourceReferenceExpression.Type);
+            
+            
+            var entityType = _queryCompilationContext.Model.FindEntityType(querySourceReferenceExpression.Type);
 
-                var stack = new Stack<INavigation>();
-                
-                foreach (var navigation
-                    in entityType.GetDeclaredNavigations()
-                        .Where(
-                            n => !n.IsDependentToPrincipal()
-                                 && n.ForeignKey.IsOwnership))
+            var stack = new Stack<INavigation>();
+
+            WalkNavigations(querySourceReferenceExpression, entityType, stack);
+
+            return base.VisitQuerySourceReference(querySourceReferenceExpression);
+        }
+
+        private void WalkNavigations(
+            Expression querySourceReferenceExpression, IEntityType entityType, Stack<INavigation> stack)
+        {
+            var depth = stack.Count;
+
+            foreach (var navigation in entityType.GetDeclaredNavigations())
+            {
+                if (navigation.IsEager)
                 {
                     stack.Push(navigation);
 
-                    GatherNavigations();
+                    WalkNavigations(querySourceReferenceExpression, navigation.GetTargetType(), stack);
 
-                    if (navigation.ForeignKey.IsEager)
+                    if (stack.Count == depth)
                     {
                         _queryCompilationContext.AddAnnotations(
                             new[]
                             {
-                                new IncludeResultOperator(navigation, querySourceReferenceExpression)
+                                new IncludeResultOperator(stack.ToArray(), querySourceReferenceExpression)
                             });
                     }
                 }
             }
-
-            return base.VisitQuerySourceReference(querySourceReferenceExpression);
         }
 
         /// <summary>

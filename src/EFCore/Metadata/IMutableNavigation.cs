@@ -23,5 +23,10 @@ namespace Microsoft.EntityFrameworkCore.Metadata
         ///     Gets the foreign key that defines the relationship this navigation property will navigate.
         /// </summary>
         new IMutableForeignKey ForeignKey { get; }
+
+        /// <summary>
+        ///     Gets or sets a value indicating whether this relationship should be eager-loaded by default.
+        /// </summary>
+        new bool IsEager { get; set; }
     }
 }
