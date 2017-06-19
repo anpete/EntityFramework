@@ -264,6 +264,9 @@ namespace Microsoft.EntityFrameworkCore.Query
         {
             Check.NotNull(queryModel, nameof(queryModel));
 
+            new EagerLoadingExpressionVisitor(_queryCompilationContext, _querySourceTracingExpressionVisitorFactory)
+                .VisitQueryModel(queryModel);
+            
             // First pass of optimizations
 
             _queryOptimizer.Optimize(QueryCompilationContext, queryModel);
@@ -304,6 +307,82 @@ namespace Microsoft.EntityFrameworkCore.Query
             // Log results
 
             QueryCompilationContext.Logger.QueryModelOptimized(queryModel);
+        }
+
+        private class EagerLoadingExpressionVisitor : QueryModelVisitorBase
+        {
+            private readonly QueryCompilationContext _queryCompilationContext;
+            private readonly QuerySourceTracingExpressionVisitor _querySourceTracingExpressionVisitor;
+
+            public EagerLoadingExpressionVisitor(
+                QueryCompilationContext queryCompilationContext,
+                IQuerySourceTracingExpressionVisitorFactory querySourceTracingExpressionVisitorFactory)
+            {
+                _queryCompilationContext = queryCompilationContext;
+
+                _querySourceTracingExpressionVisitor = querySourceTracingExpressionVisitorFactory.Create();
+            }
+
+            public override void VisitMainFromClause(MainFromClause fromClause, QueryModel queryModel)
+            {
+                ApplyIncludesForOwnedNavigations(new QuerySourceReferenceExpression(fromClause), queryModel);
+
+                base.VisitMainFromClause(fromClause, queryModel);
+            }
+
+            protected override void VisitBodyClauses(ObservableCollection<IBodyClause> bodyClauses, QueryModel queryModel)
+            {
+                foreach (var querySource in bodyClauses.OfType<IQuerySource>())
+                {
+                    ApplyIncludesForOwnedNavigations(new QuerySourceReferenceExpression(querySource), queryModel);
+                }
+
+                base.VisitBodyClauses(bodyClauses, queryModel);
+            }
+
+            private void ApplyIncludesForOwnedNavigations(QuerySourceReferenceExpression querySourceReferenceExpression, QueryModel queryModel)
+            {
+                if (_querySourceTracingExpressionVisitor
+                        .FindResultQuerySourceReferenceExpression(
+                            queryModel.SelectClause.Selector,
+                            querySourceReferenceExpression.ReferencedQuerySource) != null)
+                {
+                    var entityType = _queryCompilationContext.Model.FindEntityType(querySourceReferenceExpression.Type);
+
+                    if (entityType != null)
+                    {
+                        var stack = new Stack<INavigation>();
+
+                        WalkNavigations(querySourceReferenceExpression, entityType, stack);
+                    }
+                }
+            }
+
+            private void WalkNavigations(Expression querySourceReferenceExpression, IEntityType entityType, Stack<INavigation> stack)
+            {
+                foreach (var navigation in entityType.GetDerivedTypesInclusive().SelectMany(et => et.GetDeclaredNavigations()))
+                {
+                    if (navigation.IsEager)
+                    {
+                        stack.Push(navigation);
+
+                        var depth = stack.Count;
+
+                        WalkNavigations(querySourceReferenceExpression, navigation.GetTargetType(), stack);
+
+                        if (stack.Count == depth)
+                        {
+                            _queryCompilationContext.AddAnnotations(
+                                new[]
+                                {
+                                    new IncludeResultOperator(stack.Reverse().ToArray(), querySourceReferenceExpression)
+                                });
+                        }
+
+                        stack.Pop();
+                    }
+                }
+            }
         }
 
         private class NondeterministicResultCheckingVisitor : QueryModelVisitorBase

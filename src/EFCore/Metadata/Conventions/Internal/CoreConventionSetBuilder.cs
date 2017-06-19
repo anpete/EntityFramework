@@ -145,6 +145,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             conventionSet.PropertyFieldChangedConventions.Add(stringLengthAttributeConvention);
             conventionSet.PropertyFieldChangedConventions.Add(timestampAttributeConvention);
 
+            conventionSet.ForeignKeyOwnershipChangedConventions.Add(new NavigationEagerLoadingConvention());
+            
             return conventionSet;
         }
     }
