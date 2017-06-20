@@ -360,7 +360,9 @@ namespace Microsoft.EntityFrameworkCore.Query
 
             private void WalkNavigations(Expression querySourceReferenceExpression, IEntityType entityType, Stack<INavigation> stack)
             {
-                foreach (var navigation in entityType.GetDerivedTypesInclusive().SelectMany(et => et.GetDeclaredNavigations()))
+                foreach (var navigation 
+                    in entityType.GetNavigations()
+                        .Concat(entityType.GetDerivedTypes().SelectMany(et => et.GetDeclaredNavigations())))
                 {
                     if (navigation.IsEager)
                     {
