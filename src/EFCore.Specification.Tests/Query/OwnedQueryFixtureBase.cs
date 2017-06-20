@@ -7,44 +7,72 @@ namespace Microsoft.EntityFrameworkCore.Query
     {
         protected virtual void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<OwnedPerson>().OwnsOne(p => p.PersonAddress).OwnsOne(a => a.SubAddress);
-
-            
+            modelBuilder.Entity<OwnedPerson>().OwnsOne(p => p.PersonAddress).OwnsOne(a => a.Country);
+            modelBuilder.Entity<Branch>().OwnsOne(p => p.BranchAddress).OwnsOne(a => a.Country);
+            modelBuilder.Entity<LeafA>().OwnsOne(p => p.LeafAAddress).OwnsOne(a => a.Country);
+            modelBuilder.Entity<LeafB>().OwnsOne(p => p.LeafBAddress).OwnsOne(a => a.Country);
         }
 
         protected static void AddTestData(DbContext context)
         {
-//            var address1 = new Address { Street = "3 Dragons Way", City = "Meereen" };
-//            var address2 = new Address { Street = "42 Castle Black", City = "The Wall" };
-//            var address3 = new Address { Street = "House of Black and White", City = "Braavos" };
-//
-//            context.Set<Person>().AddRange(
-//                new Person { Name = "Daenerys Targaryen", Address = address1 },
-//                new Person { Name = "John Snow", Address = address2 },
-//                new Person { Name = "Arya Stark", Address = address3 },
-//                new Person { Name = "Harry Strickland" });
-//
-//            context.Set<Address>().AddRange(address1, address2, address3);
-//
-//            var address21 = new Address2 { Id = "1", Street = "3 Dragons Way", City = "Meereen" };
-//            var address22 = new Address2 { Id = "2", Street = "42 Castle Black", City = "The Wall" };
-//            var address23 = new Address2 { Id = "3", Street = "House of Black and White", City = "Braavos" };
-//
-//            context.Set<Person2>().AddRange(
-//                new Person2 { Name = "Daenerys Targaryen", Address = address21 },
-//                new Person2 { Name = "John Snow", Address = address22 },
-//                new Person2 { Name = "Arya Stark", Address = address23 });
-//
-//            context.Set<Address2>().AddRange(address21, address22, address23);
-//
-//            context.SaveChanges();
+            context.Set<OwnedPerson>().AddRange(
+                new OwnedPerson
+                {
+                    PersonAddress = new OwnedAddress
+                    {
+                        Country = new OwnedCountry { Name = "USA" }
+                    }
+                },
+                new Branch
+                {
+                    PersonAddress = new OwnedAddress
+                    {
+                        Country = new OwnedCountry { Name = "USA" }
+                    },
+                    BranchAddress = new OwnedAddress
+                    {
+                        Country = new OwnedCountry { Name = "Canada" }
+                    }
+                },
+                new LeafA
+                {
+                    PersonAddress = new OwnedAddress
+                    {
+                        Country = new OwnedCountry { Name = "USA" }
+                    },
+                    BranchAddress = new OwnedAddress
+                    {
+                        Country = new OwnedCountry { Name = "Canada" }
+                    },
+                    LeafAAddress = new OwnedAddress
+                    {
+                        Country = new OwnedCountry { Name = "Mexico" }
+                    }
+                },
+                new LeafB
+                {
+                    PersonAddress = new OwnedAddress
+                    {
+                        Country = new OwnedCountry { Name = "USA" }
+                    },
+                    LeafBAddress = new OwnedAddress
+                    {
+                        Country = new OwnedCountry { Name = "Panama" }
+                    }
+                });
+
+            context.SaveChanges();
         }
     }
 
     public class OwnedAddress
     {
-        public int Id { get; set; }
-        public OwnedAddress SubAddress { get; set; }
+        public OwnedCountry Country { get; set; }
+    }
+
+    public class OwnedCountry
+    {
+        public string Name { get; set; }
     }
 
     public class OwnedPerson
@@ -62,7 +90,7 @@ namespace Microsoft.EntityFrameworkCore.Query
     {
         public OwnedAddress LeafAAddress { get; set; }
     }
-    
+
     public class LeafB : OwnedPerson
     {
         public OwnedAddress LeafBAddress { get; set; }
