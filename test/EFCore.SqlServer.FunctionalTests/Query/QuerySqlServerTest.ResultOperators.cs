@@ -794,7 +794,7 @@ WHERE [c].[CustomerID] IN (N'ABCDE', @__id_0)",
 
 SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE [c].[CustomerID] IN (N'ABCDE', @__id_0)");
+WHERE [c].[CustomerID] IN (N'ABCD', @__id_0)");
         }
 
         public override void Contains_with_local_collection_false()

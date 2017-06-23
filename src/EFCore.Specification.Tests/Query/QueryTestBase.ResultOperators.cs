@@ -746,7 +746,9 @@ namespace Microsoft.EntityFrameworkCore.Query
             id = "ANATR";
 
             AssertQuery<Customer>(cs =>
-                cs.Where(c => new List<string> { "ABCDE", id }.Contains(c.CustomerID)), entryCount: 1);
+                cs.Where(c => new List<string> { "ABCD", id }.Contains(c.CustomerID)), entryCount: 1);
+
+            Assert.Equal(1, CreateContext().GetCacheCount());
         }
 
         [ConditionalFact]

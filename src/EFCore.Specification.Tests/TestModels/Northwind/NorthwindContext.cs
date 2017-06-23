@@ -3,6 +3,11 @@
 
 // ReSharper disable StringStartsWithIsCultureSpecific
 
+using System.Reflection;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Query.Internal;
+using Microsoft.Extensions.Caching.Memory;
+
 namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
 {
     public class NorthwindContext : DbContext
@@ -19,6 +24,13 @@ namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
 
         internal NorthwindContext()
         {
+        }
+
+        public int GetCacheCount()
+        {
+            var memoryCache = (MemoryCache)this.GetService<IMemoryCache>();
+            
+            return memoryCache.Count;
         }
 
         public virtual DbSet<Customer> Customers { get; set; }
