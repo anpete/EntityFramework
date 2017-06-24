@@ -16,6 +16,11 @@ namespace Microsoft.EntityFrameworkCore.Query
             //TestLoggerFactory.TestOutputHelper = testOutputHelper;
         }
 
+        public override void Query_when_group_by()
+        {
+            base.Query_when_group_by();
+        }
+
         protected override DbContext CreateContext() => _fixture.CreateContext();
     }
 }

@@ -37,7 +37,7 @@ namespace Microsoft.EntityFrameworkCore.Query
 
             AssertSql("");
         }
-
+        
         protected override DbContext CreateContext() => _fixture.CreateContext();
 
         private void AssertSql(params string[] expected)

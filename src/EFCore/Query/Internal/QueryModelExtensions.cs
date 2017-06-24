@@ -1,13 +1,17 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
+using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
 {
@@ -17,6 +21,44 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
     /// </summary>
     public static class QueryModelExtensions
     {
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public static Expression GetOutputExpression([NotNull] this QueryModel queryModel)
+        {
+            var outputExpression = queryModel.SelectClause.Selector;
+
+            if (queryModel.GetResultType().IsGrouping())
+            {
+                var groupResultOperator
+                    = queryModel.ResultOperators.OfType<GroupResultOperator>().LastOrDefault();
+
+                if (groupResultOperator != null)
+                {
+                    outputExpression = groupResultOperator.ElementSelector;
+                }
+                else
+                {
+                    var subqueryExpression
+                        = (queryModel.SelectClause.Selector
+                            .TryGetReferencedQuerySource() as MainFromClause)?.FromExpression as SubQueryExpression;
+
+                    var nestedGroupResultOperator
+                        = subqueryExpression?.QueryModel?.ResultOperators
+                            ?.OfType<GroupResultOperator>()
+                            .LastOrDefault();
+
+                    if (nestedGroupResultOperator != null)
+                    {
+                        outputExpression = nestedGroupResultOperator.ElementSelector;
+                    }
+                }
+            }
+
+            return outputExpression;
+        }
+
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.

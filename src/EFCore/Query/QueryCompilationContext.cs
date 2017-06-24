@@ -119,6 +119,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             Check.NotNull(querySource, nameof(querySource));
 
             _querySourceEntityTypeMapping.TryGetValue(querySource, out var entityType);
+            
             return entityType;
         }
 
@@ -142,6 +143,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                 {
                     var newQuerySource = (querySourceMapping.GetExpression(entityTypeMapping.Key) as QuerySourceReferenceExpression)
                         ?.ReferencedQuerySource;
+                    
                     if (newQuerySource != null)
                     {
                         _querySourceEntityTypeMapping[newQuerySource] = entityTypeMapping.Value;

@@ -23,10 +23,8 @@ using Microsoft.EntityFrameworkCore.Utilities;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
-using Remotion.Linq.Clauses.ExpressionVisitors;
 using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Clauses.StreamedData;
-using Remotion.Linq.Parsing;
 
 namespace Microsoft.EntityFrameworkCore.Query
 {
@@ -50,7 +48,6 @@ namespace Microsoft.EntityFrameworkCore.Query
         private readonly IQueryOptimizer _queryOptimizer;
         private readonly INavigationRewritingExpressionVisitorFactory _navigationRewritingExpressionVisitorFactory;
         private readonly IQuerySourceTracingExpressionVisitorFactory _querySourceTracingExpressionVisitorFactory;
-        private readonly IEntityResultFindingExpressionVisitorFactory _entityResultFindingExpressionVisitorFactory;
         private readonly ITaskBlockingExpressionVisitor _taskBlockingExpressionVisitor;
         private readonly IMemberAccessBindingExpressionVisitorFactory _memberAccessBindingExpressionVisitorFactory;
         private readonly IProjectionExpressionVisitorFactory _projectionExpressionVisitorFactory;
@@ -87,7 +84,6 @@ namespace Microsoft.EntityFrameworkCore.Query
             _queryOptimizer = dependencies.QueryOptimizer;
             _navigationRewritingExpressionVisitorFactory = dependencies.NavigationRewritingExpressionVisitorFactory;
             _querySourceTracingExpressionVisitorFactory = dependencies.QuerySourceTracingExpressionVisitorFactory;
-            _entityResultFindingExpressionVisitorFactory = dependencies.EntityResultFindingExpressionVisitorFactory;
             _taskBlockingExpressionVisitor = dependencies.TaskBlockingExpressionVisitor;
             _memberAccessBindingExpressionVisitorFactory = dependencies.MemberAccessBindingExpressionVisitorFactory;
             _projectionExpressionVisitorFactory = dependencies.ProjectionExpressionVisitorFactory;
@@ -170,8 +166,6 @@ namespace Microsoft.EntityFrameworkCore.Query
                 VisitQueryModel(queryModel);
 
                 SingleResultToSequence(queryModel);
-
-                TrackEntitiesInResults<TResult>(queryModel);
                 
                 InterceptExceptions();
 
@@ -206,8 +200,6 @@ namespace Microsoft.EntityFrameworkCore.Query
                 VisitQueryModel(queryModel);
 
                 SingleResultToSequence(queryModel, _expression.Type.GetTypeInfo().GenericTypeArguments[0]);
-
-                TrackEntitiesInResults<TResult>(queryModel);
 
                 InterceptExceptions();
 
@@ -263,7 +255,7 @@ namespace Microsoft.EntityFrameworkCore.Query
         {
             Check.NotNull(queryModel, nameof(queryModel));
 
-            new EagerLoadingExpressionVisitor(_queryCompilationContext, _querySourceTracingExpressionVisitorFactory)
+            new EagerLoadingQueryModelVisitor(_queryCompilationContext, _querySourceTracingExpressionVisitorFactory)
                 .VisitQueryModel(queryModel);
             
             // First pass of optimizations
@@ -308,17 +300,16 @@ namespace Microsoft.EntityFrameworkCore.Query
             QueryCompilationContext.Logger.QueryModelOptimized(queryModel);
         }
 
-        private class EagerLoadingExpressionVisitor : QueryModelVisitorBase
+        private class EagerLoadingQueryModelVisitor : QueryModelVisitorBase
         {
             private readonly QueryCompilationContext _queryCompilationContext;
             private readonly QuerySourceTracingExpressionVisitor _querySourceTracingExpressionVisitor;
 
-            public EagerLoadingExpressionVisitor(
+            public EagerLoadingQueryModelVisitor(
                 QueryCompilationContext queryCompilationContext,
                 IQuerySourceTracingExpressionVisitorFactory querySourceTracingExpressionVisitorFactory)
             {
                 _queryCompilationContext = queryCompilationContext;
-
                 _querySourceTracingExpressionVisitor = querySourceTracingExpressionVisitorFactory.Create();
             }
 
@@ -443,115 +434,6 @@ namespace Microsoft.EntityFrameworkCore.Query
             }
         }
 
-        /// <summary>
-        ///     Applies tracking behavior to the query.
-        /// </summary>
-        /// <typeparam name="TResult"> The type of results returned by the query. </typeparam>
-        /// <param name="queryModel"> The query. </param>
-        protected virtual void TrackEntitiesInResults<TResult>([NotNull] QueryModel queryModel)
-        {
-            Check.NotNull(queryModel, nameof(queryModel));
-
-            if (!TrackResults(queryModel))
-            {
-                return;
-            }
-
-            var outputExpression
-                = new IncludeRemovingExpressionVisitor()
-                    .Visit(queryModel.SelectClause.Selector);
-
-            var resultItemType = _expression.Type.GetSequenceType();
-            var isGrouping = resultItemType.IsGrouping();
-
-            if (isGrouping)
-            {
-                var groupResultOperator
-                    = queryModel.ResultOperators.OfType<GroupResultOperator>().LastOrDefault();
-
-                if (groupResultOperator != null)
-                {
-                    outputExpression = groupResultOperator.ElementSelector;
-                }
-                else
-                {
-                    var subqueryExpression
-                        = (queryModel.SelectClause.Selector
-                            .TryGetReferencedQuerySource() as MainFromClause)?.FromExpression as SubQueryExpression;
-
-                    var nestedGroupResultOperator
-                        = subqueryExpression?.QueryModel?.ResultOperators
-                            ?.OfType<GroupResultOperator>()
-                            .LastOrDefault();
-
-                    if (nestedGroupResultOperator != null)
-                    {
-                        outputExpression = nestedGroupResultOperator.ElementSelector;
-                    }
-                }
-            }
-
-            var entityTrackingInfos
-                = _entityResultFindingExpressionVisitorFactory
-                    .Create(QueryCompilationContext)
-                    .FindEntitiesInResult(outputExpression);
-
-            if (entityTrackingInfos.Any())
-            {
-                MethodInfo trackingMethod;
-
-                if (isGrouping)
-
-                {
-                    trackingMethod
-                        = LinqOperatorProvider.TrackGroupedEntities
-                            .MakeGenericMethod(
-                                resultItemType.GenericTypeArguments[0],
-                                resultItemType.GenericTypeArguments[1]);
-                }
-                else
-                {
-                    trackingMethod
-                        = LinqOperatorProvider.TrackEntities
-                            .MakeGenericMethod(
-                                resultItemType,
-                                outputExpression.Type);
-                }
-
-                _expression
-                    = Expression.Call(
-                        trackingMethod,
-                        _expression,
-                        QueryContextParameter,
-                        Expression.Constant(entityTrackingInfos),
-                        Expression.Constant(
-                            _getEntityAccessors
-                                .MakeGenericMethod(outputExpression.Type)
-                                .Invoke(
-                                    null,
-                                    new object[]
-                                    {
-                                        entityTrackingInfos,
-                                        outputExpression
-                                    })));
-            }
-        }
-
-        private class IncludeRemovingExpressionVisitor : RelinqExpressionVisitor
-        {
-            protected override Expression VisitMethodCall(MethodCallExpression node)
-                => IncludeCompiler.IsIncludeMethod(node)
-                    ? node.Arguments[1]
-                    : base.VisitMethodCall(node);
-
-            protected override Expression VisitMember(MemberExpression node)
-            {
-                var newExpression = Visit(node.Expression);
-
-                return newExpression != node.Expression ? newExpression : node;
-            }
-        }
-
         private bool TrackResults(QueryModel queryModel)
         {
             // TODO: Unify with QCC
@@ -566,26 +448,6 @@ namespace Microsoft.EntityFrameworkCore.Query
                    && (lastTrackingModifier == null
                        || lastTrackingModifier.IsTracking);
         }
-
-        private static readonly MethodInfo _getEntityAccessors
-            = typeof(EntityQueryModelVisitor)
-                .GetTypeInfo()
-                .GetDeclaredMethod(nameof(GetEntityAccessors));
-
-        [UsedImplicitly]
-        private static ICollection<Func<TResult, object>> GetEntityAccessors<TResult>(
-            IEnumerable<EntityTrackingInfo> entityTrackingInfos,
-            Expression selector)
-            => (from entityTrackingInfo in entityTrackingInfos
-                select
-                (Func<TResult, object>)
-                AccessorFindingExpressionVisitor
-                    .FindAccessorLambda(
-                        entityTrackingInfo.QuerySourceReferenceExpression,
-                        selector,
-                        Expression.Parameter(typeof(TResult), "result"))
-                    .Compile())
-                .ToList();
 
         /// <summary>
         ///     Creates an action to execute this query.
