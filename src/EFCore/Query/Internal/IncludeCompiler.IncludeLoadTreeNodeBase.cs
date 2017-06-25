@@ -86,9 +86,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             ref collectionIncludeId));
                 }
 
-                if (blockExpressions.Count > 1
-                    || blockExpressions.Count == 1
-                    && !trackingQuery)
+                if (blockExpressions.Count > 0)
                 { 
                     AwaitTaskExpressions(asyncQuery, blockExpressions);
 

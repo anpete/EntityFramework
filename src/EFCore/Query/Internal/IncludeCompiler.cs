@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -16,6 +17,7 @@ using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
 using Microsoft.EntityFrameworkCore.Query.ResultOperators.Internal;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.StreamedData;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
@@ -74,7 +76,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 return;
             }
 
-            foreach (var includeLoadTree in CreateIncludeLoadTrees(queryModel))
+            foreach (var includeLoadTree in CreateIncludeLoadTrees(queryModel, trackingQuery))
             {
                 includeLoadTree.Compile(
                     _queryCompilationContext,
@@ -111,7 +113,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             }
         }
 
-        private IEnumerable<IncludeLoadTree> CreateIncludeLoadTrees(QueryModel queryModel)
+        private IEnumerable<IncludeLoadTree> CreateIncludeLoadTrees(QueryModel queryModel, bool trackingQuery)
         {
             var querySourceTracingExpressionVisitor
                 = _querySourceTracingExpressionVisitorFactory.Create();
@@ -152,7 +154,84 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 _includeResultOperators.Remove(includeResultOperator);
             }
 
+            if (trackingQuery)
+            {
+                var entityResultFindingQueryModelVisitor
+                    = new EntityResultFindingQueryModelVisitor(
+                        _queryCompilationContext, querySourceTracingExpressionVisitor);
+
+                entityResultFindingQueryModelVisitor.VisitQueryModel(queryModel);
+
+                foreach (var querySourceReferenceExpression in entityResultFindingQueryModelVisitor.EntityResultExpressions)
+                {
+                    var includeLoadTree
+                        = includeLoadTrees
+                            .SingleOrDefault(
+                                t => ReferenceEquals(
+                                    t.QuerySourceReferenceExpression, querySourceReferenceExpression));
+
+                    if (includeLoadTree == null)
+                    {
+                        includeLoadTrees.Add(new IncludeLoadTree(querySourceReferenceExpression));
+                    }
+                }
+            }
+
             return includeLoadTrees;
+        }
+
+        private class EntityResultFindingQueryModelVisitor : QueryModelVisitorBase
+        {
+            private readonly QueryCompilationContext _queryCompilationContext;
+            private readonly QuerySourceTracingExpressionVisitor _querySourceTracingExpressionVisitor;
+
+            private readonly List<QuerySourceReferenceExpression> _entityResultExpressions = new List<QuerySourceReferenceExpression>();
+
+            public EntityResultFindingQueryModelVisitor(
+                QueryCompilationContext queryCompilationContext,
+                QuerySourceTracingExpressionVisitor querySourceTracingExpressionVisitor)
+            {
+                _queryCompilationContext = queryCompilationContext;
+                _querySourceTracingExpressionVisitor = querySourceTracingExpressionVisitor;
+            }
+
+            public IEnumerable<QuerySourceReferenceExpression> EntityResultExpressions => _entityResultExpressions;
+
+            public override void VisitMainFromClause(MainFromClause fromClause, QueryModel queryModel)
+            {
+                AddEntityResultExpression(new QuerySourceReferenceExpression(fromClause), queryModel);
+
+                base.VisitMainFromClause(fromClause, queryModel);
+            }
+
+            protected override void VisitBodyClauses(ObservableCollection<IBodyClause> bodyClauses, QueryModel queryModel)
+            {
+                foreach (var querySource in bodyClauses.OfType<IQuerySource>())
+                {
+                    AddEntityResultExpression(new QuerySourceReferenceExpression(querySource), queryModel);
+                }
+
+                base.VisitBodyClauses(bodyClauses, queryModel);
+            }
+
+            private void AddEntityResultExpression(QuerySourceReferenceExpression querySourceReferenceExpression, QueryModel queryModel)
+            {
+                var resultQuerySourceReferenceExpression
+                    = _querySourceTracingExpressionVisitor
+                        .FindResultQuerySourceReferenceExpression(
+                            queryModel.GetOutputExpression(),
+                            querySourceReferenceExpression.ReferencedQuerySource);
+
+                if (resultQuerySourceReferenceExpression != null)
+                {
+                    var entityType = _queryCompilationContext.Model.FindEntityType(querySourceReferenceExpression.Type);
+
+                    if (entityType != null)
+                    {
+                        _entityResultExpressions.Add(resultQuerySourceReferenceExpression);
+                    }
+                }
+            }
         }
 
         private static void ApplyParentOrderings(

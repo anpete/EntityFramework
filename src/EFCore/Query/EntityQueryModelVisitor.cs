@@ -171,7 +171,7 @@ namespace Microsoft.EntityFrameworkCore.Query
 
                 SingleResultToSequence(queryModel);
 
-                TrackEntitiesInResults<TResult>(queryModel);
+                //TrackEntitiesInResults<TResult>(queryModel);
                 
                 InterceptExceptions();
 
@@ -207,7 +207,7 @@ namespace Microsoft.EntityFrameworkCore.Query
 
                 SingleResultToSequence(queryModel, _expression.Type.GetTypeInfo().GenericTypeArguments[0]);
 
-                TrackEntitiesInResults<TResult>(queryModel);
+                //TrackEntitiesInResults<TResult>(queryModel);
 
                 InterceptExceptions();
 
