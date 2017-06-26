@@ -7,8 +7,10 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Remotion.Linq;
+using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing;
@@ -132,8 +134,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             {
                 var includeReplacingExpressionVisitor = new IncludeReplacingExpressionVisitor();
 
-                foreach (var groupResultOperator
-                    in queryModel.ResultOperators.OfType<GroupResultOperator>())
+                var groupResultOperator
+                    = queryModel.ResultOperators.OfType<GroupResultOperator>().LastOrDefault();
+
+                if (groupResultOperator != null)
                 {
                     var newElementSelector
                         = includeReplacingExpressionVisitor.Replace(
@@ -148,12 +152,89 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                         return;
                     }
                 }
+                else if (queryModel.SelectClause.Selector.Type.IsGrouping())
+                {
+                    var subqueryExpression
+                        = (queryModel.SelectClause.Selector
+                            .TryGetReferencedQuerySource() as MainFromClause)?.FromExpression as SubQueryExpression;
+
+                    var nestedGroupResultOperator
+                        = subqueryExpression?.QueryModel?.ResultOperators
+                            ?.OfType<GroupResultOperator>()
+                            .LastOrDefault();
+
+                    if (nestedGroupResultOperator != null)
+                    {
+                        var newElementSelector
+                            = includeReplacingExpressionVisitor.Replace(
+                                querySourceReferenceExpression,
+                                expression,
+                                nestedGroupResultOperator.ElementSelector);
+
+                        if (!ReferenceEquals(newElementSelector, nestedGroupResultOperator.ElementSelector))
+                        {
+                            nestedGroupResultOperator.ElementSelector = newElementSelector;
+
+                            return;
+                        }
+                    }
+                }
 
                 queryModel.SelectClause.TransformExpressions(
                     e => includeReplacingExpressionVisitor.Replace(
                         querySourceReferenceExpression,
                         expression,
                         e));
+            }
+
+            private class IncludeReplacingExpressionVisitor : RelinqExpressionVisitor
+            {
+                private QuerySourceReferenceExpression _querySourceReferenceExpression;
+                private Expression _includeExpression;
+
+                public Expression Replace(
+                    QuerySourceReferenceExpression querySourceReferenceExpression,
+                    Expression includeExpression,
+                    Expression searchedExpression)
+                {
+                    _querySourceReferenceExpression = querySourceReferenceExpression;
+                    _includeExpression = includeExpression;
+
+                    return Visit(searchedExpression);
+                }
+
+                protected override Expression VisitQuerySourceReference(
+                    QuerySourceReferenceExpression querySourceReferenceExpression)
+                {
+                    if (ReferenceEquals(querySourceReferenceExpression, _querySourceReferenceExpression))
+                    {
+                        _querySourceReferenceExpression = null;
+
+                        return _includeExpression;
+                    }
+
+                    return querySourceReferenceExpression;
+                }
+
+//                protected override Expression VisitSubQuery(SubQueryExpression subQueryExpression)
+//                {
+//                    var queryModel = subQueryExpression.QueryModel;
+//                    
+//                    foreach (var groupResultOperator
+//                        in queryModel.ResultOperators.OfType<GroupResultOperator>())
+//                    {
+//                        var newElementSelector = Visit(groupResultOperator.ElementSelector);
+//
+//                        if (!ReferenceEquals(newElementSelector, groupResultOperator.ElementSelector))
+//                        {
+//                            groupResultOperator.ElementSelector = newElementSelector;
+//
+//                            _querySourceReferenceExpression = null;
+//                        }
+//                    }
+//
+//                    return subQueryExpression;
+//                }
             }
 
             protected static void AwaitTaskExpressions(bool asyncQuery, List<Expression> blockExpressions)
@@ -190,42 +271,13 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     .GetDeclaredMethod(nameof(_AwaitMany));
 
             // ReSharper disable once InconsistentNaming
+
             private static async Task _AwaitMany(IReadOnlyList<Func<Task>> taskFactories)
             {
                 // ReSharper disable once ForCanBeConvertedToForeach
                 for (var i = 0; i < taskFactories.Count; i++)
                 {
                     await taskFactories[i]();
-                }
-            }
-
-            private class IncludeReplacingExpressionVisitor : RelinqExpressionVisitor
-            {
-                private QuerySourceReferenceExpression _querySourceReferenceExpression;
-                private Expression _includeExpression;
-
-                public Expression Replace(
-                    QuerySourceReferenceExpression querySourceReferenceExpression,
-                    Expression includeExpression,
-                    Expression searchedExpression)
-                {
-                    _querySourceReferenceExpression = querySourceReferenceExpression;
-                    _includeExpression = includeExpression;
-
-                    return Visit(searchedExpression);
-                }
-
-                protected override Expression VisitQuerySourceReference(
-                    QuerySourceReferenceExpression querySourceReferenceExpression)
-                {
-                    if (ReferenceEquals(querySourceReferenceExpression, _querySourceReferenceExpression))
-                    {
-                        _querySourceReferenceExpression = null;
-
-                        return _includeExpression;
-                    }
-
-                    return querySourceReferenceExpression;
                 }
             }
         }

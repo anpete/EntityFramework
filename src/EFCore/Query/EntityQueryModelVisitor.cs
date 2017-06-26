@@ -290,6 +290,8 @@ namespace Microsoft.EntityFrameworkCore.Query
 
             navigationRewritingExpressionVisitor.Rewrite(queryModel, parentQueryModel: null);
 
+            QueryCompilationContext.Logger.QueryModelOptimized(queryModel);
+
             includeCompiler.RewriteCollectionQueries(queryModel);
 
             includeCompiler.LogIgnoredIncludes();

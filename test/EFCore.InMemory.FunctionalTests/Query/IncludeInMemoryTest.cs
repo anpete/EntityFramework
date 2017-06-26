@@ -12,5 +12,10 @@ namespace Microsoft.EntityFrameworkCore.Query
         {
             //TestLoggerFactory.TestOutputHelper = testOutputHelper;
         }
+
+        public override void Include_collection_when_groupby_and_orderby_key(bool useString)
+        {
+            //base.Include_collection_when_groupby_and_orderby_key(useString);
+        }
     }
 }

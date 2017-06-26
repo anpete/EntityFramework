@@ -14,6 +14,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             : base(fixture)
         {
             fixture.TestSqlLoggerFactory.Clear();
+            fixture.TestSqlLoggerFactory.SetTestOutputHelper(testOutputHelper);
         }
 
         public override void Include_list(bool useString)
@@ -910,6 +911,11 @@ INNER JOIN (
     WHERE [c0].[CustomerID] = N'ALFKI'
 ) AS [t] ON [c.Orders].[CustomerID] = [t].[CustomerID]
 ORDER BY [t].[City], [t].[CustomerID]");
+        }
+
+        public override void Include_collection_when_groupby_and_orderby_key(bool useString)
+        {
+            base.Include_collection_when_groupby_and_orderby_key(useString);
         }
 
         public override void Include_collection_on_additional_from_clause2(bool useString)

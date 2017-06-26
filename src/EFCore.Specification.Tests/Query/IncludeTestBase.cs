@@ -1059,6 +1059,42 @@ namespace Microsoft.EntityFrameworkCore.Query
             }
         }
 
+        [ConditionalTheory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public virtual void Include_collection_when_groupby_and_orderby_key(bool useString)
+        {
+            using (var context = CreateContext())
+            {
+                var customers
+                    = useString
+                        ? (from c in context.Set<Customer>().Include("Orders")
+                           where c.CustomerID == "ALFKI"
+                           group c by c.City)
+                        .OrderBy(g => g.Key)
+                        .ToList()
+                        : (from c in context.Set<Customer>().Include(c => c.Orders)
+                           where c.CustomerID == "ALFKI"
+                           group c by c.City)
+                        .OrderBy(g => g.Key)
+                        .ToList();
+
+                Assert.Equal(1, customers.Count);
+                Assert.Equal(6, customers.SelectMany(c => c.Single().Orders).Count());
+                Assert.Equal(1 + 6, context.ChangeTracker.Entries().Count());
+
+                foreach (var customer in customers.Select(e => e.Single()))
+                {
+                    CheckIsLoaded(
+                        context,
+                        customer,
+                        ordersLoaded: true,
+                        orderDetailsLoaded: false,
+                        productLoaded: false);
+                }
+            }
+        }
+
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
