@@ -1555,7 +1555,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             AssertQuery<Employee>(es =>
                     from e in es.Where(c => c.EmployeeID == -1).DefaultIfEmpty(new Employee())
                     select e,
-                entryCount: 1);
+                entryCount: 0);
         }
 
         [ConditionalFact]

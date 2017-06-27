@@ -171,7 +171,7 @@ namespace Microsoft.EntityFrameworkCore.Query
 
                 SingleResultToSequence(queryModel);
 
-                TrackEntitiesInResults<TResult>(queryModel);
+                //TrackEntitiesInResults<TResult>(queryModel);
                 
                 InterceptExceptions();
 
@@ -207,7 +207,7 @@ namespace Microsoft.EntityFrameworkCore.Query
 
                 SingleResultToSequence(queryModel, _expression.Type.GetTypeInfo().GenericTypeArguments[0]);
 
-                TrackEntitiesInResults<TResult>(queryModel);
+                //TrackEntitiesInResults<TResult>(queryModel);
 
                 InterceptExceptions();
 
@@ -456,7 +456,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             {
                 return;
             }
-
+            
             var outputExpression
                 = new IncludeRemovingExpressionVisitor()
                     .Visit(queryModel.SelectClause.Selector);
@@ -566,6 +566,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                    && (lastTrackingModifier == null
                        || lastTrackingModifier.IsTracking);
         }
+        
 
         private static readonly MethodInfo _getEntityAccessors
             = typeof(EntityQueryModelVisitor)

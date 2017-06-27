@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore.TestModels.Northwind;
 using Microsoft.EntityFrameworkCore.TestUtilities.Xunit;
@@ -354,7 +355,15 @@ namespace Microsoft.EntityFrameworkCore.Query
                     select orders,
                 entryCount: 830,
                 asserter:
-                (l2oResults, efResults) => { Assert.Equal(l2oResults.Count, efResults.Count); });
+                (l2oResults, efResults) =>
+                    {
+                        Assert.Equal(l2oResults.Count, efResults.Count);
+
+                        var l2o = l2oResults.Cast<IEnumerable<Order>>();
+                        var ef = efResults.Cast<IEnumerable<Order>>();
+                        
+                        Assert.Equal(l2o.SelectMany(o => o).Count(), ef.SelectMany(o => o).Count());
+                    });
         }
 
         [ConditionalFact]

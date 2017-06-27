@@ -2167,6 +2167,40 @@ namespace Microsoft.EntityFrameworkCore.Query
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
+        public virtual void Include_reference_take_distinct(bool useString)
+        {
+            using (var context = CreateContext())
+            {
+                var orders
+                    = useString
+                        ? context.Set<Order>()
+                            .Include("Customer").Take(5).Distinct()
+                            .ToList()
+                        : context.Set<Order>()
+                            .Include(o => o.Customer).Take(5).Distinct()
+                            .ToList();
+
+                Assert.Equal(5, orders.Count);
+                Assert.True(orders.All(o => o.Customer != null));
+                Assert.Equal(5, orders.Select(o => o.Customer).Distinct().Count());
+                Assert.Equal(5 + 5, context.ChangeTracker.Entries().Count());
+
+                foreach (var order in orders)
+                {
+                    CheckIsLoaded(
+                        context,
+                        order,
+                        customerLoaded: true,
+                        orderDetailsLoaded: false,
+                        productLoaded: false,
+                        ordersLoaded: false);
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
         public virtual void Include_reference_alias_generation(bool useString)
         {
             using (var context = CreateContext())

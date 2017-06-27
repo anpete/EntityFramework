@@ -3,9 +3,7 @@
 
 using System;
 using System.Linq;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.TestModels.Northwind;
-using Microsoft.EntityFrameworkCore.TestUtilities.Xunit;
 using Xunit;
 using Xunit.Abstractions;
 using Microsoft.EntityFrameworkCore.Utilities;
@@ -19,6 +17,11 @@ namespace Microsoft.EntityFrameworkCore.Query
         {
             Fixture.TestSqlLoggerFactory.Clear();
             //Fixture.TestSqlLoggerFactory.SetTestOutputHelper(testOutputHelper);
+        }
+
+        public override void Select_anonymous_with_object()
+        {
+            base.Select_anonymous_with_object();
         }
 
         public override void Lifting_when_subquery_nested_order_by_anonymous()

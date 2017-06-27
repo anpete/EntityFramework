@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -12,10 +13,12 @@ using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Extensions.Internal;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors;
 using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
 using Microsoft.EntityFrameworkCore.Query.ResultOperators.Internal;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.StreamedData;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
@@ -40,6 +43,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         private readonly QueryCompilationContext _queryCompilationContext;
         private readonly IQuerySourceTracingExpressionVisitorFactory _querySourceTracingExpressionVisitorFactory;
         private readonly List<IncludeResultOperator> _includeResultOperators;
+        
+        private readonly List<QuerySourceReferenceExpression> _trackedQsres = new List<QuerySourceReferenceExpression>();
 
         private int _collectionIncludeId;
 
@@ -74,7 +79,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 return;
             }
 
-            foreach (var includeLoadTree in CreateIncludeLoadTrees(queryModel))
+            foreach (var includeLoadTree in CreateIncludeLoadTrees(queryModel, trackingQuery))
             {
                 includeLoadTree.Compile(
                     _queryCompilationContext,
@@ -111,10 +116,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             }
         }
 
-        private IEnumerable<IncludeLoadTree> CreateIncludeLoadTrees(QueryModel queryModel)
+        private IEnumerable<IncludeLoadTree> CreateIncludeLoadTrees(QueryModel queryModel, bool trackingQuery)
         {
             var querySourceTracingExpressionVisitor
                 = _querySourceTracingExpressionVisitorFactory.Create();
+
+            var outputExpression = queryModel.GetOutputExpression();
 
             var includeLoadTrees = new List<IncludeLoadTree>();
 
@@ -125,7 +132,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 var querySourceReferenceExpression
                     = querySourceTracingExpressionVisitor
                         .FindResultQuerySourceReferenceExpression(
-                            queryModel.GetOutputExpression(),
+                            outputExpression,
                             includeResultOperator.QuerySource);
 
                 if (querySourceReferenceExpression == null
@@ -152,8 +159,98 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 _includeResultOperators.Remove(includeResultOperator);
             }
 
+            if (trackingQuery)
+            {
+                var entityResultFindingQueryModelVisitor
+                    = new EntityResultFindingExpressionVisitor(_queryCompilationContext);
+
+                foreach (var querySourceReferenceExpression
+                    in entityResultFindingQueryModelVisitor.FindEntitiesInResult(outputExpression)
+                        .Where(qsre => !_trackedQsres.Contains(qsre)))
+                {
+                    var includeLoadTree
+                        = includeLoadTrees
+                            .SingleOrDefault(
+                                t => ReferenceEquals(
+                                    t.QuerySourceReferenceExpression, querySourceReferenceExpression));
+
+                    if (includeLoadTree == null)
+                    {
+                        includeLoadTrees.Add(new IncludeLoadTree(querySourceReferenceExpression));
+                    }
+
+                    _trackedQsres.Add(querySourceReferenceExpression);
+                }
+            }
+
             return includeLoadTrees;
         }
+
+        private sealed class EntityResultFindingExpressionVisitor : ExpressionVisitorBase
+        {
+            private readonly QueryCompilationContext _queryCompilationContext;
+
+            private List<QuerySourceReferenceExpression> _querySourceReferenceExpressions;
+
+            /// <summary>
+            ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+            ///     directly from your code. This API may change or be removed in future releases.
+            /// </summary>
+            public EntityResultFindingExpressionVisitor(QueryCompilationContext queryCompilationContext)
+            {
+                _queryCompilationContext = queryCompilationContext;
+            }
+
+            public IEnumerable<QuerySourceReferenceExpression> FindEntitiesInResult([NotNull] Expression expression)
+            {
+                _querySourceReferenceExpressions = new List<QuerySourceReferenceExpression>();
+
+                Visit(expression);
+
+                return _querySourceReferenceExpressions;
+            }
+
+            /// <summary>
+            ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+            ///     directly from your code. This API may change or be removed in future releases.
+            /// </summary>
+            protected override Expression VisitQuerySourceReference(QuerySourceReferenceExpression querySourceReferenceExpression)
+            {
+                var sequenceType = querySourceReferenceExpression.Type.TryGetSequenceType();
+
+                var entityType
+                    = _queryCompilationContext.FindEntityType(querySourceReferenceExpression.ReferencedQuerySource)
+                      ?? ((sequenceType != null
+                              ? _queryCompilationContext.Model.FindEntityType(sequenceType)
+                              : null)
+                          ?? _queryCompilationContext.Model.FindEntityType(querySourceReferenceExpression.Type));
+
+                if (entityType != null)
+                {
+                    _querySourceReferenceExpressions.Add(querySourceReferenceExpression);
+                }
+
+                return querySourceReferenceExpression;
+            }
+
+            /// <summary>
+            ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+            ///     directly from your code. This API may change or be removed in future releases.
+            /// </summary>
+            protected override Expression VisitNew(NewExpression expression)
+                => expression.Members == null ? expression : base.VisitNew(expression);
+
+            // Prune these nodes...
+            protected override Expression VisitSubQuery(SubQueryExpression expression) => expression;
+            protected override Expression VisitMember(MemberExpression node) => node;
+            protected override Expression VisitMethodCall(MethodCallExpression node) => node;
+            protected override Expression VisitConditional(ConditionalExpression node) => node;
+            protected override Expression VisitBinary(BinaryExpression node) => node;
+            protected override Expression VisitTypeBinary(TypeBinaryExpression node) => node;
+            protected override Expression VisitLambda<T>(Expression<T> node) => node;
+            protected override Expression VisitInvocation(InvocationExpression node) => node;
+        }
+
 
         private static void ApplyParentOrderings(
             QueryModel queryModel,

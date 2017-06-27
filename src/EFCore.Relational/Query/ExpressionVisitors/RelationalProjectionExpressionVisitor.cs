@@ -199,7 +199,16 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
 
                 if (sqlExpression == null)
                 {
-                    if (expression is QuerySourceReferenceExpression qsre)
+                    var qsre = expression as QuerySourceReferenceExpression;
+                    
+                    if (qsre == null
+                        && expression is MethodCallExpression methodCallExpression
+                        && IncludeCompiler.IsIncludeMethod(methodCallExpression))
+                    {
+                        qsre = (QuerySourceReferenceExpression)methodCallExpression.Arguments[1];
+                    }
+
+                    if (qsre != null)
                     {
                         if (QueryModelVisitor.ParentQueryModelVisitor != null
                             && selectExpression.HandlesQuerySource(qsre.ReferencedQuerySource))
