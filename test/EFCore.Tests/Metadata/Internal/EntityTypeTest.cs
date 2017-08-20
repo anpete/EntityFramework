@@ -102,6 +102,11 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             public IEnumerable<IIndex> GetIndexes() => throw new NotImplementedException();
             public IProperty FindProperty(string name) => throw new NotImplementedException();
             public IEnumerable<IProperty> GetProperties() => throw new NotImplementedException();
+
+            IStructuralType IStructuralType.BaseType
+            {
+                get => BaseType;
+            }
         }
 
         [Fact]

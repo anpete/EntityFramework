@@ -41,7 +41,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         public ForeignKey(
             [NotNull] IReadOnlyList<Property> dependentProperties,
             [NotNull] Key principalKey,
-            [NotNull] EntityType dependentEntityType,
+            [NotNull] StructuralType dependentEntityType,
             [NotNull] EntityType principalEntityType,
             ConfigurationSource configurationSource)
         {
@@ -52,11 +52,11 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
             Properties = dependentProperties;
             PrincipalKey = principalKey;
-            DeclaringEntityType = dependentEntityType;
+            DeclaringEntityType = (EntityType)dependentEntityType;
             PrincipalEntityType = principalEntityType;
             _configurationSource = configurationSource;
 
-            AreCompatible(principalKey.Properties, dependentProperties, principalEntityType, dependentEntityType, shouldThrow: true);
+            AreCompatible(principalKey.Properties, dependentProperties, principalEntityType, (EntityType)dependentEntityType, shouldThrow: true);
 
             if (!principalEntityType.GetKeys().Contains(principalKey))
             {
@@ -603,7 +603,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         /// </summary>
         public static bool AreCompatible(
             [NotNull] EntityType principalEntityType,
-            [NotNull] EntityType dependentEntityType,
+            [NotNull] StructuralType dependentEntityType,
             [CanBeNull] PropertyInfo navigationToPrincipal,
             [CanBeNull] PropertyInfo navigationToDependent,
             [CanBeNull] IReadOnlyList<Property> dependentProperties,
@@ -621,7 +621,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 if (shouldThrow)
                 {
                     throw new InvalidOperationException(
-                        CoreStrings.ForeignKeySelfReferencingDependentEntityType(dependentEntityType.DisplayName()));
+                        CoreStrings.ForeignKeySelfReferencingDependentEntityType(((EntityType)dependentEntityType).DisplayName()));
                 }
                 return false;
             }
@@ -670,7 +670,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             }
 
             if (dependentProperties != null
-                && !CanPropertiesBeRequired(dependentProperties, required, dependentEntityType, true))
+                && !CanPropertiesBeRequired(dependentProperties, required, (EntityType)dependentEntityType, true))
             {
                 return false;
             }
@@ -681,7 +681,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                     principalProperties,
                     dependentProperties,
                     principalEntityType,
-                    dependentEntityType,
+                    (EntityType)dependentEntityType,
                     shouldThrow))
             {
                 return false;

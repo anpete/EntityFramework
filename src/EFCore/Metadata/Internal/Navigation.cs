@@ -103,7 +103,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         public static bool IsCompatible(
             [NotNull] string navigationName,
             [CanBeNull] PropertyInfo navigationProperty,
-            [NotNull] EntityType sourceType,
+            [NotNull] StructuralType sourceType,
             [NotNull] EntityType targetType,
             bool? shouldBeCollection,
             bool shouldThrow)

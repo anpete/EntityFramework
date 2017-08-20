@@ -69,7 +69,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             return true;
         }
 
-        private void SetDefaultDiscriminatorValues(IReadOnlyList<EntityType> entityTypes, DiscriminatorBuilder discriminator)
+        private void SetDefaultDiscriminatorValues(IReadOnlyList<StructuralType> entityTypes, DiscriminatorBuilder discriminator)
         {
             foreach (var entityType in entityTypes)
             {

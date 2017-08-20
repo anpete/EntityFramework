@@ -587,7 +587,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 return true;
             }
 
-            foreach (var derivedEntityType in entityType.GetDirectlyDerivedTypes())
+            foreach (var derivedEntityType in entityType.GetDirectlyDerivedTypes().Cast<EntityType>())
             {
                 Apply(derivedEntityType, navigationProperty);
             }
@@ -624,7 +624,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
         /// </summary>
         public virtual bool Apply(InternalEntityTypeBuilder entityTypeBuilder, string ignoredMemberName)
         {
-            foreach (var derivedEntityType in entityTypeBuilder.Metadata.GetDerivedTypesInclusive())
+            foreach (var derivedEntityType in entityTypeBuilder.Metadata.GetDerivedTypesInclusive().Cast<EntityType>())
             {
                 var ambigousNavigation = GetAmbigousNavigations(derivedEntityType)?.Keys.FirstOrDefault(p => p.Name == ignoredMemberName);
                 if (ambigousNavigation == null)
@@ -646,7 +646,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
         /// </summary>
         public virtual InternalRelationshipBuilder Apply(InternalRelationshipBuilder relationshipBuilder, Navigation navigation)
         {
-            foreach (var entityType in navigation.DeclaringEntityType.GetDerivedTypesInclusive())
+            foreach (var entityType in navigation.DeclaringEntityType.GetDerivedTypesInclusive().Cast<EntityType>())
             {
                 // Only run the convention if an ambiguity might have been removed
                 if (RemoveAmbiguous(entityType, navigation.PropertyInfo))

@@ -29,7 +29,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         [DebuggerStepThrough]
-        public static string ShortName([NotNull] this IEntityType type)
+        public static string ShortName([NotNull] this IStructuralType type)
             => ((ITypeBase)type).DisplayName();
 
         /// <summary>

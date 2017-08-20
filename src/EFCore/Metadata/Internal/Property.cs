@@ -45,7 +45,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             [NotNull] Type clrType,
             [CanBeNull] PropertyInfo propertyInfo,
             [CanBeNull] FieldInfo fieldInfo,
-            [NotNull] EntityType declaringEntityType,
+            [NotNull] StructuralType declaringEntityType,
             ConfigurationSource configurationSource,
             ConfigurationSource? typeConfigurationSource)
             : base(name, propertyInfo, fieldInfo)
@@ -53,7 +53,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             Check.NotNull(clrType, nameof(clrType));
             Check.NotNull(declaringEntityType, nameof(declaringEntityType));
 
-            DeclaringEntityType = declaringEntityType;
+            DeclaringEntityType = (EntityType)declaringEntityType;
             ClrType = clrType;
             _configurationSource = configurationSource;
             _typeConfigurationSource = typeConfigurationSource;

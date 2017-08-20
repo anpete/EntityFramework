@@ -32,7 +32,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         /// </summary>
         public Index(
             [NotNull] IReadOnlyList<Property> properties,
-            [NotNull] EntityType declaringEntityType,
+            [NotNull] StructuralType declaringEntityType,
             ConfigurationSource configurationSource)
         {
             Check.NotEmpty(properties, nameof(properties));
@@ -40,7 +40,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             Check.NotNull(declaringEntityType, nameof(declaringEntityType));
 
             Properties = properties;
-            DeclaringEntityType = declaringEntityType;
+            DeclaringEntityType = (EntityType)declaringEntityType;
             _configurationSource = configurationSource;
 
             Builder = new InternalIndexBuilder(this, declaringEntityType.Model.Builder);
