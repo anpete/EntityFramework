@@ -147,6 +147,122 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         }
 
         /// <summary>
+        ///     This API supports the View Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual InternalViewTypeBuilder View(
+            [NotNull] string name, ConfigurationSource configurationSource)
+            => View(new TypeIdentity(name), configurationSource);
+
+        /// <summary>
+        ///     This API supports the View Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual InternalViewTypeBuilder View(
+            [NotNull] Type type, ConfigurationSource configurationSource)
+            => View(new TypeIdentity(type), configurationSource);
+
+        private InternalViewTypeBuilder View(
+            TypeIdentity type, ConfigurationSource configurationSource)
+        {
+            if (IsIgnored(type, configurationSource))
+            {
+                return null;
+
+            }
+
+            var clrType = type.Type;
+            var viewType = clrType == null
+                ? Metadata.FindViewType(type.Name)
+                : Metadata.FindViewType(clrType);
+
+            if (viewType == null)
+            {
+                if (clrType == null)
+                {
+                    Metadata.Unignore(type.Name);
+
+                    viewType = Metadata.AddViewType(type.Name, configurationSource);
+                }
+                else
+                {
+                    Metadata.Unignore(clrType);
+
+                    viewType = Metadata.AddViewType(clrType, configurationSource);
+                }
+            }
+            else
+            {
+                viewType.UpdateConfigurationSource(configurationSource);
+            }
+
+            return viewType?.Builder;
+        }
+
+        /// <summary>
+        ///     This API supports the View Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual InternalViewTypeBuilder View(
+            [NotNull] string name,
+            [NotNull] string definingNavigationName,
+            [NotNull] ViewType definingViewType,
+            ConfigurationSource configurationSource)
+            => View(new TypeIdentity(name), definingNavigationName, definingViewType, configurationSource);
+
+        /// <summary>
+        ///     This API supports the View Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual InternalViewTypeBuilder View(
+            [NotNull] Type type,
+            [NotNull] string definingNavigationName,
+            [NotNull] ViewType definingViewType,
+            ConfigurationSource configurationSource)
+            => View(new TypeIdentity(type), definingNavigationName, definingViewType, configurationSource);
+
+        private InternalViewTypeBuilder View(
+            TypeIdentity type,
+            string definingNavigationName,
+            ViewType definingViewType,
+            ConfigurationSource configurationSource)
+        {
+            if (IsIgnored(type, configurationSource))
+            {
+                return null;
+            }
+
+            var clrType = type.Type;
+            var viewType = clrType == null
+                ? Metadata.FindViewType(type.Name)
+                : Metadata.FindViewType(clrType);
+            if (viewType != null)
+            {
+                if (!configurationSource.Overrides(viewType.GetConfigurationSource()))
+                {
+                    return null;
+                }
+
+                Ignore(viewType, configurationSource);
+            }
+
+            if (clrType == null)
+            {
+                Metadata.Unignore(type.Name);
+
+                viewType = Metadata.AddViewType(type.Name, definingNavigationName, definingViewType, configurationSource);
+            }
+            else
+            {
+                Metadata.Unignore(clrType);
+
+                viewType = Metadata.AddViewType(clrType, definingNavigationName, definingViewType, configurationSource);
+            }
+
+            return viewType?.Builder;
+        }
+
+        /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>

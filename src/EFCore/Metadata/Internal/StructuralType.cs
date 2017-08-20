@@ -55,7 +55,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public StructuralType([NotNull] string name, [NotNull] Model model, ConfigurationSource configurationSource)
+        protected StructuralType([NotNull] string name, [NotNull] Model model, ConfigurationSource configurationSource)
             : base(name, model, configurationSource)
         {
             _properties = new SortedDictionary<string, Property>(CreatePropertyComparer());
@@ -66,7 +66,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public StructuralType([NotNull] Type clrType, [NotNull] Model model, ConfigurationSource configurationSource)
+        protected StructuralType([NotNull] Type clrType, [NotNull] Model model, ConfigurationSource configurationSource)
             : base(clrType, model, configurationSource)
         {
             Check.ValidEntityType(clrType, nameof(clrType));
