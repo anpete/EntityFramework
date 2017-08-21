@@ -254,10 +254,11 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public virtual InternalPropertyBuilder Attach(
-            [NotNull] InternalEntityTypeBuilder entityTypeBuilder, ConfigurationSource configurationSource)
+        public virtual InternalPropertyBuilder Attach<TStructuralTypeBuilder>(
+            [NotNull] InternalStructuralTypeBuilder<TStructuralTypeBuilder> structuralTypeBuilder, ConfigurationSource configurationSource)
+            where TStructuralTypeBuilder : StructuralType
         {
-            var newProperty = entityTypeBuilder.Metadata.FindProperty(Metadata.Name);
+            var newProperty = structuralTypeBuilder.Metadata.FindProperty(Metadata.Name);
             InternalPropertyBuilder newPropertyBuilder;
             var typeConfigurationSource = Metadata.GetTypeConfigurationSource();
             if (newProperty != null
@@ -276,8 +277,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             else
             {
                 newPropertyBuilder = Metadata.PropertyInfo == null
-                    ? entityTypeBuilder.Property(Metadata.Name, Metadata.ClrType, configurationSource, Metadata.GetTypeConfigurationSource())
-                    : entityTypeBuilder.Property(Metadata.PropertyInfo, configurationSource);
+                    ? structuralTypeBuilder.Property(Metadata.Name, Metadata.ClrType, configurationSource, Metadata.GetTypeConfigurationSource())
+                    : structuralTypeBuilder.Property(Metadata.PropertyInfo, configurationSource);
             }
 
             if (newProperty == Metadata)

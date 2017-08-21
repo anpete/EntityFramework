@@ -25,6 +25,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             }
 
             var baseEntityType = FindClosestBaseType(entityType);
+            
             return entityTypeBuilder.HasBaseType(baseEntityType, ConfigurationSource.Convention);
         }
     }

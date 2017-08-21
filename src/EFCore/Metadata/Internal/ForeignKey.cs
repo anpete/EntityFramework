@@ -732,13 +732,13 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             [NotNull] IReadOnlyList<Property> principalProperties,
             [NotNull] IReadOnlyList<Property> dependentProperties,
             [NotNull] EntityType principalEntityType,
-            [NotNull] EntityType dependentEntityType,
+            [NotNull] StructuralType dependentType,
             bool shouldThrow)
         {
             Check.NotNull(principalProperties, nameof(principalProperties));
             Check.NotNull(dependentProperties, nameof(dependentProperties));
             Check.NotNull(principalEntityType, nameof(principalEntityType));
-            Check.NotNull(dependentEntityType, nameof(dependentEntityType));
+            Check.NotNull(dependentType, nameof(dependentType));
 
             if (!ArePropertyCountsEqual(principalProperties, dependentProperties))
             {
@@ -747,7 +747,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                     throw new InvalidOperationException(
                         CoreStrings.ForeignKeyCountMismatch(
                             Property.Format(dependentProperties),
-                            dependentEntityType.DisplayName(),
+                            dependentType.DisplayName(),
                             Property.Format(principalProperties),
                             principalEntityType.DisplayName()));
                 }
@@ -761,7 +761,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                     throw new InvalidOperationException(
                         CoreStrings.ForeignKeyTypeMismatch(
                             Property.Format(dependentProperties),
-                            dependentEntityType.DisplayName(),
+                            dependentType.DisplayName(),
                             Property.Format(principalProperties),
                             principalEntityType.DisplayName()));
                 }

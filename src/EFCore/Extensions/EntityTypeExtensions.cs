@@ -54,27 +54,30 @@ namespace Microsoft.EntityFrameworkCore
         }
 
         /// <summary>
-        ///     Determines if an entity type derives from (or is the same as) a given entity type.
+        ///     Determines if a structural type derives from (or is the same as) a given type.
         /// </summary>
-        /// <param name="entityType"> The base entity type. </param>
-        /// <param name="derivedType"> The entity type to check if it derives from <paramref name="entityType" />. </param>
+        /// <param name="structuralType"> The base structural type. </param>
+        /// <param name="derivedType"> The structural type to check if it derives from <paramref name="structuralType" />. </param>
         /// <returns>
-        ///     True if <paramref name="derivedType" /> derives from (or is the same as) <paramref name="entityType" />, otherwise false.
+        ///     True if <paramref name="derivedType" /> derives from (or is the same as) <paramref name="structuralType" />, otherwise false.
         /// </returns>
-        public static bool IsAssignableFrom([NotNull] this IEntityType entityType, [NotNull] IEntityType derivedType)
+        public static bool IsAssignableFrom([NotNull] this IStructuralType structuralType, [NotNull] IStructuralType derivedType)
         {
-            Check.NotNull(entityType, nameof(entityType));
+            Check.NotNull(structuralType, nameof(structuralType));
             Check.NotNull(derivedType, nameof(derivedType));
 
             var baseType = derivedType;
+
             while (baseType != null)
             {
-                if (baseType == entityType)
+                if (baseType == structuralType)
                 {
                     return true;
                 }
+
                 baseType = baseType.BaseType;
             }
+
             return false;
         }
 
