@@ -31,6 +31,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             public IEnumerable<IEntityType> GetEntityTypes() => throw new NotImplementedException();
             public IEntityType FindEntityType(string name) => throw new NotImplementedException();
             public IEntityType FindEntityType(string name, string definingNavigationName, IEntityType definingEntityType) => throw new NotImplementedException();
+            public IEnumerable<IViewType> GetViewTypes() => throw new NotImplementedException();
+            public IViewType FindViewType(string name) => throw new NotImplementedException();
         }
 
         [Fact]

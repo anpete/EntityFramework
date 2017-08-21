@@ -1390,8 +1390,7 @@ namespace Microsoft.EntityFrameworkCore.Internal
         public static string InvalidIncludeLambdaExpression([CanBeNull] object methodName, [CanBeNull] object includeLambdaExpression)
             => string.Format(
                 GetString("InvalidIncludeLambdaExpression", nameof(methodName), nameof(includeLambdaExpression)),
-                methodName,
-                includeLambdaExpression);
+                methodName, includeLambdaExpression);
 
         /// <summary>
         ///     The corresponding CLR type for entity type '{entityType}' is not instantiable and there is no derived entity type in the model that corresponds to a concrete CLR type.
@@ -1798,6 +1797,30 @@ namespace Microsoft.EntityFrameworkCore.Internal
                     LogLevel.Warning,
                     CoreEventId.DuplicateDependentEntityTypeInstanceWarning,
                     _resourceManager.GetString("LogDuplicateDependentEntityTypeInstance")));
+
+        /// <summary>
+        ///     The view type '{viewType}' cannot be added to the model because a view type with the same name already exists.
+        /// </summary>
+        public static string DuplicateViewType([CanBeNull] object viewType)
+            => string.Format(
+                GetString("DuplicateViewType", nameof(viewType)),
+                viewType);
+
+        /// <summary>
+        ///     The view type '{viewType}' cannot be removed because '{derivedViewType}' is derived from it. All derived view types must be removed or redefined before the view type can be removed.
+        /// </summary>
+        public static string ViewTypeInUseByDerived([CanBeNull] object viewType, [CanBeNull] object derivedViewType)
+            => string.Format(
+                GetString("ViewTypeInUseByDerived", nameof(viewType), nameof(derivedViewType)),
+                viewType, derivedViewType);
+
+        /// <summary>
+        ///     The view type '{viewType}' cannot be removed because it is referencing '{referencedEntityType}' by foreign key {foreignKey}. All foreign keys must be removed before the view type can be removed.
+        /// </summary>
+        public static string ViewTypeInUseByForeignKey([CanBeNull] object viewType, [CanBeNull] object referencedEntityType, [CanBeNull] object foreignKey)
+            => string.Format(
+                GetString("ViewTypeInUseByForeignKey", nameof(viewType), nameof(referencedEntityType), nameof(foreignKey)),
+                viewType, referencedEntityType, foreignKey);
 
         private static string GetString(string name, params string[] formatterNames)
         {

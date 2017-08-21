@@ -40,5 +40,19 @@ namespace Microsoft.EntityFrameworkCore.Metadata
             [NotNull] string name,
             [NotNull] string definingNavigationName,
             [NotNull] IEntityType definingEntityType);
+
+        /// <summary>
+        ///     Gets all view types defined in the model.
+        /// </summary>
+        /// <returns> All view types defined in the model. </returns>
+        IEnumerable<IViewType> GetViewTypes();
+
+        /// <summary>
+        ///     Gets the view type with the given name. Returns null if no view type with the given name is found
+        ///     or the view type has a defining navigation.
+        /// </summary>
+        /// <param name="name"> The name of the view type to find. </param>
+        /// <returns> The view type, or null if none are found. </returns>
+        IViewType FindViewType([NotNull] string name);
     }
 }

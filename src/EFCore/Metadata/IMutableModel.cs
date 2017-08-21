@@ -109,5 +109,46 @@ namespace Microsoft.EntityFrameworkCore.Metadata
         /// </summary>
         /// <returns> All entity types defined in the model. </returns>
         new IEnumerable<IMutableEntityType> GetEntityTypes();
+
+        /// <summary>
+        ///     <para>
+        ///         Adds a shadow state view type to the model.
+        ///     </para>
+        ///     <para>
+        ///         Shadow entities are not currently supported in a model that is used at runtime with a <see cref="DbContext" />.
+        ///         Therefore, shadow state view types will only exist in migration model snapshots, etc.
+        ///     </para>
+        /// </summary>
+        /// <param name="name"> The name of the view to be added. </param>
+        /// <returns> The new view type. </returns>
+        IMutableViewType AddViewType([NotNull] string name);
+
+        /// <summary>
+        ///     Adds an view type to the model.
+        /// </summary>
+        /// <param name="clrType"> The CLR class that is used to represent instances of this view type. </param>
+        /// <returns> The new view type. </returns>
+        IMutableViewType AddViewType([NotNull] Type clrType);
+
+        /// <summary>
+        ///     Gets the view with the given name. Returns null if no view type with the given name is found
+        ///     or the view type has a defining navigation.
+        /// </summary>
+        /// <param name="name"> The name of the view type to find. </param>
+        /// <returns> The view type, or null if none are found. </returns>
+        new IMutableViewType FindViewType([NotNull] string name);
+
+        /// <summary>
+        ///     Removes an view type without a defining navigation from the model.
+        /// </summary>
+        /// <param name="name"> The name of the view type to be removed. </param>
+        /// <returns> The view type that was removed. </returns>
+        IMutableViewType RemoveViewType([NotNull] string name);
+
+        /// <summary>
+        ///     Gets all view types defined in the model.
+        /// </summary>
+        /// <returns> All view types defined in the model. </returns>
+        new IEnumerable<IMutableViewType> GetViewTypes();
     }
 }

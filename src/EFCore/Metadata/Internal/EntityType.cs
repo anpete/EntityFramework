@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Utilities;
+using System.Diagnostics;
 
 namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 {
@@ -120,6 +121,12 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         /// </summary>
         public virtual EntityType RootType() => (EntityType)((IEntityType)this).RootType();
 
+//        /// <summary>
+//        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+//        ///     directly from your code. This API may change or be removed in future releases.
+//        /// </summary>
+//        public virtual InternalEntityTypeBuilder Builder { [DebuggerStepThrough] get; [DebuggerStepThrough] [param: CanBeNull] set; }
+
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
@@ -159,6 +166,23 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 throw new InvalidOperationException(CoreStrings.DependentDerivedType(this.DisplayName()));
             }
         }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual IEnumerable<ForeignKey> GetDeclaredReferencingForeignKeys()
+            => DeclaredReferencingForeignKeys ?? Enumerable.Empty<ForeignKey>();
+
+        internal SortedSet<ForeignKey> DeclaredReferencingForeignKeys { get; set; }
+        
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual IEnumerable<ForeignKey> GetReferencingForeignKeys()
+            => BaseType?.GetReferencingForeignKeys().Concat(GetDeclaredReferencingForeignKeys())
+               ?? GetDeclaredReferencingForeignKeys();
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used

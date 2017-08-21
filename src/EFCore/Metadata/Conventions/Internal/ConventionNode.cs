@@ -79,6 +79,12 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 return entityTypeBuilder;
             }
 
+            public virtual InternalViewTypeBuilder OnViewTypeAdded([NotNull] InternalViewTypeBuilder viewTypeBuilder)
+            {
+                Add(new OnViewTypeAddedNode(viewTypeBuilder));
+                return viewTypeBuilder;
+            }
+
             public virtual bool OnEntityTypeIgnored([NotNull] InternalModelBuilder modelBuilder, [NotNull] string name, [CanBeNull] Type type)
             {
                 Add(new OnEntityTypeIgnoredNode(modelBuilder, name, type));
@@ -258,6 +264,25 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
                 }
 
                 return entityTypeBuilder;
+            }
+
+            public override InternalViewTypeBuilder OnViewTypeAdded(InternalViewTypeBuilder viewTypeBuilder)
+            {
+                if (viewTypeBuilder.Metadata.Builder == null)
+                {
+                    return null;
+                }
+
+                foreach (var entityTypeConvention in _conventionSet.ViewTypeAddedConventions)
+                {
+                    viewTypeBuilder = entityTypeConvention.Apply(viewTypeBuilder);
+                    if (viewTypeBuilder?.Metadata.Builder == null)
+                    {
+                        return null;
+                    }
+                }
+
+                return viewTypeBuilder;
             }
 
             public override bool OnEntityTypeIgnored(InternalModelBuilder modelBuilder, string name, Type type)
@@ -732,6 +757,18 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             public InternalEntityTypeBuilder EntityTypeBuilder { get; }
 
             public override ConventionNode Accept(ConventionVisitor visitor) => visitor.VisitOnEntityTypeAdded(this);
+        }
+
+        private class OnViewTypeAddedNode : ConventionNode
+        {
+            public OnViewTypeAddedNode(InternalViewTypeBuilder viewTypeBuilder)
+            {
+                ViewTypeBuilder = viewTypeBuilder;
+            }
+
+            public InternalViewTypeBuilder ViewTypeBuilder { get; }
+
+            public override ConventionNode Accept(ConventionVisitor visitor) => visitor.VisitOnViewTypeAdded(this);
         }
 
         private class OnEntityTypeIgnoredNode : ConventionNode

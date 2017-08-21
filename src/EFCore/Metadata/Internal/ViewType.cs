@@ -16,16 +16,25 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public ViewType([NotNull] Type clrType, [NotNull] Model model, ConfigurationSource configurationSource)
-            : base(clrType, model, configurationSource)
+        public ViewType([NotNull] string name, [NotNull] Model model, ConfigurationSource configurationSource)
+            : base(name, model, configurationSource)
         {
-        }        
-        
+        }
+
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        new public virtual ViewType BaseType => (ViewType)base.BaseType;
+        public ViewType([NotNull] Type clrType, [NotNull] Model model, ConfigurationSource configurationSource)
+            : base(clrType, model, configurationSource)
+        {
+        }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public new virtual ViewType BaseType => (ViewType)base.BaseType;
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used

@@ -639,6 +639,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             else
             {
                 var added = principalEntityType.DeclaredReferencingForeignKeys.Add(foreignKey);
+
                 Debug.Assert(added);
             }
 
@@ -881,23 +882,6 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
             return null;
         }
-
-        /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public virtual IEnumerable<ForeignKey> GetReferencingForeignKeys()
-            => _baseType?.GetReferencingForeignKeys().Concat(GetDeclaredReferencingForeignKeys())
-               ?? GetDeclaredReferencingForeignKeys();
-
-        /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public virtual IEnumerable<ForeignKey> GetDeclaredReferencingForeignKeys()
-            => DeclaredReferencingForeignKeys ?? Enumerable.Empty<ForeignKey>();
-
-        private SortedSet<ForeignKey> DeclaredReferencingForeignKeys { get; set; }
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used

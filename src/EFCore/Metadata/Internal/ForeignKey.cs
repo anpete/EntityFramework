@@ -41,7 +41,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         public ForeignKey(
             [NotNull] IReadOnlyList<Property> dependentProperties,
             [NotNull] Key principalKey,
-            [NotNull] StructuralType dependentEntityType,
+            [NotNull] StructuralType dependentType,
             [NotNull] EntityType principalEntityType,
             ConfigurationSource configurationSource)
         {
@@ -52,11 +52,11 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
             Properties = dependentProperties;
             PrincipalKey = principalKey;
-            DeclaringEntityType = (EntityType)dependentEntityType;
+            DeclaringType = dependentType;
             PrincipalEntityType = principalEntityType;
             _configurationSource = configurationSource;
 
-            AreCompatible(principalKey.Properties, dependentProperties, principalEntityType, (EntityType)dependentEntityType, shouldThrow: true);
+            AreCompatible(principalKey.Properties, dependentProperties, principalEntityType, dependentType, shouldThrow: true);
 
             if (!principalEntityType.GetKeys().Contains(principalKey))
             {
@@ -66,7 +66,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                         principalEntityType.DisplayName()));
             }
 
-            Builder = new InternalRelationshipBuilder(this, dependentEntityType.Model.Builder);
+            Builder = new InternalRelationshipBuilder(this, dependentType.Model.Builder);
         }
 
         /// <summary>
@@ -85,7 +85,19 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public virtual EntityType DeclaringEntityType { [DebuggerStepThrough] get; }
+        public virtual StructuralType DeclaringType { [DebuggerStepThrough] get; }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual EntityType DeclaringEntityType => DeclaringType as EntityType;
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual ViewType DeclaringViewType => DeclaringType as ViewType;
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -732,7 +744,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             [NotNull] IReadOnlyList<Property> principalProperties,
             [NotNull] IReadOnlyList<Property> dependentProperties,
             [NotNull] EntityType principalEntityType,
-            [NotNull] EntityType dependentEntityType,
+            [NotNull] StructuralType dependentEntityType,
             bool shouldThrow)
         {
             Check.NotNull(principalProperties, nameof(principalProperties));

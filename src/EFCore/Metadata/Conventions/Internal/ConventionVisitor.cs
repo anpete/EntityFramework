@@ -31,6 +31,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             }
 
             public virtual OnEntityTypeAddedNode VisitOnEntityTypeAdded(OnEntityTypeAddedNode node) => node;
+            public virtual OnViewTypeAddedNode VisitOnViewTypeAdded(OnViewTypeAddedNode node) => node;
             public virtual OnEntityTypeIgnoredNode VisitOnEntityTypeIgnored(OnEntityTypeIgnoredNode node) => node;
             public virtual OnEntityTypeMemberIgnoredNode VisitOnEntityTypeMemberIgnored(OnEntityTypeMemberIgnoredNode node) => node;
             public virtual OnBaseEntityTypeChangedNode VisitOnBaseEntityTypeChanged(OnBaseEntityTypeChangedNode node) => node;
@@ -66,6 +67,12 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
             public override OnEntityTypeAddedNode VisitOnEntityTypeAdded(OnEntityTypeAddedNode node)
             {
                 Dispatcher._immediateConventionScope.OnEntityTypeAdded(node.EntityTypeBuilder);
+                return null;
+            }
+
+            public override OnViewTypeAddedNode VisitOnViewTypeAdded(OnViewTypeAddedNode node)
+            {
+                Dispatcher._immediateConventionScope.OnViewTypeAdded(node.ViewTypeBuilder);
                 return null;
             }
 
