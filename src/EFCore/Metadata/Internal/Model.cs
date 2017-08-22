@@ -23,8 +23,14 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         private readonly SortedDictionary<string, EntityType> _entityTypes
             = new SortedDictionary<string, EntityType>();
 
+        private readonly SortedDictionary<string, ViewType> _viewTypes
+            = new SortedDictionary<string, ViewType>();
+
         private readonly IDictionary<Type, EntityType> _clrTypeMap
             = new Dictionary<Type, EntityType>();
+
+        private readonly IDictionary<Type, ViewType> _clrViewTypeMap
+            = new Dictionary<Type, ViewType>();
 
         private readonly SortedDictionary<string, SortedSet<EntityType>> _entityTypesWithDefiningNavigation
             = new SortedDictionary<string, SortedSet<EntityType>>();
@@ -110,6 +116,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             var entityType = new EntityType(type, this, configurationSource);
 
             _clrTypeMap[type] = entityType;
+
             return AddEntityType(entityType);
         }
 
@@ -151,6 +158,56 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         }
 
         /// <summary>
+        ///     This API supports the View Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual ViewType AddViewType(
+            [NotNull] string name,
+            // ReSharper disable once MethodOverloadWithOptionalParameter
+            ConfigurationSource configurationSource = ConfigurationSource.Explicit)
+        {
+            Check.NotEmpty(name, nameof(name));
+
+            var viewType = new ViewType(name, this, configurationSource);
+
+            return AddViewType(viewType);
+        }
+
+        /// <summary>
+        ///     This API supports the View Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual ViewType AddViewType(
+            [NotNull] Type type,
+            // ReSharper disable once MethodOverloadWithOptionalParameter
+            ConfigurationSource configurationSource = ConfigurationSource.Explicit)
+        {
+            Check.NotNull(type, nameof(type));
+
+            var viewType = new ViewType(type, this, configurationSource);
+
+            _clrViewTypeMap[type] = viewType;
+
+            return AddViewType(viewType);
+        }
+
+        private ViewType AddViewType(ViewType viewType)
+        {
+            var viewTypeName = viewType.Name;
+            var previousLength = _viewTypes.Count;
+
+            _viewTypes[viewTypeName] = viewType;
+
+            if (previousLength == _viewTypes.Count)
+            {
+                // TODO: Fix message
+                throw new InvalidOperationException(CoreStrings.DuplicateEntityType(viewType.DisplayName()));
+            }
+            
+            return (ViewType)ConventionDispatcher.OnEntityTypeAdded(viewType.Builder)?.Metadata;
+        }
+
+        /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
@@ -180,6 +237,27 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         public virtual EntityType FindEntityType([NotNull] string name)
             => _entityTypes.TryGetValue(Check.NotEmpty(name, nameof(name)), out var entityType)
                 ? entityType
+                : null;
+
+        /// <summary>
+        ///     This API supports the View Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual ViewType FindViewType([NotNull] Type type)
+        {
+            return _clrViewTypeMap.TryGetValue(Check.NotNull(type, nameof(type)), out var entityType)
+                && entityType is ViewType viewType
+                ? viewType
+                : FindViewType(type.DisplayName());
+        }
+
+        /// <summary>
+        ///     This API supports the View Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual ViewType FindViewType([NotNull] string name)
+            => _viewTypes.TryGetValue(Check.NotEmpty(name, nameof(name)), out var viewType)
+                ? viewType
                 : null;
 
         /// <summary>

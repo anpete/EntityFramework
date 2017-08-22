@@ -145,7 +145,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
             var relationalQueryCompilationContext = QueryModelVisitor.QueryCompilationContext;
 
             var entityType = relationalQueryCompilationContext.FindEntityType(_querySource)
-                             ?? _model.FindEntityType(elementType);
+                             ?? _model.FindEntityType(elementType)
+                             ?? _model.FindViewType(elementType);
 
             var selectExpression = _selectExpressionFactory.Create(relationalQueryCompilationContext);
 
@@ -260,7 +261,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                             null, new object[]
                             {
                                 _querySource,
-                                QueryModelVisitor.QueryCompilationContext.IsTrackingQuery,
+                                QueryModelVisitor.QueryCompilationContext.IsTrackingQuery
+                                && !(entityType is ViewType),
                                 entityType.FindPrimaryKey(),
                                 materializer,
                                 typeIndexMap,

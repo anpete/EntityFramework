@@ -8,5 +8,6 @@ namespace Microsoft.EntityFrameworkCore.Query
     public interface IQueryFixtureBase
     {
         QueryAsserterBase QueryAsserter { get; set; }
+        QueryAsserterBase ViewQueryAsserter { get; set; }
     }
 }

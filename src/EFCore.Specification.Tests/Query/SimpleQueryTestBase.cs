@@ -332,6 +332,12 @@ namespace Microsoft.EntityFrameworkCore.Query
         }
 
         [ConditionalFact]
+        public virtual void View_simple()
+        {
+            AssertViewQuery<CustomerView>(cs => cs);
+        }
+
+        [ConditionalFact]
         public virtual void Queryable_simple_anonymous()
         {
             AssertQuery<Customer>(

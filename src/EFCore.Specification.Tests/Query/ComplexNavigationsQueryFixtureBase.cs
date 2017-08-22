@@ -131,6 +131,7 @@ namespace Microsoft.EntityFrameworkCore.Query
         }
 
         public QueryAsserterBase QueryAsserter { get; set; }
+        public QueryAsserterBase ViewQueryAsserter { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder, DbContext context)
         {

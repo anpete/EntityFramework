@@ -62,6 +62,9 @@ namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
                     });
 
             modelBuilder.Entity<OrderDetail>(e => { e.HasKey(od => new { od.OrderID, od.ProductID }); });
+
+            modelBuilder.View<CustomerView>()
+                .HasAlternateKey(cv => cv.CustomerID);
         }
 
         public string TenantPrefix { get; set; } = "B";

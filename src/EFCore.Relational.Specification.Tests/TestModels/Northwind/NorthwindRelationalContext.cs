@@ -36,6 +36,8 @@ namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
             modelBuilder.HasDbFunction(typeof(NorthwindRelationalContext)
                 .GetRuntimeMethod(nameof(IsDate), new[] { typeof(string) }))
                 .HasSchema("");
+            
+            modelBuilder.View<CustomerView>().ToTable("Customers");
         }
 
         public enum ReportingPeriod

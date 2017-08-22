@@ -1848,6 +1848,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 if (principalKey == null)
                 {
                     principalKey = principalType.FindPrimaryKey();
+                    
                     if (principalKey != null
                         && dependentProperties != null)
                     {

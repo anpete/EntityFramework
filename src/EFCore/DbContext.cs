@@ -207,6 +207,14 @@ namespace Microsoft.EntityFrameworkCore
             where TEntity : class
             => (DbSet<TEntity>)((IDbSetCache)this).GetOrAddSet(DbContextDependencies.SetSource, typeof(TEntity));
 
+        /// <summary>
+        ///     Creates a <see cref="DbView{TView}" /> that can be used to query and save instances of <typeparamref name="TView" />.
+        /// </summary>
+        /// <typeparam name="TView"> The type of entity for which a set should be returned. </typeparam>
+        /// <returns> A set for the given entity type. </returns>
+        public virtual DbView<TView> View<TView>()
+            => (DbView<TView>)((IDbSetCache)this).GetOrAddSet(DbContextDependencies.SetSource, typeof(TView));
+
         private IEntityFinder Finder(Type type)
         {
             var entityType = Model.FindEntityType(type);

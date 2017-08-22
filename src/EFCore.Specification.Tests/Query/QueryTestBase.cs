@@ -137,6 +137,14 @@ namespace Microsoft.EntityFrameworkCore.Query
             => Fixture.QueryAsserter.AssertQuery(actualQuery, expectedQuery, elementSorter, elementAsserter, assertOrder, entryCount, isAsync: false).Wait();
 
         #endregion
+        
+        public virtual void AssertViewQuery<TItem1>(
+            Func<IQueryable<TItem1>, IQueryable<object>> query,
+            Func<dynamic, object> elementSorter = null,
+            Action<dynamic, dynamic> elementAsserter = null,
+            bool assertOrder = false)
+            where TItem1 : class
+            => Fixture.ViewQueryAsserter.AssertQuery(query, query, elementSorter, elementAsserter, assertOrder, entryCount: 0, isAsync: false).Wait();
 
         #region AssertQueryScalar
 

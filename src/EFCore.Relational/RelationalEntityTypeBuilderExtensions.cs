@@ -54,6 +54,25 @@ namespace Microsoft.EntityFrameworkCore
         /// <summary>
         ///     Configures the table that the entity maps to when targeting a relational database.
         /// </summary>
+        /// <typeparam name="TView"> The entity type being configured. </typeparam>
+        /// <param name="viewTypeBuilder"> The builder for the entity type being configured. </param>
+        /// <param name="name"> The name of the table. </param>
+        /// <returns> The same builder instance so that multiple calls can be chained. </returns>
+        public static ViewTypeBuilder<TView> ToTable<TView>(
+            [NotNull] this ViewTypeBuilder<TView> viewTypeBuilder,
+            [CanBeNull] string name)
+            where TView : class
+        {
+            viewTypeBuilder.Builder
+                .Relational(ConfigurationSource.Explicit)
+                .ToTable(name);
+
+            return viewTypeBuilder;
+        }
+
+        /// <summary>
+        ///     Configures the table that the entity maps to when targeting a relational database.
+        /// </summary>
         /// <param name="entityTypeBuilder"> The builder for the entity type being configured. </param>
         /// <param name="name"> The name of the table. </param>
         /// <param name="schema"> The schema of the table. </param>

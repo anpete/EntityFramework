@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.TestModels.Northwind;
 using Microsoft.EntityFrameworkCore.TestUtilities;
+using System.Linq;
 
 namespace Microsoft.EntityFrameworkCore.Query
 {
@@ -18,6 +19,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             var entitySorters = new Dictionary<Type, Func<dynamic, object>>
             {
                 { typeof(Customer), e => e.CustomerID },
+                { typeof(CustomerView), e => e.CustomerID },
                 { typeof(Order), e => e.OrderID },
                 { typeof(Employee), e => e.EmployeeID },
                 { typeof(Product), e => e.ProductID },
@@ -31,6 +33,20 @@ namespace Microsoft.EntityFrameworkCore.Query
                 new NorthwindData(),
                 entitySorters,
                 entityAsserters);
+
+            ViewQueryAsserter = new QueryAsserter<NorthwindContext>(
+                CreateContext,
+                new NorthwindData(),
+                entitySorters,
+                entityAsserters);
+
+            ViewQueryAsserter.SetExtractor = new ViewExtractor();
+        }
+
+        private class ViewExtractor : ISetExtractor
+        {
+            public override IQueryable<TView> Set<TView>(DbContext context)
+                => context.View<TView>();
         }
 
         protected override string StoreName { get; } = "Northwind";
@@ -38,6 +54,7 @@ namespace Microsoft.EntityFrameworkCore.Query
         protected override bool UsePooling => false;
 
         public QueryAsserterBase QueryAsserter { get; set; }
+        public QueryAsserterBase ViewQueryAsserter { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder, DbContext context)
             => new TModelCustomizer().Customize(modelBuilder, context);

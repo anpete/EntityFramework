@@ -27,6 +27,16 @@ namespace Microsoft.EntityFrameworkCore
             => Check.NotNull(model, nameof(model)).AsModel().FindEntityType(Check.NotNull(type, nameof(type)));
 
         /// <summary>
+        ///     Gets the view that maps the given view class. Returns null if no view type with the given name is found
+        ///     or the view type has a defining navigation.
+        /// </summary>
+        /// <param name="model"> The model to find the view type in. </param>
+        /// <param name="type"> The type to find the corresponding view type for. </param>
+        /// <returns> The view type, or null if none if found. </returns>
+        public static IEntityType FindViewType([NotNull] this IModel model, [NotNull] Type type)
+            => Check.NotNull(model, nameof(model)).AsModel().FindViewType(Check.NotNull(type, nameof(type)));
+
+        /// <summary>
         ///     Gets the entity type for the given type, defining navigation name
         ///     and the defining entity type. Returns null if no matching entity type is found.
         /// </summary>

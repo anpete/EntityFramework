@@ -20,6 +20,7 @@ namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
     public partial class NorthwindData : IExpectedData
     {
         private readonly Customer[] _customers;
+        private readonly CustomerView[] _customerViews;
         private readonly Employee[] _employees;
         private readonly Product[] _products;
         private readonly Order[] _orders;
@@ -68,6 +69,20 @@ namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
                 var manager = _employees.FirstOrDefault(e => employee.ReportsTo == e.EmployeeID);
                 employee.Manager = manager;
             }
+
+            _customerViews
+                = _customers
+                    .Select(
+                        c => new CustomerView
+                        {
+                            CustomerID = c.CustomerID,
+                            CompanyName = c.CompanyName,
+                            ContactName = c.ContactName,
+                            ContactTitle = c.ContactTitle,
+                            Address = c.Address,
+                            City = c.City
+                        })
+                        .ToArray();
         }
 
         public IQueryable<TEntity> Set<TEntity>()
@@ -96,6 +111,11 @@ namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
             if (typeof(TEntity) == typeof(Product))
             {
                 return new AsyncEnumerable<TEntity>(_products.Cast<TEntity>());
+            }
+
+            if (typeof(TEntity) == typeof(CustomerView))
+            {
+                return new AsyncEnumerable<TEntity>(_customerViews.Cast<TEntity>());
             }
 
             throw new InvalidOperationException("Invalid entity type: " + typeof(TEntity));

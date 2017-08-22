@@ -48,8 +48,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             [NotNull] Type type, ConfigurationSource configurationSource)
             => Entity(new TypeIdentity(type), configurationSource);
 
-        private InternalEntityTypeBuilder Entity(
-            TypeIdentity type, ConfigurationSource configurationSource)
+        private InternalEntityTypeBuilder Entity(TypeIdentity type, ConfigurationSource configurationSource)
         {
             if (IsIgnored(type, configurationSource))
             {
@@ -57,9 +56,11 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             }
 
             var clrType = type.Type;
+
             var entityType = clrType == null
                 ? Metadata.FindEntityType(type.Name)
                 : Metadata.FindEntityType(clrType);
+
             if (entityType == null)
             {
                 if (clrType == null)
@@ -81,6 +82,50 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             }
 
             return entityType?.Builder;
+        }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual InternalEntityTypeBuilder View(
+            [NotNull] Type type, ConfigurationSource configurationSource) 
+            => View(new TypeIdentity(type), configurationSource);
+
+        private InternalEntityTypeBuilder View(TypeIdentity type, ConfigurationSource configurationSource)
+        {
+            if (IsIgnored(type, configurationSource))
+            {
+                return null;
+            }
+
+            var clrType = type.Type;
+
+            var viewType = clrType == null
+                ? Metadata.FindViewType(type.Name)
+                : Metadata.FindViewType(clrType);
+
+            if (viewType == null)
+            {
+                if (clrType == null)
+                {
+                    Metadata.Unignore(type.Name);
+
+                    viewType = Metadata.AddViewType(type.Name, configurationSource);
+                }
+                else
+                {
+                    Metadata.Unignore(clrType);
+
+                    viewType = Metadata.AddViewType(clrType, configurationSource);
+                }
+            }
+            else
+            {
+                viewType.UpdateConfigurationSource(configurationSource);
+            }
+
+            return viewType?.Builder;
         }
 
         /// <summary>

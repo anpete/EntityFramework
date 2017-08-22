@@ -5,15 +5,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
-using Microsoft.EntityFrameworkCore.Query.Internal;
 
 namespace Microsoft.EntityFrameworkCore
 {
@@ -39,8 +35,7 @@ namespace Microsoft.EntityFrameworkCore
     ///     </para>
     /// </summary>
     /// <typeparam name="TEntity"> The type of entity being operated on by this set. </typeparam>
-    public abstract class DbSet<TEntity>
-        : IQueryable<TEntity>, IAsyncEnumerableAccessor<TEntity>, IInfrastructure<IServiceProvider>, IListSource
+    public abstract class DbSet<TEntity> : DbView<TEntity>, IListSource
         where TEntity : class
     {
         /// <summary>
@@ -378,53 +373,6 @@ namespace Microsoft.EntityFrameworkCore
         /// </summary>
         /// <param name="entities"> The entities to update. </param>
         public virtual void UpdateRange([NotNull] IEnumerable<TEntity> entities) => throw new NotImplementedException();
-
-        /// <summary>
-        ///     Returns an <see cref="IEnumerator{T}" /> which when enumerated will execute a query against the database
-        ///     to load all entities from the database.
-        /// </summary>
-        /// <returns> The query results. </returns>
-        IEnumerator<TEntity> IEnumerable<TEntity>.GetEnumerator() => throw new NotImplementedException();
-
-        /// <summary>
-        ///     Returns an <see cref="IEnumerator" /> which when enumerated will execute a query against the database
-        ///     to load all entities from the database.
-        /// </summary>
-        /// <returns> The query results. </returns>
-        IEnumerator IEnumerable.GetEnumerator() => throw new NotImplementedException();
-
-        /// <summary>
-        ///     Returns an <see cref="IAsyncEnumerable{T}" /> which when enumerated will asynchronously execute the query against
-        ///     the database.
-        /// </summary>
-        /// <returns> The query results. </returns>
-        IAsyncEnumerable<TEntity> IAsyncEnumerableAccessor<TEntity>.AsyncEnumerable => throw new NotImplementedException();
-
-        /// <summary>
-        ///     Gets the IQueryable element type.
-        /// </summary>
-        Type IQueryable.ElementType => throw new NotImplementedException();
-
-        /// <summary>
-        ///     Gets the IQueryable LINQ Expression.
-        /// </summary>
-        Expression IQueryable.Expression => throw new NotImplementedException();
-
-        /// <summary>
-        ///     Gets the IQueryable provider.
-        /// </summary>
-        IQueryProvider IQueryable.Provider => throw new NotImplementedException();
-
-        /// <summary>
-        ///     <para>
-        ///         Gets the scoped <see cref="IServiceProvider" /> being used to resolve services.
-        ///     </para>
-        ///     <para>
-        ///         This property is intended for use by extension methods that need to make use of services
-        ///         not directly exposed in the public API surface.
-        ///     </para>
-        /// </summary>
-        IServiceProvider IInfrastructure<IServiceProvider>.Instance => throw new NotImplementedException();
 
         /// <summary>
         ///     <para>
