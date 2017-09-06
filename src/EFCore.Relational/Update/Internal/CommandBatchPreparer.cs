@@ -152,7 +152,7 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
             }
 
             var tables = new Dictionary<(string Schema, string TableName), HashSet<IEntityType>>();
-            foreach (var entityType in model.GetEntityTypes())
+            foreach (var entityType in model.GetEntityTypes().Where(et => !et.IsViewType()))
             {
                 var fullName = (entityType.Relational().Schema, entityType.Relational().TableName);
                 if (!tables.TryGetValue(fullName, out var mappedEntityTypes))

@@ -154,9 +154,14 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
                                 entity.GetType().ShortDisplayName(),
                                 "." + nameof(EntityEntry.Reference) + "()." + nameof(ReferenceEntry.TargetEntry)));
                     }
+
                     throw new InvalidOperationException(CoreStrings.EntityTypeNotFound(entity.GetType().ShortDisplayName()));
                 }
 
+                if (entityType.IsViewType())
+                {
+                    throw new InvalidOperationException(CoreStrings.ViewTypeNotValid(entityType.DisplayName()));
+                }
                 entry = _internalEntityEntryFactory.Create(this, entityType, entity);
 
                 _entityReferenceMap[entity] = entry;

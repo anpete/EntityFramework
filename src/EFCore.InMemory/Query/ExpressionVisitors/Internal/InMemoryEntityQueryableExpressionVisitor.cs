@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq.Expressions;
+using System.Reflection;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query.Internal;
@@ -17,8 +18,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
     /// </summary>
     public class InMemoryEntityQueryableExpressionVisitor : EntityQueryableExpressionVisitor
     {
-        private readonly IModel _model;
         private readonly IMaterializerFactory _materializerFactory;
+        private readonly IModel _model;
         private readonly IQuerySource _querySource;
 
         /// <summary>
