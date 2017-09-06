@@ -308,6 +308,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 var blockExpressions = new List<Expression>();
 
+                var viewType = Navigation.DeclaringEntityType.IsViewType();
+
                 if (trackingQuery)
                 {
                     blockExpressions.Add(
@@ -318,16 +320,20 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             _queryBufferStartTrackingMethodInfo,
                             relatedArrayAccessExpression,
                             Expression.Constant(Navigation.GetTargetType())));
-
-                    blockExpressions.Add(
-                        Expression.Call(
-                            _setRelationshipSnapshotValueMethodInfo,
-                            stateManagerProperty,
-                            Expression.Constant(Navigation),
-                            targetEntityExpression,
-                            relatedArrayAccessExpression));
+                    
+                    if (!viewType)
+                    {
+                        blockExpressions.Add(
+                            Expression.Call(
+                                _setRelationshipSnapshotValueMethodInfo,
+                                stateManagerProperty,
+                                Expression.Constant(Navigation),
+                                targetEntityExpression,
+                                relatedArrayAccessExpression));
+                    }
                 }
-                else
+
+                if (!trackingQuery || viewType)
                 {
                     blockExpressions.Add(
                         targetEntityExpression

@@ -287,6 +287,8 @@ namespace Microsoft.EntityFrameworkCore.Query
 
             navigationRewritingExpressionVisitor.Rewrite(queryModel, parentQueryModel: null);
 
+            QueryCompilationContext.Logger.QueryModelOptimized(queryModel);
+
             includeCompiler.CompileIncludes(queryModel, TrackResults(queryModel), asyncQuery);
 
             navigationRewritingExpressionVisitor.Rewrite(queryModel, parentQueryModel: null);

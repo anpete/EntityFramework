@@ -30,6 +30,10 @@ namespace Microsoft.EntityFrameworkCore.Query
             {
                 modelBuilder.Entity<Animal>().HasQueryFilter(a => a.CountryId == 1);
             }
+
+            modelBuilder.View<AnimalView>();
+            modelBuilder.View<BirdView>();
+            modelBuilder.View<KiwiView>();
         }
 
         protected override void Seed(InheritanceContext context) => InheritanceContext.SeedData(context);

@@ -89,7 +89,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
         public virtual InternalModelBuilder Apply(InternalModelBuilder modelBuilder)
         {
             var tables = new Dictionary<string, (List<EntityType> MappedEntityTypes, Dictionary<string, Property> Columns)>();
-            foreach (var entityType in modelBuilder.Metadata.GetEntityTypes())
+            foreach (var entityType in modelBuilder.Metadata.GetEntityTypes().Where(et => !et.IsViewType()))
             {
                 var annotations = entityType.Relational();
                 var tableName = Format(annotations.Schema, annotations.TableName);
