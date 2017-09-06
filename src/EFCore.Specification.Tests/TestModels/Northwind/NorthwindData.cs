@@ -98,6 +98,21 @@ namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
                 return new AsyncEnumerable<TEntity>(_products.Cast<TEntity>());
             }
 
+            if (typeof(TEntity) == typeof(CustomerView))
+            {
+                return new AsyncEnumerable<TEntity>(
+                    _customers.Select(c 
+                        => new CustomerView()
+                        {
+                            Address = c.Address,
+                            City = c.City,
+                            CompanyName = c.CompanyName,
+                            ContactName = c.ContactName,
+                            ContactTitle = c.ContactTitle
+                        })
+                        .Cast<TEntity>());
+            }
+
             throw new InvalidOperationException("Invalid entity type: " + typeof(TEntity));
         }
 

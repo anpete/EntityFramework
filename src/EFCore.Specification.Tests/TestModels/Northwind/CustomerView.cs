@@ -1,68 +1,55 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
 {
-    public class Customer
+    public class CustomerView
     {
-        public string CustomerID { get; set; }
         public string CompanyName { get; set; }
         public string ContactName { get; set; }
         public string ContactTitle { get; set; }
         public string Address { get; set; }
         public string City { get; set; }
-        public string Region { get; set; }
-        public string PostalCode { get; set; }
-        public string Country { get; set; }
-        public string Phone { get; set; }
-        public string Fax { get; set; }
-
-        public virtual ICollection<Order> Orders { get; set; }
 
         [NotMapped]
         public bool IsLondon => City == "London";
 
-        protected bool Equals(Customer other)
+        protected bool Equals(CustomerView other)
         {
-            return string.Equals(CustomerID, other.CustomerID);
+            return string.Equals(CompanyName, other.CompanyName);
         }
 
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj))
-            {
                 return false;
-            }
             if (ReferenceEquals(this, obj))
-            {
                 return true;
-            }
 
             return obj.GetType() == GetType()
-                   && Equals((Customer) obj);
+                   && Equals((CustomerView) obj);
         }
 
-        public static bool operator ==(Customer left, Customer right)
+        public static bool operator ==(CustomerView left, CustomerView right)
         {
             return Equals(left, right);
         }
 
-        public static bool operator !=(Customer left, Customer right)
+        public static bool operator !=(CustomerView left, CustomerView right)
         {
             return !Equals(left, right);
         }
 
         public override int GetHashCode()
         {
-            return CustomerID.GetHashCode();
+            return CompanyName.GetHashCode();
         }
 
         public override string ToString()
         {
-            return "Customer " + CustomerID;
+            return "CustomerView " + CompanyName;
         }
     }
 }

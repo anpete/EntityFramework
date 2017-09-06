@@ -242,7 +242,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                     .QuerySourceRequiresMaterialization(_querySource)
                 || QueryModelVisitor.RequiresClientEval)
             {
-                var materializer
+                var materializerExpression 
                     = _materializerFactory
                         .CreateMaterializer(
                             entityType,
@@ -252,7 +252,9 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                                     p,
                                     _querySource),
                             _querySource,
-                            out var typeIndexMap).Compile();
+                            out var typeIndexMap);
+
+                var materializer = materializerExpression.Compile();
 
                 shaper
                     = (Shaper)_createEntityShaperMethodInfo.MakeGenericMethod(elementType)
