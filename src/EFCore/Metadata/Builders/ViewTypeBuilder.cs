@@ -37,22 +37,22 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
         private InternalEntityTypeBuilder Builder { [DebuggerStepThrough] get; }
 
         /// <summary>
-        ///     The entity type being configured.
+        ///     The view type being configured.
         /// </summary>
         public virtual IMutableEntityType Metadata => Builder.Metadata;
 
         /// <summary>
-        ///     The model that the entity type belongs to.
+        ///     The model that the view type belongs to.
         /// </summary>
         IMutableModel IInfrastructure<IMutableModel>.Instance => Builder.ModelBuilder.Metadata;
 
         /// <summary>
-        ///     Gets the internal builder being used to configure the entity type.
+        ///     Gets the internal builder being used to configure the view type.
         /// </summary>
         InternalEntityTypeBuilder IInfrastructure<InternalEntityTypeBuilder>.Instance => Builder;
 
         /// <summary>
-        ///     Adds or updates an annotation on the entity type. If an annotation with the key specified in
+        ///     Adds or updates an annotation on the view type. If an annotation with the key specified in
         ///     <paramref name="annotation" /> already exists its value will be updated.
         /// </summary>
         /// <param name="annotation"> The key of the annotation to be added or updated. </param>
@@ -69,7 +69,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
         }
 
         /// <summary>
-        ///     Sets the base type of this entity in an inheritance hierarchy.
+        ///     Sets the base type of this view in an inheritance hierarchy.
         /// </summary>
         /// <param name="name"> The name of the base type. </param>
         /// <returns> The same builder instance so that multiple configuration calls can be chained. </returns>
@@ -79,26 +79,26 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
         }
 
         /// <summary>
-        ///     Sets the base type of this entity in an inheritance hierarchy.
+        ///     Sets the base type of this view in an inheritance hierarchy.
         /// </summary>
-        /// <param name="entityType"> The base type. </param>
+        /// <param name="viewType"> The base type. </param>
         /// <returns> The same builder instance so that multiple configuration calls can be chained. </returns>
-        public virtual ViewTypeBuilder HasBaseType([CanBeNull] Type entityType)
+        public virtual ViewTypeBuilder HasBaseType([CanBeNull] Type viewType)
         {
-            return new ViewTypeBuilder(Builder.HasBaseType(entityType, ConfigurationSource.Explicit));
+            return new ViewTypeBuilder(Builder.HasBaseType(viewType, ConfigurationSource.Explicit));
         }
 
         /// <summary>
         ///     <para>
-        ///         Returns an object that can be used to configure a property of the entity type.
+        ///         Returns an object that can be used to configure a property of the view type.
         ///         If no property with the given name exists, then a new property will be added.
         ///     </para>
         ///     <para>
-        ///         When adding a new property, if a property with the same name exists in the entity class
-        ///         then it will be added to the model. If no property exists in the entity class, then
+        ///         When adding a new property, if a property with the same name exists in the view class
+        ///         then it will be added to the model. If no property exists in the view class, then
         ///         a new shadow state property will be added. A shadow state property is one that does not have a
-        ///         corresponding property in the entity class. The current value for the property is stored in
-        ///         the <see cref="ChangeTracker" /> rather than being stored in instances of the entity class.
+        ///         corresponding property in the view class. The current value for the property is stored in
+        ///         the <see cref="ChangeTracker" /> rather than being stored in instances of the view class.
         ///     </para>
         /// </summary>
         /// <typeparam name="TProperty"> The type of the property to be configured. </typeparam>
@@ -115,15 +115,15 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
 
         /// <summary>
         ///     <para>
-        ///         Returns an object that can be used to configure a property of the entity type.
+        ///         Returns an object that can be used to configure a property of the view type.
         ///         If no property with the given name exists, then a new property will be added.
         ///     </para>
         ///     <para>
-        ///         When adding a new property, if a property with the same name exists in the entity class
-        ///         then it will be added to the model. If no property exists in the entity class, then
+        ///         When adding a new property, if a property with the same name exists in the view class
+        ///         then it will be added to the model. If no property exists in the view class, then
         ///         a new shadow state property will be added. A shadow state property is one that does not have a
-        ///         corresponding property in the entity class. The current value for the property is stored in
-        ///         the <see cref="ChangeTracker" /> rather than being stored in instances of the entity class.
+        ///         corresponding property in the view class. The current value for the property is stored in
+        ///         the <see cref="ChangeTracker" /> rather than being stored in instances of the view class.
         ///     </para>
         /// </summary>
         /// <param name="propertyType"> The type of the property to be configured. </param>
@@ -140,12 +140,12 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
 
         /// <summary>
         ///     <para>
-        ///         Returns an object that can be used to configure a property of the entity type.
+        ///         Returns an object that can be used to configure a property of the view type.
         ///         If no property with the given name exists, then a new property will be added.
         ///     </para>
         ///     <para>
         ///         When adding a new property with this overload the property name must match the
-        ///         name of a CLR property or field on the entity type. This overload cannot be used to
+        ///         name of a CLR property or field on the view type. This overload cannot be used to
         ///         add a new shadow state property.
         ///     </para>
         /// </summary>
@@ -160,10 +160,10 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
         }
 
         /// <summary>
-        ///     Excludes the given property from the entity type. This method is typically used to remove properties
-        ///     from the entity type that were added by convention.
+        ///     Excludes the given property from the view type. This method is typically used to remove properties
+        ///     from the view type that were added by convention.
         /// </summary>
-        /// <param name="propertyName"> The name of then property to be removed from the entity type. </param>
+        /// <param name="propertyName"> The name of then property to be removed from the view type. </param>
         public virtual ViewTypeBuilder Ignore([NotNull] string propertyName)
         {
             Check.NotEmpty(propertyName, nameof(propertyName));
@@ -175,10 +175,10 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
 
         /// <summary>
         ///     Specifies a LINQ predicate expression that will automatically be applied to any queries targeting
-        ///     this entity type.
+        ///     this view type.
         /// </summary>
         /// <param name="filter">The LINQ predicate expression.</param>
-        /// <returns> An object that can be used to configure the entity type. </returns>
+        /// <returns> An object that can be used to configure the view type. </returns>
         public virtual ViewTypeBuilder HasQueryFilter([CanBeNull] LambdaExpression filter)
         {
             Builder.HasQueryFilter(filter);
@@ -200,7 +200,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
 
         /// <summary>
         ///     <para>
-        ///         Configures a relationship where this entity type has a reference that points
+        ///         Configures a relationship where this view type has a reference that points
         ///         to a single instance of the other type in the relationship.
         ///     </para>
         ///     <para>
@@ -211,9 +211,9 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
         ///         produce a valid relationship.
         ///     </para>
         /// </summary>
-        /// <param name="relatedType"> The entity type that this relationship targets. </param>
+        /// <param name="relatedType"> The view type that this relationship targets. </param>
         /// <param name="navigationName">
-        ///     The name of the reference navigation property on this entity type that represents the relationship. If
+        ///     The name of the reference navigation property on this view type that represents the relationship. If
         ///     no property is specified, the relationship will be configured without a navigation property on this
         ///     end.
         /// </param>
@@ -239,7 +239,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
 
         /// <summary>
         ///     <para>
-        ///         Configures a relationship where this entity type has a reference that points
+        ///         Configures a relationship where this view type has a reference that points
         ///         to a single instance of the other type in the relationship.
         ///     </para>
         ///     <para>
@@ -250,9 +250,9 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
         ///         produce a valid relationship.
         ///     </para>
         /// </summary>
-        /// <param name="relatedTypeName"> The name of the entity type that this relationship targets. </param>
+        /// <param name="relatedTypeName"> The name of the view type that this relationship targets. </param>
         /// <param name="navigationName">
-        ///     The name of the reference navigation property on this entity type that represents the relationship. If
+        ///     The name of the reference navigation property on this view type that represents the relationship. If
         ///     no property is specified, the relationship will be configured without a navigation property on this
         ///     end.
         /// </param>
@@ -278,20 +278,20 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
 
         /// <summary>
         ///     <para>
-        ///         Sets the <see cref="PropertyAccessMode" /> to use for all properties of this entity type.
+        ///         Sets the <see cref="PropertyAccessMode" /> to use for all properties of this view type.
         ///     </para>
         ///     <para>
         ///         By default, the backing field, if one is found by convention or has been specified, is used when
         ///         new objects are constructed, typically when entities are queried from the database.
         ///         Properties are used for all other accesses.  Calling this method witll change that behavior
-        ///         for all properties of this entity type as described in the <see cref="PropertyAccessMode" /> enum.
+        ///         for all properties of this view type as described in the <see cref="PropertyAccessMode" /> enum.
         ///     </para>
         ///     <para>
-        ///         Calling this method overrrides for all properties of this entity type any access mode that was
+        ///         Calling this method overrrides for all properties of this view type any access mode that was
         ///         set on the model.
         ///     </para>
         /// </summary>
-        /// <param name="propertyAccessMode"> The <see cref="PropertyAccessMode" /> to use for properties of this entity type. </param>
+        /// <param name="propertyAccessMode"> The <see cref="PropertyAccessMode" /> to use for properties of this view type. </param>
         /// <returns> The same builder instance so that multiple configuration calls can be chained. </returns>
         public virtual ViewTypeBuilder UsePropertyAccessMode(PropertyAccessMode propertyAccessMode)
         {

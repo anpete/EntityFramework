@@ -1798,6 +1798,22 @@ namespace Microsoft.EntityFrameworkCore.Internal
                     CoreEventId.DuplicateDependentEntityTypeInstanceWarning,
                     _resourceManager.GetString("LogDuplicateDependentEntityTypeInstance")));
 
+        /// <summary>
+        ///     Cannot create a DbSet for '{typeName}' because it is a view type. Use the DbContext.View method to create a DbView instead.
+        /// </summary>
+        public static string InvalidSetTypeView([CanBeNull] object typeName)
+            => string.Format(
+                GetString("InvalidSetTypeView", nameof(typeName)),
+                typeName);
+
+        /// <summary>
+        ///     Cannot create a DbView for '{typeName}' because it is not a view type. Use the DbContext.Set method to create a DbSet instead.
+        /// </summary>
+        public static string InvalidSetTypeEntity([CanBeNull] object typeName)
+            => string.Format(
+                GetString("InvalidSetTypeEntity", nameof(typeName)),
+                typeName);
+
         private static string GetString(string name, params string[] formatterNames)
         {
             var value = _resourceManager.GetString(name);

@@ -55,9 +55,15 @@ namespace Microsoft.EntityFrameworkCore.Internal
                 }
 
                 _entityType = _context.Model.FindEntityType(typeof(TEntity));
+
                 if (_entityType == null)
                 {
                     throw new InvalidOperationException(CoreStrings.InvalidSetType(typeof(TEntity).ShortDisplayName()));
+                }
+
+                if (_entityType.IsViewType())
+                {
+                    throw new InvalidOperationException(CoreStrings.InvalidSetTypeView(typeof(TEntity).ShortDisplayName()));
                 }
 
                 return _entityType;

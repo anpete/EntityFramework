@@ -1,6 +1,3 @@
-// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-
 using System;
 using System.Linq.Expressions;
 using JetBrains.Annotations;
@@ -48,7 +45,6 @@ namespace Microsoft.EntityFrameworkCore
         public static ViewTypeBuilder<TView> ToTable<TView>(
             [NotNull] this ViewTypeBuilder<TView> viewTypeBuilder,
             [CanBeNull] string name)
-            where TView : class
             => (ViewTypeBuilder<TView>)ToTable((ViewTypeBuilder)viewTypeBuilder, name);
 
         /// <summary>
@@ -86,7 +82,6 @@ namespace Microsoft.EntityFrameworkCore
             [NotNull] this ViewTypeBuilder<TView> viewTypeBuilder,
             [CanBeNull] string name,
             [CanBeNull] string schema)
-            where TView : class
             => (ViewTypeBuilder<TView>)ToTable((ViewTypeBuilder)viewTypeBuilder, name, schema);
 
         /// <summary>
@@ -159,7 +154,6 @@ namespace Microsoft.EntityFrameworkCore
         public static DiscriminatorBuilder<TDiscriminator> HasDiscriminator<TView, TDiscriminator>(
             [NotNull] this ViewTypeBuilder<TView> viewTypeBuilder,
             [NotNull] Expression<Func<TView, TDiscriminator>> propertyExpression)
-            where TView : class
         {
             Check.NotNull(viewTypeBuilder, nameof(viewTypeBuilder));
             Check.NotNull(propertyExpression, nameof(propertyExpression));

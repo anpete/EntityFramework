@@ -259,10 +259,12 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                 shaper
                     = (Shaper)_createEntityShaperMethodInfo.MakeGenericMethod(elementType)
                         .Invoke(
-                            null, new object[]
+                            obj: null, 
+                            parameters: new object[]
                             {
                                 _querySource,
-                                QueryModelVisitor.QueryCompilationContext.IsTrackingQuery,
+                                QueryModelVisitor.QueryCompilationContext.IsTrackingQuery
+                                    && !entityType.IsViewType(),
                                 entityType.FindPrimaryKey(),
                                 materializer,
                                 typeIndexMap,
@@ -342,10 +344,10 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
             IQuerySource querySource,
             bool trackingQuery,
             IKey key,
-            Func<ValueBuffer, object> materializer,
+            Func<ValueBuffer, TEntity> materializer,
             Dictionary<Type, int[]> typeIndexMap,
             bool useQueryBuffer)
-            where TEntity : class
+            //where TEntity : class
             => !useQueryBuffer
                 ? (IShaper<TEntity>)new UnbufferedEntityShaper<TEntity>(
                     querySource,

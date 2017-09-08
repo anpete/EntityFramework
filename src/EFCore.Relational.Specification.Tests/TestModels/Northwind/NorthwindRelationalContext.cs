@@ -28,6 +28,7 @@ namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
             modelBuilder.Entity<MostExpensiveProduct>().HasKey(mep => mep.TenMostExpensiveProducts);
             
             modelBuilder.View<CustomerView>().ToTable("Customers");
+            modelBuilder.View<ProductSales1997>().ToTable("Product Sales for 1997");
         }
     }
 }

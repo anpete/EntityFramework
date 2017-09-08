@@ -47,12 +47,6 @@ namespace Microsoft.EntityFrameworkCore.Query
         }
 
         [ConditionalFact]
-        public virtual void View_simple()
-        {
-            AssertQuery<CustomerView>(cs => cs.AsNoTracking());
-        }
-
-        [ConditionalFact]
         public virtual void Query_when_evaluatable_queryable_method_call_with_repository()
         {
             using (var context = CreateContext())
