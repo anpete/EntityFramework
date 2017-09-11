@@ -20,6 +20,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
     /// </summary>
     /// <typeparam name="TView"> The view type being configured. </typeparam>
     public class ViewTypeBuilder<TView> : ViewTypeBuilder
+        where TView : class
     {
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used

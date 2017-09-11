@@ -195,15 +195,9 @@ namespace Microsoft.EntityFrameworkCore
         /// <typeparam name="TView"> The view type to be configured. </typeparam>
         /// <returns> An object that can be used to configure the view type. </returns>
         public virtual ViewTypeBuilder<TView> View<TView>()
+            where TView : class
         {
-            var internalEntityTypeBuilder = Builder.Entity(typeof(TView), ConfigurationSource.Explicit);
-            var keyProperty = internalEntityTypeBuilder.Metadata.GetOrAddProperty("__ViewTypeKey__", typeof(int));
-
-            internalEntityTypeBuilder.Metadata.SetPrimaryKey(keyProperty);
-
-            internalEntityTypeBuilder.HasAnnotation(CoreAnnotationNames.IsViewTypeAnnotation, new object(), ConfigurationSource.Explicit);
-            
-            return new ViewTypeBuilder<TView>(internalEntityTypeBuilder);
+            return new ViewTypeBuilder<TView>(Builder.View(typeof(TView)));
         }
 
         /// <summary>

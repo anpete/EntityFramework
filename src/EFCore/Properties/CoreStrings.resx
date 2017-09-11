@@ -796,4 +796,10 @@
   <data name="InvalidSetTypeEntity" xml:space="preserve">
     <value>Cannot create a DbView for '{typeName}' because it is not a view type. Use the DbContext.Set method to create a DbSet instead.</value>
   </data>
+  <data name="ViewTypeCannotBePrincipal" xml:space="preserve">
+    <value>Unable to create a foreign key with the view type '{viewType}' as the principal type. Only entity types are allowed as foreign key principal types.</value>
+  </data>
+  <data name="ViewTypeNotValid" xml:space="preserve">
+    <value>Unable to track an instance of type '{type}' because it is a view type. Only entity types may be tracked.</value>
+  </data>
 </root>

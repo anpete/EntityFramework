@@ -63,6 +63,8 @@ namespace Microsoft.EntityFrameworkCore.Internal
 
                 if (_entityType.IsViewType())
                 {
+                    _entityType = null;
+
                     throw new InvalidOperationException(CoreStrings.InvalidSetTypeView(typeof(TEntity).ShortDisplayName()));
                 }
 

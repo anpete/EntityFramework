@@ -20,6 +20,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                 { typeof(Customer), e => e.CustomerID },
                 { typeof(CustomerView), e => e.CompanyName },
                 { typeof(Order), e => e.OrderID },
+                { typeof(OrderView), e => e.CustomerID },
                 { typeof(Employee), e => e.EmployeeID },
                 { typeof(Product), e => e.ProductID },
                 { typeof(OrderDetail), e => e.OrderID.ToString() + " " + e.ProductID.ToString() }

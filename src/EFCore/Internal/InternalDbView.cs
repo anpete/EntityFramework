@@ -20,6 +20,7 @@ namespace Microsoft.EntityFrameworkCore.Internal
     /// </summary>
     public class InternalDbView<TView> :
         DbView<TView>, IQueryable<TView>, IAsyncEnumerableAccessor<TView>, IInfrastructure<IServiceProvider>
+        where TView : class
     {
         private readonly DbContext _context;
         private IEntityType _entityType;
@@ -58,6 +59,8 @@ namespace Microsoft.EntityFrameworkCore.Internal
 
                 if (!_entityType.IsViewType())
                 {
+                    _entityType = null;
+
                     throw new InvalidOperationException(CoreStrings.InvalidSetTypeEntity(typeof(TView).ShortDisplayName()));
                 }
 

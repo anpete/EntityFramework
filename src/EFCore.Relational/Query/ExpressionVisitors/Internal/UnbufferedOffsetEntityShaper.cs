@@ -14,7 +14,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
     ///     directly from your code. This API may change or be removed in future releases.
     /// </summary>
     public class UnbufferedOffsetEntityShaper<TEntity> : UnbufferedEntityShaper<TEntity>
-      //  where TEntity : class
+        where TEntity : class
     {
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used

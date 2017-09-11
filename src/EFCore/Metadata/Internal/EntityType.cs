@@ -71,8 +71,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         public EntityType([NotNull] Type clrType, [NotNull] Model model, ConfigurationSource configurationSource)
             : base(clrType, model, configurationSource)
         {
-            // TODO: Move to validation
-            //Check.ValidEntityType(clrType, nameof(clrType));
+            Check.ValidEntityType(clrType, nameof(clrType));
 
             _properties = new SortedDictionary<string, Property>(new PropertyComparer(this));
             Builder = new InternalEntityTypeBuilder(this, model.Builder);

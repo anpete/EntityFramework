@@ -33,8 +33,9 @@ namespace Microsoft.EntityFrameworkCore
     ///     </para>
     /// </summary>
     /// <typeparam name="TView"> The type of view being operated on by this view. </typeparam>
-    public class DbView<TView>
+    public abstract class DbView<TView>
         : IQueryable<TView>, IAsyncEnumerableAccessor<TView>, IInfrastructure<IServiceProvider>
+        where TView : class
     {
         /// <summary>
         ///     Returns an <see cref="IEnumerator{T}" /> which when enumerated will execute a query against the database

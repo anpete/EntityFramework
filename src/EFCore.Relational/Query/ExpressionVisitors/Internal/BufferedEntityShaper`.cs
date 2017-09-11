@@ -16,7 +16,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
     ///     directly from your code. This API may change or be removed in future releases.
     /// </summary>
     public class BufferedEntityShaper<TEntity> : EntityShaper, IShaper<TEntity>
-      //where TEntity : class
+        where TEntity : class
     {
         private readonly Dictionary<Type, int[]> _typeIndexMap;
 
@@ -28,7 +28,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             [NotNull] IQuerySource querySource,
             bool trackingQuery,
             [NotNull] IKey key,
-            [NotNull] Func<ValueBuffer, TEntity> materializer,
+            [NotNull] Func<ValueBuffer, object> materializer,
             [CanBeNull] Dictionary<Type, int[]> typeIndexMap)
             : base(querySource, trackingQuery, key, materializer)
         {

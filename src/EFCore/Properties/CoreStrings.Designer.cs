@@ -1814,6 +1814,22 @@ namespace Microsoft.EntityFrameworkCore.Internal
                 GetString("InvalidSetTypeEntity", nameof(typeName)),
                 typeName);
 
+        /// <summary>
+        ///     Unable to create a foreign key with the view type '{viewType}' as the principal type. Only entity types are allowed as foreign key principal types.
+        /// </summary>
+        public static string ViewTypeCannotBePrincipal([CanBeNull] object viewType)
+            => string.Format(
+                GetString("ViewTypeCannotBePrincipal", nameof(viewType)),
+                viewType);
+
+        /// <summary>
+        ///     Unable to track an instance of type '{type}' because it is a view type. Only entity types may be tracked.
+        /// </summary>
+        public static string ViewTypeNotValid([CanBeNull] object type)
+            => string.Format(
+                GetString("ViewTypeNotValid", nameof(type)),
+                type);
+
         private static string GetString(string name, params string[] formatterNames)
         {
             var value = _resourceManager.GetString(name);

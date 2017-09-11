@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq.Expressions;
+using System.Reflection;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query.Internal;
@@ -17,9 +18,15 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
     /// </summary>
     public class InMemoryEntityQueryableExpressionVisitor : EntityQueryableExpressionVisitor
     {
-        private readonly IModel _model;
+        private static readonly PropertyInfo _queryContextContextPropertyInfo
+            = typeof(QueryContext)
+                .GetTypeInfo()
+                .GetDeclaredProperty(nameof(QueryContext.Context));
+
         private readonly IMaterializerFactory _materializerFactory;
+        private readonly IModel _model;
         private readonly IQuerySource _querySource;
+        private readonly IQueryCompiler _queryCompiler;
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -29,19 +36,22 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             [NotNull] IModel model,
             [NotNull] IMaterializerFactory materializerFactory,
             [NotNull] EntityQueryModelVisitor entityQueryModelVisitor,
+            [NotNull] IQueryCompiler queryCompiler,
             [CanBeNull] IQuerySource querySource)
             : base(Check.NotNull(entityQueryModelVisitor, nameof(entityQueryModelVisitor)))
         {
             Check.NotNull(model, nameof(model));
             Check.NotNull(materializerFactory, nameof(materializerFactory));
+            Check.NotNull(queryCompiler, nameof(queryCompiler));
 
             _model = model;
             _materializerFactory = materializerFactory;
             _querySource = querySource;
+            _queryCompiler = queryCompiler;
         }
 
         private new InMemoryQueryModelVisitor QueryModelVisitor
-            => (InMemoryQueryModelVisitor)base.QueryModelVisitor;
+            => (InMemoryQueryModelVisitor) base.QueryModelVisitor;
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -53,6 +63,21 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
             var entityType = QueryModelVisitor.QueryCompilationContext.FindEntityType(_querySource)
                              ?? _model.FindEntityType(elementType);
+
+            if (entityType.IsViewType())
+            {
+                var query = entityType.FindAnnotation("query");
+
+                if (query != null)
+                {
+                    return Expression.Invoke(
+                        Expression.Constant(query.Value),
+                        Expression.Property(
+                            EntityQueryModelVisitor.QueryContextParameter,
+                            _queryContextContextPropertyInfo));
+                }
+                throw new InvalidOperationException();
+            }
 
             if (QueryModelVisitor.QueryCompilationContext
                 .QuerySourceRequiresMaterialization(_querySource))

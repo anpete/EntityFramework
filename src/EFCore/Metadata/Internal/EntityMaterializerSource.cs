@@ -145,9 +145,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
             var constructorInfo = entityType.ClrType.GetDeclaredConstructor(null);
 
-            if (constructorInfo == null
-                && (!entityType.IsViewType()
-                    || entityType.ClrType.GetTypeInfo().IsClass))
+            if (constructorInfo == null)
             {
                 throw new InvalidOperationException(CoreStrings.NoParameterlessConstructor(entityType.DisplayName()));
             }
@@ -159,9 +157,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 {
                     Expression.Assign(
                         instanceVariable,
-                        constructorInfo != null
-                            ? (Expression)Expression.New(constructorInfo)
-                            : Expression.Default(entityType.ClrType))
+                        Expression.New(constructorInfo))
                 };
 
             blockExpressions.AddRange(

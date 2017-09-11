@@ -3,7 +3,7 @@
 
 namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
 {
-    public struct ProductSales1997
+    public class ProductSales1997
     {
         public string CategoryName { get; private set; }
         public string ProductName { get; private set; }

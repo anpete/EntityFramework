@@ -55,7 +55,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 var propertyExpressions = new List<Expression>();
                 var blockExpressions = new List<Expression>();
 
-                if (trackingQuery)
+                var entityType 
+                    = queryCompilationContext.FindEntityType(targetQuerySourceReferenceExpression.ReferencedQuerySource)
+                          ?? queryCompilationContext.Model.FindEntityType(entityParameter.Type);
+
+                if (trackingQuery
+                    && !entityType.IsViewType())
                 {
                     blockExpressions.Add(
                         Expression.Call(
@@ -64,9 +69,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                 nameof(QueryContext.QueryBuffer)),
                             _queryBufferStartTrackingMethodInfo,
                             entityParameter,
-                            Expression.Constant(
-                                queryCompilationContext.FindEntityType(targetQuerySourceReferenceExpression.ReferencedQuerySource)
-                                ?? queryCompilationContext.Model.FindEntityType(entityParameter.Type))));
+                            Expression.Constant(entityType)));
                 }
 
                 var includedIndex = 0;
@@ -88,7 +91,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 if (blockExpressions.Count > 1
                     || blockExpressions.Count == 1
-                    && !trackingQuery)
+                    && (!trackingQuery || entityType.IsViewType()))
                 {
                     AwaitTaskExpressions(asyncQuery, blockExpressions);
 

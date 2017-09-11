@@ -269,6 +269,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
                                 materializer,
                                 typeIndexMap,
                                 QueryModelVisitor.QueryCompilationContext.IsQueryBufferRequired
+                                    && !entityType.IsViewType()
                             });
             }
             else
@@ -344,10 +345,10 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors
             IQuerySource querySource,
             bool trackingQuery,
             IKey key,
-            Func<ValueBuffer, TEntity> materializer,
+            Func<ValueBuffer, object> materializer,
             Dictionary<Type, int[]> typeIndexMap,
             bool useQueryBuffer)
-            //where TEntity : class
+            where TEntity : class
             => !useQueryBuffer
                 ? (IShaper<TEntity>)new UnbufferedEntityShaper<TEntity>(
                     querySource,

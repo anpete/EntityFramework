@@ -9,4 +9,11 @@ namespace Microsoft.EntityFrameworkCore.TestModels.Inheritance
         public string Name { get; set; }
         public int CountryId { get; set; }
     }
+
+    public abstract class AnimalView
+    {
+        public string Species { get; set; }
+        public string Name { get; set; }
+        public int CountryId { get; set; }
+    }
 }

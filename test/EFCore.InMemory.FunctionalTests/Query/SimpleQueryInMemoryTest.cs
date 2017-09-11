@@ -15,7 +15,12 @@ namespace Microsoft.EntityFrameworkCore.Query
             ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestLoggerFactory.TestOutputHelper = testOutputHelper;
+            TestLoggerFactory.TestOutputHelper = testOutputHelper;
+        }
+
+        public override void View_simple()
+        {
+            base.View_simple();
         }
 
         [Fact(Skip = "See issue #9591")]
