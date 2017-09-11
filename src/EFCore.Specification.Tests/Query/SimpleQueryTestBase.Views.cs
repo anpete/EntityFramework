@@ -25,6 +25,7 @@ namespace Microsoft.EntityFrameworkCore.Query
         // - State manager
         // - Migrations ignores
         // - Query filters
+        // - Defining query parameterization
 
         [ConditionalFact]
         public virtual void View_simple()

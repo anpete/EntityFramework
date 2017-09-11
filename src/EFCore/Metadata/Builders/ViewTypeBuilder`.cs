@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Utilities;
+using System.Linq;
 
 namespace Microsoft.EntityFrameworkCore.Metadata.Builders
 {
@@ -131,46 +132,60 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
                     Check.NotNull(indexExpression, nameof(indexExpression)).GetPropertyAccessList(),
                     ConfigurationSource.Explicit));
 
-//        /// <summary>
-//        ///     <para>
-//        ///         Configures a relationship where this view type has a reference that points
-//        ///         to a single instance of the other type in the relationship.
-//        ///     </para>
-//        ///     <para>
-//        ///         After calling this method, you should chain a call to
-//        ///         <see
-//        ///             cref="ReferenceNavigationBuilder{TView,TRelatedEntity}.WithMany(Expression{Func{TRelatedEntity,IEnumerable{TView}}})" />
-//        ///         or
-//        ///         <see
-//        ///             cref="ReferenceNavigationBuilder{TView,TRelatedEntity}.WithOne(Expression{Func{TRelatedEntity,TView}})" />
-//        ///         to fully configure the relationship. Calling just this method without the chained call will not
-//        ///         produce a valid relationship.
-//        ///     </para>
-//        /// </summary>
-//        /// <typeparam name="TRelatedEntity"> The view type that this relationship targets. </typeparam>
-//        /// <param name="navigationExpression">
-//        ///     A lambda expression representing the reference navigation property on this view type that represents
-//        ///     the relationship (<c>post => post.Blog</c>). If no property is specified, the relationship will be
-//        ///     configured without a navigation property on this end.
-//        /// </param>
-//        /// <returns> An object that can be used to configure the relationship. </returns>
-//        public virtual ReferenceNavigationBuilder<TView, TRelatedEntity> HasOne<TRelatedEntity>(
-//            [CanBeNull] Expression<Func<TView, TRelatedEntity>> navigationExpression = null)
-//            where TRelatedEntity : class
-//        {
-//            var relatedEntityType = Builder.Metadata.FindInDefinitionPath(typeof(TRelatedEntity)) ??
-//                                    Builder.ModelBuilder.Entity(typeof(TRelatedEntity), ConfigurationSource.Explicit)
-//                                        .Metadata;
-//            var navigation = navigationExpression?.GetPropertyAccess();
-//
-//            return new ReferenceNavigationBuilder<TView, TRelatedEntity>(
-//                Builder.Metadata,
-//                relatedEntityType,
-//                navigation,
-//                Builder.Navigation(
-//                    relatedEntityType.Builder, navigation, ConfigurationSource.Explicit,
-//                    Builder.Metadata == relatedEntityType));
-//        }
+        /// <summary>
+        ///     Configures a query used to provide data for a view type.
+        /// </summary>
+        /// <param name="queryFactory"> The query that will provider the underlying data for the view type. </param>
+        /// <returns> The same builder instance so that multiple calls can be chained. </returns>
+        public virtual ViewTypeBuilder<TView> ToQuery([NotNull] Func<DbContext, IQueryable<TView>> queryFactory)
+        {
+            Check.NotNull(queryFactory, nameof(queryFactory));
+
+            Builder.Metadata[CoreAnnotationNames.DefiningQuery] = queryFactory;
+
+            return this;
+        }
+
+        /// <summary>
+        ///     <para>
+        ///         Configures a relationship where this view type has a reference that points
+        ///         to a single instance of the other type in the relationship.
+        ///     </para>
+        ///     <para>
+        ///         After calling this method, you should chain a call to
+        ///         <see
+        ///             cref="ReferenceNavigationBuilder{TView,TRelatedEntity}.WithMany(Expression{Func{TRelatedEntity,IEnumerable{TView}}})" />
+        ///         or
+        ///         <see
+        ///             cref="ReferenceNavigationBuilder{TView,TRelatedEntity}.WithOne(Expression{Func{TRelatedEntity,TView}})" />
+        ///         to fully configure the relationship. Calling just this method without the chained call will not
+        ///         produce a valid relationship.
+        ///     </para>
+        /// </summary>
+        /// <typeparam name="TRelatedEntity"> The view type that this relationship targets. </typeparam>
+        /// <param name="navigationExpression">
+        ///     A lambda expression representing the reference navigation property on this view type that represents
+        ///     the relationship (<c>post => post.Blog</c>). If no property is specified, the relationship will be
+        ///     configured without a navigation property on this end.
+        /// </param>
+        /// <returns> An object that can be used to configure the relationship. </returns>
+        public virtual ReferenceNavigationBuilder<TView, TRelatedEntity> HasOne<TRelatedEntity>(
+            [CanBeNull] Expression<Func<TView, TRelatedEntity>> navigationExpression = null)
+            where TRelatedEntity : class
+        {
+            var relatedEntityType = Builder.Metadata.FindInDefinitionPath(typeof(TRelatedEntity)) ??
+                                    Builder.ModelBuilder.Entity(typeof(TRelatedEntity), ConfigurationSource.Explicit)
+                                        .Metadata;
+            var navigation = navigationExpression?.GetPropertyAccess();
+
+            return new ReferenceNavigationBuilder<TView, TRelatedEntity>(
+                Builder.Metadata,
+                relatedEntityType,
+                navigation,
+                Builder.Navigation(
+                    relatedEntityType.Builder, navigation, ConfigurationSource.Explicit,
+                    Builder.Metadata == relatedEntityType));
+        }
 
         /// <summary>
         ///     <para>

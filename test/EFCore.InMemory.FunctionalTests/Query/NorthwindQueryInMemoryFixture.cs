@@ -1,6 +1,3 @@
-// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-
 using System;
 using System.Linq;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -28,20 +25,27 @@ namespace Microsoft.EntityFrameworkCore.Query
                 base.OnModelCreating(modelBuilder);
 
                 modelBuilder.View<CustomerView>()
-                    .ToQuery(db =>
-                        db.Set<Customer>()
-                            .Select(c => new CustomerView
-                            {
-                                Address = c.Address,
-                                City = c.City,
-                                CompanyName = c.CompanyName,
-                                ContactName = c.ContactName,
-                                ContactTitle = c.ContactTitle
-                            }));
+                    .ToQuery(context => context.Set<Customer>()
+                        .Select(c => new CustomerView
+                        {
+                            Address = c.Address,
+                            City = c.City,
+                            CompanyName = c.CompanyName,
+                            ContactName = c.ContactName,
+                            ContactTitle = c.ContactTitle
+                        }));
 
 
-                //            modelBuilder.View<OrderView>().HasQuery("Orders");
-                //            modelBuilder.View<ProductSales1997>().HasQuery("Product Sales for 1997");
+                modelBuilder.View<OrderView>()
+                    .ToQuery(context => context.Set<Order>()
+                        .Include(o => o.Customer)
+                        .Select(o => new OrderView
+                        {
+                            CustomerID = o.CustomerID,
+                            Customer = o.Customer
+                        }));
+
+                //modelBuilder.View<ProductSales1997>().ToQuery("Product Sales for 1997");
             }
         }
     }

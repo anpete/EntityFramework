@@ -18,11 +18,6 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
     /// </summary>
     public class InMemoryEntityQueryableExpressionVisitor : EntityQueryableExpressionVisitor
     {
-        private static readonly PropertyInfo _queryContextContextPropertyInfo
-            = typeof(QueryContext)
-                .GetTypeInfo()
-                .GetDeclaredProperty(nameof(QueryContext.Context));
-
         private readonly IMaterializerFactory _materializerFactory;
         private readonly IModel _model;
         private readonly IQuerySource _querySource;
@@ -47,7 +42,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         }
 
         private new InMemoryQueryModelVisitor QueryModelVisitor
-            => (InMemoryQueryModelVisitor) base.QueryModelVisitor;
+            => (InMemoryQueryModelVisitor)base.QueryModelVisitor;
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
