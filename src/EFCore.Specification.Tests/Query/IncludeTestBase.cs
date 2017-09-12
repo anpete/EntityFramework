@@ -282,6 +282,56 @@ namespace Microsoft.EntityFrameworkCore.Query
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
+        public virtual void Include_collection_on_user_materialized(bool useString)
+        {
+            using (var context = CreateContext())
+            {
+                var customers
+                    = useString
+                        ? context.Set<Customer>()
+                            .Select(c => new Customer { CustomerID = c.CustomerID })
+                            .Include("Orders")
+                            .ToList()
+                        : context.Set<Customer>()
+                            .Select(c => new Customer { CustomerID = c.CustomerID })
+                            .Include(c => c.Orders)
+                            .ToList();
+
+                Assert.Equal(91, customers.Count);
+                Assert.Equal(830, customers.Where(c => c.Orders != null).SelectMany(c => c.Orders).Count());
+                Assert.True(customers.Where(c => c.Orders != null).SelectMany(c => c.Orders).All(o => o.Customer != null));
+                Assert.Equal(0, context.ChangeTracker.Entries().Count());
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public virtual void Include_collection_on_user_materialized_no_pk_projected(bool useString)
+        {
+            using (var context = CreateContext())
+            {
+                var customers
+                    = useString
+                        ? context.Set<Customer>()
+                            .Select(c => new Customer { CompanyName = c.CompanyName })
+                            .Include("Orders")
+                            .ToList()
+                        : context.Set<Customer>()
+                            .Select(c => new Customer { CompanyName = c.CompanyName })
+                            .Include(c => c.Orders)
+                            .ToList();
+
+                Assert.Equal(91, customers.Count);
+                Assert.Equal(830, customers.Where(c => c.Orders != null).SelectMany(c => c.Orders).Count());
+                Assert.True(customers.Where(c => c.Orders != null).SelectMany(c => c.Orders).All(o => o.Customer != null));
+                Assert.Equal(0, context.ChangeTracker.Entries().Count());
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
         public virtual void Include_collection_then_reference(bool useString)
         {
             using (var context = CreateContext())
@@ -2188,6 +2238,164 @@ namespace Microsoft.EntityFrameworkCore.Query
                         productLoaded: false,
                         ordersLoaded: false);
                 }
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public virtual void Include_reference_on_user_materialized(bool useString)
+        {
+            using (var context = CreateContext())
+            {
+                var orders
+                    = useString
+                        ? context.Set<Order>()
+                            .Select(o => new Order {OrderID = o.OrderID, CustomerID = o.CustomerID})
+                            .Include("Customer")
+                            .ToList()
+                        : context.Set<Order>()
+                            .Select(o => new Order {OrderID = o.OrderID, CustomerID = o.CustomerID})
+                            .Include(o => o.Customer)
+                            .ToList();
+
+                Assert.Equal(830, orders.Count);
+                Assert.True(orders.All(o => o.Customer != null));
+                Assert.Equal(89, orders.Select(o => o.Customer).Distinct().Count());
+                Assert.Equal(0, context.ChangeTracker.Entries().Count());
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public virtual void Include_reference_on_user_materialized_no_fk_projected(bool useString)
+        {
+            using (var context = CreateContext())
+            {
+                var orders
+                    = useString
+                        ? context.Set<Order>()
+                            .Select(o => new Order { OrderID = o.OrderID })
+                            .Include("Customer")
+                            .ToList()
+                        : context.Set<Order>()
+                            .Select(o => new Order { OrderID = o.OrderID })
+                            .Include(o => o.Customer)
+                            .ToList();
+
+                Assert.Equal(830, orders.Count);
+                Assert.True(orders.All(o => o.Customer != null));
+                Assert.Equal(89, orders.Select(o => o.Customer).Distinct().Count());
+                Assert.Equal(0, context.ChangeTracker.Entries().Count());
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public virtual void Include_reference_on_user_materialized_no_pk_projected(bool useString)
+        {
+            using (var context = CreateContext())
+            {
+                var orders
+                    = useString
+                        ? context.Set<Order>()
+                            .Select(o => new Order { CustomerID = o.CustomerID })
+                            .Include("Customer")
+                            .ToList()
+                        : context.Set<Order>()
+                            .Select(o => new Order { CustomerID = o.CustomerID })
+                            .Include(o => o.Customer)
+                            .ToList();
+
+                Assert.Equal(830, orders.Count);
+                Assert.True(orders.All(o => o.Customer != null));
+                Assert.Equal(89, orders.Select(o => o.Customer).Distinct().Count());
+                Assert.Equal(0, context.ChangeTracker.Entries().Count());
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public virtual void Include_reference_on_user_materialized2(bool useString)
+        {
+            using (var context = CreateContext())
+            {
+                var orders
+                    = useString
+                        ? context.Set<Order>()
+                            .Include("Customer")
+                            .Select(o => new Order { OrderID = o.OrderID, CustomerID = o.CustomerID })
+                            .ToList()
+                        : context.Set<Order>()
+                            .Include(o => o.Customer)
+                            .Select(o => new Order { OrderID = o.OrderID, CustomerID = o.CustomerID })
+                            .ToList();
+
+                Assert.Equal(830, orders.Count);
+                Assert.True(orders.All(o => o.Customer != null));
+                Assert.Equal(89, orders.Select(o => o.Customer).Distinct().Count());
+                Assert.Equal(0, context.ChangeTracker.Entries().Count());
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public virtual void Include_reference_on_user_materialized3(bool useString)
+        {
+            using (var context = CreateContext())
+            {
+                var orders
+                    = useString
+                        ? context.Set<Order>()
+                            .OrderBy(o => o.OrderID)
+                            .Take(5)
+                            .Select(o => new Order { OrderID = o.OrderID, CustomerID = o.CustomerID })
+                            .Include("Customer")
+                            .ToList()
+                        : context.Set<Order>()
+                            .OrderBy(o => o.OrderID)
+                            .Take(5)
+                            .Select(o => new Order { OrderID = o.OrderID, CustomerID = o.CustomerID })
+                            .Include(o => o.Customer)
+                            .ToList();
+
+                Assert.Equal(5, orders.Count);
+                Assert.True(orders.All(o => o.Customer != null));
+                Assert.Equal(5, orders.Select(o => o.Customer).Distinct().Count());
+                Assert.Equal(0, context.ChangeTracker.Entries().Count());
+            }
+        }
+        
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public virtual void Include_reference_on_user_materialized4(bool useString)
+        {
+            using (var context = CreateContext())
+            {
+                var orders
+                    = useString
+                        ? context.Set<Order>()
+                            .Include("Customer")
+                            .OrderBy(o => o.OrderID)
+                            .Take(5)
+                            .Select(o => new Order { OrderID = o.OrderID, CustomerID = o.CustomerID })
+                            .ToList()
+                        : context.Set<Order>()
+                            .Include(o => o.Customer)
+                            .OrderBy(o => o.OrderID)
+                            .Take(5)
+                            .Select(o => new Order { OrderID = o.OrderID, CustomerID = o.CustomerID })
+                            .ToList();
+
+                Assert.Equal(5, orders.Count);
+                Assert.True(orders.All(o => o.Customer != null));
+                Assert.Equal(5, orders.Select(o => o.Customer).Distinct().Count());
+                Assert.Equal(0, context.ChangeTracker.Entries().Count());
             }
         }
 

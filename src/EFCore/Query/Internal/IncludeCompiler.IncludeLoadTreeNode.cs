@@ -1,5 +1,5 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+﻿// // Copyright (c) .NET Foundation. All rights reserved.
+// // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Extensions.Internal;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -118,7 +117,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     trackingQuery,
                     asyncQuery,
                     ref collectionIncludeId,
-                    querySourceReferenceExpression);
+                    querySourceReferenceExpression,
+                    null);
 
                 Expression collectionLambdaExpression
                     = Expression.Lambda<Func<IEnumerable<object>>>(

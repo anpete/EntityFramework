@@ -15,7 +15,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             : base(fixture)
         {
             fixture.TestSqlLoggerFactory.Clear();
-            //fixture.TestSqlLoggerFactory.SetTestOutputHelper(testOutputHelper);
+            fixture.TestSqlLoggerFactory.SetTestOutputHelper(testOutputHelper);
         }
 
         public override void Include_list(bool useString)
@@ -47,6 +47,73 @@ FROM [Orders] AS [o]
 LEFT JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[CustomerID]");
         }
 
+        public override void Include_reference_on_user_materialized(bool useString)
+        {
+            base.Include_reference_on_user_materialized(useString);
+
+            AssertSql(
+                @"SELECT [o.Customer].[CustomerID], [o.Customer].[Address], [o.Customer].[City], [o.Customer].[CompanyName], [o.Customer].[ContactName], [o.Customer].[ContactTitle], [o.Customer].[Country], [o.Customer].[Fax], [o.Customer].[Phone], [o.Customer].[PostalCode], [o.Customer].[Region], [o].[OrderID], [o].[CustomerID]
+FROM [Orders] AS [o]
+LEFT JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[CustomerID]");
+        }
+
+
+        public override void Include_reference_on_user_materialized_no_fk_projected(bool useString)
+        {
+            base.Include_reference_on_user_materialized_no_fk_projected(useString);
+
+            AssertSql(
+                @"SELECT [o.Customer].[CustomerID], [o.Customer].[Address], [o.Customer].[City], [o.Customer].[CompanyName], [o.Customer].[ContactName], [o.Customer].[ContactTitle], [o.Customer].[Country], [o.Customer].[Fax], [o.Customer].[Phone], [o.Customer].[PostalCode], [o.Customer].[Region], [o].[OrderID]
+FROM [Orders] AS [o]
+LEFT JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[CustomerID]");
+        }
+
+        public override void Include_reference_on_user_materialized_no_pk_projected(bool useString)
+        {
+            base.Include_reference_on_user_materialized_no_pk_projected(useString);
+
+            AssertSql(
+                @"SELECT [o.Customer].[CustomerID], [o.Customer].[Address], [o.Customer].[City], [o.Customer].[CompanyName], [o.Customer].[ContactName], [o.Customer].[ContactTitle], [o.Customer].[Country], [o.Customer].[Fax], [o.Customer].[Phone], [o.Customer].[PostalCode], [o.Customer].[Region], [o].[CustomerID]
+FROM [Orders] AS [o]
+LEFT JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[CustomerID]");
+        }
+
+        public override void Include_reference_on_user_materialized2(bool useString)
+        {
+            base.Include_reference_on_user_materialized2(useString);
+
+            AssertSql(
+                @"SELECT [o.Customer].[CustomerID], [o.Customer].[Address], [o.Customer].[City], [o.Customer].[CompanyName], [o.Customer].[ContactName], [o.Customer].[ContactTitle], [o.Customer].[Country], [o.Customer].[Fax], [o.Customer].[Phone], [o.Customer].[PostalCode], [o.Customer].[Region], [o].[OrderID], [o].[CustomerID]
+FROM [Orders] AS [o]
+LEFT JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[CustomerID]");
+        }
+
+        public override void Include_reference_on_user_materialized3(bool useString)
+        {
+            base.Include_reference_on_user_materialized3(useString);
+
+            AssertSql(
+                @"@__p_0='5'
+
+SELECT TOP(@__p_0) [o.Customer].[CustomerID], [o.Customer].[Address], [o.Customer].[City], [o.Customer].[CompanyName], [o.Customer].[ContactName], [o.Customer].[ContactTitle], [o.Customer].[Country], [o.Customer].[Fax], [o.Customer].[Phone], [o.Customer].[PostalCode], [o.Customer].[Region], [o].[OrderID], [o].[CustomerID]
+FROM [Orders] AS [o]
+LEFT JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[CustomerID]
+ORDER BY [o].[OrderID]");
+        }
+
+        public override void Include_reference_on_user_materialized4(bool useString)
+        {
+            base.Include_reference_on_user_materialized4(useString);
+
+            AssertSql(
+                @"@__p_0='5'
+
+SELECT TOP(@__p_0) [o.Customer].[CustomerID], [o.Customer].[Address], [o.Customer].[City], [o.Customer].[CompanyName], [o.Customer].[ContactName], [o.Customer].[ContactTitle], [o.Customer].[Country], [o.Customer].[Fax], [o.Customer].[Phone], [o.Customer].[PostalCode], [o.Customer].[Region], [o].[OrderID], [o].[CustomerID]
+FROM [Orders] AS [o]
+LEFT JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[CustomerID]
+ORDER BY [o].[OrderID]");
+        }
+
         public override void Include_collection(bool useString)
         {
             base.Include_collection(useString);
@@ -63,6 +130,16 @@ INNER JOIN (
     FROM [Customers] AS [c0]
 ) AS [t] ON [c.Orders].[CustomerID] = [t].[CustomerID]
 ORDER BY [t].[CustomerID]");
+        }
+
+        public override void Include_collection_on_user_materialized(bool useString)
+        {
+            base.Include_collection_on_user_materialized(useString);
+        }
+
+        public override void Include_collection_on_user_materialized_no_pk_projected(bool useString)
+        {
+            base.Include_collection_on_user_materialized_no_pk_projected(useString);
         }
 
         public override void Include_collection_with_last(bool useString)

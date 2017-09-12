@@ -47,7 +47,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 bool trackingQuery,
                 bool asyncQuery,
                 ref int collectionIncludeId,
-                QuerySourceReferenceExpression targetQuerySourceReferenceExpression)
+                QuerySourceReferenceExpression targetQuerySourceReferenceExpression,
+                MemberInitExpression userMaterializationExpression)
             {
                 var entityParameter
                     = Expression.Parameter(targetQuerySourceReferenceExpression.Type, name: "entity");
@@ -55,7 +56,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 var propertyExpressions = new List<Expression>();
                 var blockExpressions = new List<Expression>();
 
-                if (trackingQuery)
+                var track = trackingQuery && userMaterializationExpression == null;
+
+                if (track)
                 {
                     blockExpressions.Add(
                         Expression.Call(
@@ -80,7 +83,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             targetQuerySourceReferenceExpression,
                             entityParameter,
                             propertyExpressions,
-                            trackingQuery,
+                            track,
                             asyncQuery,
                             ref includedIndex,
                             ref collectionIncludeId));
@@ -88,9 +91,13 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 if (blockExpressions.Count > 1
                     || blockExpressions.Count == 1
-                    && !trackingQuery)
+                    && !track)
                 {
                     AwaitTaskExpressions(asyncQuery, blockExpressions);
+
+                    var targetExpression
+                        = userMaterializationExpression 
+                            ?? (Expression)targetQuerySourceReferenceExpression;
 
                     var includeExpression
                         = blockExpressions.Last().Type == typeof(Task)
@@ -99,7 +106,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                     _includeAsyncMethodInfo
                                         .MakeGenericMethod(targetQuerySourceReferenceExpression.Type),
                                     EntityQueryModelVisitor.QueryContextParameter,
-                                    targetQuerySourceReferenceExpression,
+                                    targetExpression,
                                     Expression.NewArrayInit(typeof(object), propertyExpressions),
                                     Expression.Lambda(
                                         Expression.Block(blockExpressions),
@@ -112,7 +119,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             : Expression.Call(
                                 _includeMethodInfo.MakeGenericMethod(targetQuerySourceReferenceExpression.Type),
                                 EntityQueryModelVisitor.QueryContextParameter,
-                                targetQuerySourceReferenceExpression,
+                                targetExpression,
                                 Expression.NewArrayInit(typeof(object), propertyExpressions),
                                 Expression.Lambda(
                                     Expression.Block(typeof(void), blockExpressions),
@@ -120,40 +127,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                     entityParameter,
                                     _includedParameter));
 
-                    ApplyIncludeExpressionsToQueryModel(
-                        queryModel, targetQuerySourceReferenceExpression, includeExpression);
+                    ApplyIncludeExpressionsToQueryModel(queryModel, targetExpression, includeExpression);
                 }
-            }
-
-            protected static void ApplyIncludeExpressionsToQueryModel(
-                QueryModel queryModel,
-                QuerySourceReferenceExpression querySourceReferenceExpression,
-                Expression expression)
-            {
-                var includeReplacingExpressionVisitor = new IncludeReplacingExpressionVisitor();
-
-                foreach (var groupResultOperator
-                    in queryModel.ResultOperators.OfType<GroupResultOperator>())
-                {
-                    var newElementSelector
-                        = includeReplacingExpressionVisitor.Replace(
-                            querySourceReferenceExpression,
-                            expression,
-                            groupResultOperator.ElementSelector);
-
-                    if (!ReferenceEquals(newElementSelector, groupResultOperator.ElementSelector))
-                    {
-                        groupResultOperator.ElementSelector = newElementSelector;
-
-                        return;
-                    }
-                }
-
-                queryModel.SelectClause.TransformExpressions(
-                    e => includeReplacingExpressionVisitor.Replace(
-                        querySourceReferenceExpression,
-                        expression,
-                        e));
             }
 
             protected static void AwaitTaskExpressions(bool asyncQuery, List<Expression> blockExpressions)
@@ -190,6 +165,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     .GetDeclaredMethod(nameof(_AwaitMany));
 
             // ReSharper disable once InconsistentNaming
+
             private static async Task _AwaitMany(IReadOnlyList<Func<Task>> taskFactories)
             {
                 // ReSharper disable once ForCanBeConvertedToForeach
@@ -199,33 +175,68 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 }
             }
 
+            protected static void ApplyIncludeExpressionsToQueryModel(
+                QueryModel queryModel,
+                Expression expression,
+                Expression includeExpression)
+            {
+                var includeReplacingExpressionVisitor = new IncludeReplacingExpressionVisitor();
+
+                foreach (var groupResultOperator
+                    in queryModel.ResultOperators.OfType<GroupResultOperator>())
+                {
+                    var newElementSelector
+                        = includeReplacingExpressionVisitor.Replace(
+                            expression,
+                            includeExpression,
+                            groupResultOperator.ElementSelector);
+
+                    if (!ReferenceEquals(newElementSelector, groupResultOperator.ElementSelector))
+                    {
+                        groupResultOperator.ElementSelector = newElementSelector;
+
+                        return;
+                    }
+                }
+
+                queryModel.SelectClause.TransformExpressions(
+                    e => includeReplacingExpressionVisitor.Replace(
+                        expression,
+                        includeExpression,
+                        e));
+            }
+
             private class IncludeReplacingExpressionVisitor : RelinqExpressionVisitor
             {
-                private QuerySourceReferenceExpression _querySourceReferenceExpression;
+                private Expression _expression;
                 private Expression _includeExpression;
 
                 public Expression Replace(
-                    QuerySourceReferenceExpression querySourceReferenceExpression,
+                    Expression expression,
                     Expression includeExpression,
                     Expression searchedExpression)
                 {
-                    _querySourceReferenceExpression = querySourceReferenceExpression;
+                    _expression = expression;
                     _includeExpression = includeExpression;
 
                     return Visit(searchedExpression);
                 }
 
-                protected override Expression VisitQuerySourceReference(
-                    QuerySourceReferenceExpression querySourceReferenceExpression)
+                public override Expression Visit(Expression expression)
                 {
-                    if (ReferenceEquals(querySourceReferenceExpression, _querySourceReferenceExpression))
+                    if (_expression == null)
                     {
-                        _querySourceReferenceExpression = null;
+                        return expression;
+                    }
+
+                    if (ReferenceEquals(expression, _expression))
+                    {
+                        _expression = null;
 
                         return _includeExpression;
                     }
 
-                    return querySourceReferenceExpression;
+                    return base.Visit(expression);
                 }
             }
         }

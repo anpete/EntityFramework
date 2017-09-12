@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
+using System.Linq.Expressions;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
 {
@@ -13,10 +14,16 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
     {
         private sealed class IncludeLoadTree : IncludeLoadTreeNodeBase
         {
-            public IncludeLoadTree(QuerySourceReferenceExpression querySourceReferenceExpression)
-                => QuerySourceReferenceExpression = querySourceReferenceExpression;
+            public IncludeLoadTree(
+                QuerySourceReferenceExpression querySourceReferenceExpression,
+                MemberInitExpression userMaterializationExpression)
+            {
+                QuerySourceReferenceExpression = querySourceReferenceExpression;
+                UserMaterializationExpression = userMaterializationExpression;
+            }
 
             public QuerySourceReferenceExpression QuerySourceReferenceExpression { get; }
+            public MemberInitExpression UserMaterializationExpression { get; }
 
             public void AddLoadPath(IReadOnlyList<INavigation> navigationPath)
             {
@@ -60,7 +67,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     trackingQuery,
                     asyncQuery,
                     ref collectionIncludeId,
-                    querySourceReferenceExpression);
+                    querySourceReferenceExpression,
+                    UserMaterializationExpression);
             }
         }
     }

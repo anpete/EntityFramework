@@ -122,15 +122,30 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             foreach (var includeResultOperator in _includeResultOperators.ToArray())
             {
+                var outputExpression = queryModel.GetOutputExpression();
+
                 var querySourceReferenceExpression
                     = querySourceTracingExpressionVisitor
                         .FindResultQuerySourceReferenceExpression(
-                            queryModel.GetOutputExpression(),
+                            outputExpression,
                             includeResultOperator.QuerySource);
+
+                MemberInitExpression userMaterializationExpression = null;
 
                 if (querySourceReferenceExpression == null)
                 {
-                    continue;
+                    if (outputExpression is MemberInitExpression memberInitExpression
+                        && outputExpression.Type == includeResultOperator.QuerySource.ItemType)
+                    {
+                        querySourceReferenceExpression
+                            = new QuerySourceReferenceExpression(includeResultOperator.QuerySource);
+
+                        userMaterializationExpression = memberInitExpression;
+                    }
+                    else
+                    {
+                        continue;
+                    }
                 }
 
                 var includeLoadTree
@@ -141,7 +156,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 if (includeLoadTree == null)
                 {
-                    includeLoadTrees.Add(includeLoadTree = new IncludeLoadTree(querySourceReferenceExpression));
+                    includeLoadTrees.Add(includeLoadTree 
+                        = new IncludeLoadTree(querySourceReferenceExpression, userMaterializationExpression));
                 }
 
                 PopulateIncludeLoadTree(includeResultOperator, includeLoadTree);
