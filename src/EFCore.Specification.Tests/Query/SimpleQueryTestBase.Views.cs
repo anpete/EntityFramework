@@ -45,9 +45,9 @@ namespace Microsoft.EntityFrameworkCore.Query
         {
             using (var context = CreateContext())
             {
-                var results = context.View<ProductSales1997>().ToArray();
+                var results = context.View<ProductView>().ToArray();
 
-                Assert.Equal(77, results.Length);
+                Assert.Equal(69, results.Length);
             }
         }
 

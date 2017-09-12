@@ -38,14 +38,20 @@ namespace Microsoft.EntityFrameworkCore.Query
 
                 modelBuilder.View<OrderView>()
                     .ToQuery(context => context.Set<Order>()
-                        .Include(o => o.Customer)
                         .Select(o => new OrderView
                         {
-                            CustomerID = o.CustomerID,
-                            Customer = o.Customer
+                            CustomerID = o.CustomerID
                         }));
 
-                //modelBuilder.View<ProductSales1997>().ToQuery("Product Sales for 1997");
+                modelBuilder.View<ProductView>()
+                    .ToQuery(context => context.Set<Product>()
+                        .Where(p => !p.Discontinued)
+                        .Select(p => new ProductView
+                        {
+                            ProductID = p.ProductID,
+                            ProductName = p.ProductName,
+                            CategoryName = "Food"
+                        }));
             }
         }
     }

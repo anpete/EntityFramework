@@ -25,7 +25,7 @@ namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
 
             modelBuilder.View<CustomerView>().ToTable("Customers");
             modelBuilder.View<OrderView>().ToTable("Orders");
-            modelBuilder.View<ProductSales1997>().ToTable("Product Sales for 1997");
+            modelBuilder.View<ProductView>().ToTable("Alphabetical list of products");
         }
     }
 }

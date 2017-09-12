@@ -3,10 +3,10 @@
 
 namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
 {
-    public class ProductSales1997
+    public class ProductView
     {
-        public string CategoryName { get; private set; }
-        public string ProductName { get; private set; }
-        public decimal ProductSales { get; private set; }
+        public int ProductID { get; set; }
+        public string ProductName { get; set; }
+        public string CategoryName { get; set; }
     }
 }

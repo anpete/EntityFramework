@@ -29,8 +29,8 @@ WHERE [c].[City] = N'London'");
             base.View_backed_by_view();
 
             AssertSql(
-                @"SELECT [p].[CategoryName], [p].[ProductName], [p].[ProductSales]
-FROM [Product Sales for 1997] AS [p]");
+                @"SELECT [a].[CategoryName], [a].[ProductID], [a].[ProductName]
+FROM [Alphabetical list of products] AS [a]");
         }
 
         public override void View_with_nav()
