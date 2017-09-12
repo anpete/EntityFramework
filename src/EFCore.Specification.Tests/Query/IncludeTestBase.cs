@@ -2194,6 +2194,42 @@ namespace Microsoft.EntityFrameworkCore.Query
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
+        public virtual void Include_reference_on_user_materialized(bool useString)
+        {
+            using (var context = CreateContext())
+            {
+                var orders
+                    = useString
+                        ? context.Set<Order>()
+                            .Select(o => new Order { OrderID = o.OrderID, CustomerID = o.CustomerID })
+                            .Include("Customer")
+                            .ToList()
+                        : context.Set<Order>()
+                            .Select(o => new Order { OrderID = o.OrderID, CustomerID = o.CustomerID })
+                            .Include(o => o.Customer)
+                            .ToList();
+
+                Assert.Equal(830, orders.Count);
+                Assert.True(orders.All(o => o.Customer != null));
+                Assert.Equal(89, orders.Select(o => o.Customer).Distinct().Count());
+                Assert.Equal(830 + 89, context.ChangeTracker.Entries().Count());
+
+                foreach (var order in orders)
+                {
+                    CheckIsLoaded(
+                        context,
+                        order,
+                        customerLoaded: true,
+                        orderDetailsLoaded: false,
+                        productLoaded: false,
+                        ordersLoaded: false);
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
         public virtual void Include_reference_alias_generation(bool useString)
         {
             using (var context = CreateContext())

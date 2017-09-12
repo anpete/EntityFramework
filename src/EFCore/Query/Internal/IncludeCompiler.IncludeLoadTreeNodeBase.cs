@@ -47,7 +47,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 bool trackingQuery,
                 bool asyncQuery,
                 ref int collectionIncludeId,
-                QuerySourceReferenceExpression targetQuerySourceReferenceExpression)
+                Expression targetQuerySourceReferenceExpression)
             {
                 var entityParameter
                     = Expression.Parameter(targetQuerySourceReferenceExpression.Type, name: "entity");
@@ -57,6 +57,13 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 if (trackingQuery)
                 {
+                    IEntityType entityType = null;
+
+                    if (targetQuerySourceReferenceExpression is QuerySourceReferenceExpression qsre)
+                    {
+                        entityType = queryCompilationContext.FindEntityType(qsre.ReferencedQuerySource);
+                    }
+
                     blockExpressions.Add(
                         Expression.Call(
                             Expression.Property(
@@ -65,7 +72,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             _queryBufferStartTrackingMethodInfo,
                             entityParameter,
                             Expression.Constant(
-                                queryCompilationContext.FindEntityType(targetQuerySourceReferenceExpression.ReferencedQuerySource)
+                                entityType
                                 ?? queryCompilationContext.Model.FindEntityType(entityParameter.Type))));
                 }
 
@@ -127,7 +134,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             protected static void ApplyIncludeExpressionsToQueryModel(
                 QueryModel queryModel,
-                QuerySourceReferenceExpression querySourceReferenceExpression,
+                Expression querySourceReferenceExpression,
                 Expression expression)
             {
                 var includeReplacingExpressionVisitor = new IncludeReplacingExpressionVisitor();
@@ -201,11 +208,11 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             private class IncludeReplacingExpressionVisitor : RelinqExpressionVisitor
             {
-                private QuerySourceReferenceExpression _querySourceReferenceExpression;
+                private Expression _querySourceReferenceExpression;
                 private Expression _includeExpression;
 
                 public Expression Replace(
-                    QuerySourceReferenceExpression querySourceReferenceExpression,
+                    Expression querySourceReferenceExpression,
                     Expression includeExpression,
                     Expression searchedExpression)
                 {
@@ -213,6 +220,18 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     _includeExpression = includeExpression;
 
                     return Visit(searchedExpression);
+                }
+
+                protected override Expression VisitMemberInit(MemberInitExpression memberInitExpression)
+                {
+                    if (ReferenceEquals(memberInitExpression, _querySourceReferenceExpression))
+                    {
+                        _querySourceReferenceExpression = null;
+
+                        return _includeExpression;
+                    }
+
+                    return base.VisitMemberInit(memberInitExpression);
                 }
 
                 protected override Expression VisitQuerySourceReference(

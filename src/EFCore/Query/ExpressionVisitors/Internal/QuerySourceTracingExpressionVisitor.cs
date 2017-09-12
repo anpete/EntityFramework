@@ -25,10 +25,16 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public virtual QuerySourceReferenceExpression FindResultQuerySourceReferenceExpression(
+        public virtual Expression FindResultQuerySourceReferenceExpression(
             [NotNull] Expression expression,
             [NotNull] IQuerySource targetQuerySource)
         {
+            if (expression.NodeType == ExpressionType.MemberInit
+                && expression.Type == targetQuerySource.ItemType)
+            {
+                return expression;
+            }
+
             _targetQuerySource = targetQuerySource;
 
             _originQuerySourceReferenceExpression = null;

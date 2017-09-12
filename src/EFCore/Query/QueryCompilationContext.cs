@@ -119,6 +119,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             Check.NotNull(querySource, nameof(querySource));
 
             _querySourceEntityTypeMapping.TryGetValue(querySource, out var entityType);
+
             return entityType;
         }
 

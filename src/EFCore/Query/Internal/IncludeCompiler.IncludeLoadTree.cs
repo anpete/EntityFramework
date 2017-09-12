@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
+using System.Linq.Expressions;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
 {
@@ -13,10 +14,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
     {
         private sealed class IncludeLoadTree : IncludeLoadTreeNodeBase
         {
-            public IncludeLoadTree(QuerySourceReferenceExpression querySourceReferenceExpression)
+            public IncludeLoadTree(Expression querySourceReferenceExpression)
                 => QuerySourceReferenceExpression = querySourceReferenceExpression;
 
-            public QuerySourceReferenceExpression QuerySourceReferenceExpression { get; }
+            public Expression QuerySourceReferenceExpression { get; }
 
             public void AddLoadPath(IReadOnlyList<INavigation> navigationPath)
             {
@@ -30,9 +31,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 bool asyncQuery,
                 ref int collectionIncludeId)
             {
-                var querySourceReferenceExpression = QuerySourceReferenceExpression;
+                var querySourceReferenceExpression = QuerySourceReferenceExpression as QuerySourceReferenceExpression;
 
-                if (querySourceReferenceExpression.ReferencedQuerySource is GroupJoinClause groupJoinClause)
+                if (querySourceReferenceExpression?.ReferencedQuerySource is GroupJoinClause groupJoinClause)
                 {
                     // GJs expand to 'from e in [g] select e' so we can rewrite the projector
 
@@ -60,7 +61,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     trackingQuery,
                     asyncQuery,
                     ref collectionIncludeId,
-                    querySourceReferenceExpression);
+                    querySourceReferenceExpression ?? QuerySourceReferenceExpression);
             }
         }
     }
