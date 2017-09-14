@@ -16,14 +16,14 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         {
             public IncludeLoadTree(
                 QuerySourceReferenceExpression querySourceReferenceExpression,
-                MemberInitExpression userMaterializationExpression)
+                Expression userMaterializationExpression)
             {
                 QuerySourceReferenceExpression = querySourceReferenceExpression;
                 UserMaterializationExpression = userMaterializationExpression;
             }
 
             public QuerySourceReferenceExpression QuerySourceReferenceExpression { get; }
-            public MemberInitExpression UserMaterializationExpression { get; }
+            public Expression UserMaterializationExpression { get; }
 
             public void AddLoadPath(IReadOnlyList<INavigation> navigationPath)
             {

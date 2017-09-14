@@ -1798,6 +1798,22 @@ namespace Microsoft.EntityFrameworkCore.Internal
                     CoreEventId.DuplicateDependentEntityTypeInstanceWarning,
                     _resourceManager.GetString("LogDuplicateDependentEntityTypeInstance")));
 
+        /// <summary>
+        ///     The Include operation '{include}' is not supported because the query is performing custom entity materialization and the included relationship is using one or more shadow key properties.
+        /// </summary>
+        public static string InvalidUserMaterializedIncludeShadow([CanBeNull] object include)
+            => string.Format(
+                GetString("InvalidUserMaterializedIncludeShadow", nameof(include)),
+                include);
+
+        /// <summary>
+        ///     The Include operation '{include}' is not supported because the query is performing custom entity materialization and not all principal keys are being materialized. Ensure all key properties on the principal entity are included when creating the instance.
+        /// </summary>
+        public static string InvalidUserMaterializedIncludeMissingKeys([CanBeNull] object include)
+            => string.Format(
+                GetString("InvalidUserMaterializedIncludeMissingKeys", nameof(include)),
+                include);
+
         private static string GetString(string name, params string[] formatterNames)
         {
             var value = _resourceManager.GetString(name);

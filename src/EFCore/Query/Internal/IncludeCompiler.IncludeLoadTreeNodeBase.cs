@@ -7,6 +7,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Remotion.Linq;
 using Remotion.Linq.Clauses.Expressions;
@@ -39,7 +40,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 }
             }
 
-            protected ICollection<IncludeLoadTreeNode> Children { get; } = new List<IncludeLoadTreeNode>();
+            public ICollection<IncludeLoadTreeNode> Children { get; } = new List<IncludeLoadTreeNode>();
 
             protected void Compile(
                 QueryCompilationContext queryCompilationContext,
@@ -48,7 +49,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 bool asyncQuery,
                 ref int collectionIncludeId,
                 QuerySourceReferenceExpression targetQuerySourceReferenceExpression,
-                MemberInitExpression userMaterializationExpression)
+                Expression userMaterializationExpression)
             {
                 var entityParameter
                     = Expression.Parameter(targetQuerySourceReferenceExpression.Type, name: "entity");
@@ -97,7 +98,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                     var targetExpression
                         = userMaterializationExpression 
-                            ?? (Expression)targetQuerySourceReferenceExpression;
+                            ?? targetQuerySourceReferenceExpression;
 
                     var includeExpression
                         = blockExpressions.Last().Type == typeof(Task)

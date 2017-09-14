@@ -19,6 +19,7 @@ using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.StreamedData;
+using Remotion.Linq.Parsing;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
 {
@@ -130,17 +131,18 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             outputExpression,
                             includeResultOperator.QuerySource);
 
-                MemberInitExpression userMaterializationExpression = null;
+                Expression userMaterializationExpression = null;
 
                 if (querySourceReferenceExpression == null)
                 {
-                    if (outputExpression is MemberInitExpression memberInitExpression
+                    if (outputExpression.NodeType == ExpressionType.MemberInit
+                        || outputExpression.NodeType == ExpressionType.New
                         && outputExpression.Type == includeResultOperator.QuerySource.ItemType)
                     {
                         querySourceReferenceExpression
                             = new QuerySourceReferenceExpression(includeResultOperator.QuerySource);
 
-                        userMaterializationExpression = memberInitExpression;
+                        userMaterializationExpression = outputExpression;
                     }
                     else
                     {
@@ -193,8 +195,11 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 if (entityType == null)
                 {
-                    var pathFromSource = MemberAccessBindingExpressionVisitor.GetPropertyPath(
-                        includeResultOperator.PathFromQuerySource, _queryCompilationContext, out qsre);
+                    var pathFromSource 
+                        = MemberAccessBindingExpressionVisitor.GetPropertyPath(
+                            includeResultOperator.PathFromQuerySource, 
+                            _queryCompilationContext, 
+                            out qsre);
 
                     if (pathFromSource.Count > 0
                         && pathFromSource[pathFromSource.Count - 1] is INavigation navigation)
@@ -208,16 +213,100 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             {
                 throw new InvalidOperationException(
                     CoreStrings.IncludeNotSpecifiedDirectlyOnEntityType(
-                        includeResultOperator.ToString(),
+                        includeResultOperator.DisplayString(),
                         includeResultOperator.NavigationPropertyPaths.FirstOrDefault()));
             }
 
+            
             WalkNavigations(entityType, includeResultOperator.NavigationPropertyPaths, includeLoadTree);
+
+            ValidateUserMaterialization(includeResultOperator, includeLoadTree);
         }
 
-        private static void WalkNavigations(IEntityType entityType, IReadOnlyList<string> navigationPropertyPaths, IncludeLoadTree includeLoadTree)
+        private void ValidateUserMaterialization(IncludeResultOperator includeResultOperator, IncludeLoadTree includeLoadTree)
         {
-            var longestMatchFound = WalkNavigationsInternal(entityType, navigationPropertyPaths, includeLoadTree, new Stack<INavigation>(), new KeyValuePair<int, IEntityType>(0, null));
+            if (includeLoadTree.UserMaterializationExpression != null)
+            {
+                var navigationWithShadowProperties
+                    = (from iltn in includeLoadTree.Children
+                        let fk = iltn.Navigation.ForeignKey
+                        from p in fk.PrincipalKey.Properties.Concat(fk.Properties)
+                        where p.IsShadowProperty
+                        select iltn.Navigation).FirstOrDefault();
+
+                if (navigationWithShadowProperties != null)
+                {
+                    throw new InvalidOperationException(
+                        CoreStrings.InvalidUserMaterializedIncludeShadow(includeResultOperator.DisplayString()));
+                }
+
+                foreach (var includeLoadTreeNode
+                    in includeLoadTree.Children.Where(iltn => iltn.Navigation.IsCollection()))
+                {
+                    var foreignKey = includeLoadTreeNode.Navigation.ForeignKey;
+
+                    var memberFindingExpressionVisitor
+                        = new MemberFindingExpressionVisitor(
+                            _queryCompilationContext,
+                            includeLoadTree.QuerySourceReferenceExpression);
+
+                    memberFindingExpressionVisitor.Visit(includeLoadTree.UserMaterializationExpression);
+
+                    if (!foreignKey.PrincipalKey.Properties.All(p => memberFindingExpressionVisitor.FoundProperties.Contains(p)))
+                    {
+                        throw new InvalidOperationException(
+                            CoreStrings.InvalidUserMaterializedIncludeMissingKeys(includeResultOperator.DisplayString()));
+                    }
+                }
+            }
+        }
+
+        private sealed class MemberFindingExpressionVisitor : RelinqExpressionVisitor
+        {
+            private readonly QueryCompilationContext _queryCompilationContext;
+            private readonly QuerySourceReferenceExpression _querySourceReferenceExpression;
+
+            private List<IProperty> _foundProperties = new List<IProperty>();
+
+            public MemberFindingExpressionVisitor(
+                QueryCompilationContext queryCompilationContext,
+                QuerySourceReferenceExpression querySourceReferenceExpression)
+            {
+                _queryCompilationContext = queryCompilationContext;
+                _querySourceReferenceExpression = querySourceReferenceExpression;
+            }
+
+            public IReadOnlyList<IProperty> FoundProperties => _foundProperties;
+
+            public override Expression Visit(Expression expression)
+            {
+                var properties
+                    = MemberAccessBindingExpressionVisitor
+                        .GetPropertyPath(expression, _queryCompilationContext, out var qsre);
+
+                if (properties.Count == 1
+                    && properties[0] is IProperty property
+                    && ReferenceEquals(qsre.ReferencedQuerySource, _querySourceReferenceExpression.ReferencedQuerySource))
+                {
+                    _foundProperties.Add(property);
+
+                    return expression;
+                }
+                
+                return base.Visit(expression);
+            }
+        }
+
+        private static void WalkNavigations(
+            IEntityType entityType, IReadOnlyList<string> navigationPropertyPaths, IncludeLoadTree includeLoadTree)
+        {
+            var longestMatchFound 
+                = WalkNavigationsInternal(
+                    entityType, 
+                    navigationPropertyPaths, 
+                    includeLoadTree, 
+                    new Stack<INavigation>(), 
+                    new KeyValuePair<int, IEntityType>(0, null));
 
             if (longestMatchFound.Key < navigationPropertyPaths.Count)
             {
@@ -254,7 +343,13 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 {
                     stack.Push(navigation);
 
-                    longestMatchFound = WalkNavigationsInternal(navigation.GetTargetType(), navigationPropertyPaths, includeLoadTree, stack, longestMatchFound);
+                    longestMatchFound 
+                        = WalkNavigationsInternal(
+                            navigation.GetTargetType(), 
+                            navigationPropertyPaths, 
+                            includeLoadTree, 
+                            stack, 
+                            longestMatchFound);
 
                     stack.Pop();
                 }

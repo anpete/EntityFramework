@@ -57,6 +57,10 @@ FROM [Orders] AS [o]
 LEFT JOIN [Customers] AS [o.Customer] ON [o].[CustomerID] = [o.Customer].[CustomerID]");
         }
 
+        public override void Include_reference_on_user_materialized_grouped(bool useString)
+        {
+            base.Include_reference_on_user_materialized_grouped(useString);
+        }
 
         public override void Include_reference_on_user_materialized_no_fk_projected(bool useString)
         {
@@ -135,11 +139,42 @@ ORDER BY [t].[CustomerID]");
         public override void Include_collection_on_user_materialized(bool useString)
         {
             base.Include_collection_on_user_materialized(useString);
+
+            AssertSql(
+                @"SELECT [c].[CustomerID]
+FROM [Customers] AS [c]
+ORDER BY [c].[CustomerID]",
+                //
+                @"SELECT [c.Orders].[OrderID], [c.Orders].[CustomerID], [c.Orders].[EmployeeID], [c.Orders].[OrderDate]
+FROM [Orders] AS [c.Orders]
+INNER JOIN (
+    SELECT [c0].[CustomerID]
+    FROM [Customers] AS [c0]
+) AS [t] ON [c.Orders].[CustomerID] = [t].[CustomerID]
+ORDER BY [t].[CustomerID]");
         }
 
-        public override void Include_collection_on_user_materialized_no_pk_projected(bool useString)
+        public override void Include_collection_on_user_materialized_custom_ctor(bool useString)
         {
-            base.Include_collection_on_user_materialized_no_pk_projected(useString);
+            base.Include_collection_on_user_materialized_custom_ctor(useString);
+
+            AssertSql(
+                @"SELECT [c].[CustomerID]
+FROM [Customers] AS [c]
+ORDER BY [c].[CustomerID]",
+                //
+                @"SELECT [c.Orders].[OrderID], [c.Orders].[CustomerID], [c.Orders].[EmployeeID], [c.Orders].[OrderDate]
+FROM [Orders] AS [c.Orders]
+INNER JOIN (
+    SELECT [c0].[CustomerID]
+    FROM [Customers] AS [c0]
+) AS [t] ON [c.Orders].[CustomerID] = [t].[CustomerID]
+ORDER BY [t].[CustomerID]");
+        }
+
+        public override void Include_collection_on_user_materialized_no_pk_projected()
+        {
+            base.Include_collection_on_user_materialized_no_pk_projected();
         }
 
         public override void Include_collection_with_last(bool useString)

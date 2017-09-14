@@ -1,5 +1,5 @@
-// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+// // Copyright (c) .NET Foundation. All rights reserved.
+// // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -8,6 +8,12 @@ namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
 {
     public class Customer
     {
+        public Customer()
+        {
+        }
+
+        public Customer(string customerID) => CustomerID = customerID;
+
         public string CustomerID { get; set; }
         public string CompanyName { get; set; }
         public string ContactName { get; set; }

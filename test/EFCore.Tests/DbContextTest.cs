@@ -740,6 +740,18 @@ namespace Microsoft.EntityFrameworkCore
             }
         }
 
+        [Fact]
+        public void Include_with_user_materialization_should_throw_when_shadow_keys()
+        {
+            using (var context = new NullShadowKeyContext())
+            {
+                Assert.Equal(
+                    CoreStrings.InvalidUserMaterializedIncludeShadow("new TestAssembly() {Name = [ta].Name}.Classes"),
+                    Assert.Throws<InvalidOperationException>(() =>
+                        context.Assemblies.Select(ta => new TestAssembly {Name = ta.Name}).Include(ta => ta.Classes).ToList()).Message);
+            }
+        }
+
         private static void ValidateGraph(NullShadowKeyContext context, TestAssembly assembly, TestClass testClass, Test test)
         {
             Assert.Equal(EntityState.Unchanged, context.Entry(assembly).State);

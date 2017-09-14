@@ -307,18 +307,18 @@ namespace Microsoft.EntityFrameworkCore.Query
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
-        public virtual void Include_collection_on_user_materialized_no_pk_projected(bool useString)
+        public virtual void Include_collection_on_user_materialized_ef_property(bool useString)
         {
             using (var context = CreateContext())
             {
                 var customers
                     = useString
                         ? context.Set<Customer>()
-                            .Select(c => new Customer { CompanyName = c.CompanyName })
+                            .Select(c => new Customer { CustomerID = EF.Property<string>(c, "CustomerID") })
                             .Include("Orders")
                             .ToList()
                         : context.Set<Customer>()
-                            .Select(c => new Customer { CompanyName = c.CompanyName })
+                            .Select(c => new Customer { CustomerID = EF.Property<string>(c, "CustomerID") })
                             .Include(c => c.Orders)
                             .ToList();
 
@@ -326,6 +326,71 @@ namespace Microsoft.EntityFrameworkCore.Query
                 Assert.Equal(830, customers.Where(c => c.Orders != null).SelectMany(c => c.Orders).Count());
                 Assert.True(customers.Where(c => c.Orders != null).SelectMany(c => c.Orders).All(o => o.Customer != null));
                 Assert.Equal(0, context.ChangeTracker.Entries().Count());
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public virtual void Include_collection_on_user_materialized_custom_ctor(bool useString)
+        {
+            using (var context = CreateContext())
+            {
+                var customers
+                    = useString
+                        ? context.Set<Customer>()
+                            .Select(c => new Customer(c.CustomerID))
+                            .Include("Orders")
+                            .ToList()
+                        : context.Set<Customer>()
+                            .Select(c => new Customer(c.CustomerID))
+                            .Include(c => c.Orders)
+                            .ToList();
+
+                Assert.Equal(91, customers.Count);
+                Assert.Equal(830, customers.Where(c => c.Orders != null).SelectMany(c => c.Orders).Count());
+                Assert.True(customers.Where(c => c.Orders != null).SelectMany(c => c.Orders).All(o => o.Customer != null));
+                Assert.Equal(0, context.ChangeTracker.Entries().Count());
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public virtual void Include_collection_on_user_materialized_custom_ctor_ef_property(bool useString)
+        {
+            using (var context = CreateContext())
+            {
+                var customers
+                    = useString
+                        ? context.Set<Customer>()
+                            .Select(c => new Customer(EF.Property<string>(c, "CustomerID")))
+                            .Include("Orders")
+                            .ToList()
+                        : context.Set<Customer>()
+                            .Select(c => new Customer(EF.Property<string>(c, "CustomerID")))
+                            .Include(c => c.Orders)
+                            .ToList();
+
+                Assert.Equal(91, customers.Count);
+                Assert.Equal(830, customers.Where(c => c.Orders != null).SelectMany(c => c.Orders).Count());
+                Assert.True(customers.Where(c => c.Orders != null).SelectMany(c => c.Orders).All(o => o.Customer != null));
+                Assert.Equal(0, context.ChangeTracker.Entries().Count());
+            }
+        }
+
+        [Fact]
+        public virtual void Include_collection_on_user_materialized_no_pk_projected()
+        {
+            using (var context = CreateContext())
+            {
+                Assert.Equal(
+                    CoreStrings.InvalidUserMaterializedIncludeMissingKeys("new Customer() {CompanyName = [c].CompanyName}.Orders"),
+                    Assert.Throws<InvalidOperationException>(() =>
+                        context.Set<Customer>()
+                            .Select(c => new Customer {CompanyName = c.CompanyName})
+                            .Include("Orders")
+                            .ToList()).Message);
             }
         }
 
@@ -2269,6 +2334,31 @@ namespace Microsoft.EntityFrameworkCore.Query
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
+        public virtual void Include_reference_on_user_materialized_grouped(bool useString)
+        {
+            using (var context = CreateContext())
+            {
+                var groups
+                    = useString
+                        ? context.Set<Order>()
+                            .Select(o => new Order { OrderID = o.OrderID, CustomerID = o.CustomerID })
+                            .Include("Customer")
+                            .GroupBy(o => o.CustomerID)
+                            .ToList()
+                        : context.Set<Order>()
+                            .Select(o => new Order { OrderID = o.OrderID, CustomerID = o.CustomerID })
+                            .Include(o => o.Customer)
+                            .GroupBy(o => o.CustomerID)
+                            .ToList();
+
+                Assert.Equal(89, groups.Count);
+                Assert.True(groups.All(g => g.Key != null));
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
         public virtual void Include_reference_on_user_materialized_no_fk_projected(bool useString)
         {
             using (var context = CreateContext())
@@ -3355,7 +3445,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             using (var context = CreateContext())
             {
                 Assert.Equal(
-                    CoreStrings.IncludeNotSpecifiedDirectlyOnEntityType(@"Include(""Item1.Orders"")", "Item1"),
+                    CoreStrings.IncludeNotSpecifiedDirectlyOnEntityType(@"new Tuple`2(Item1 = [c], Item2 = 5).Item1.Orders", "Item1"),
                     Assert.Throws<InvalidOperationException>(
                         () => useString
                             ? context.Customers
