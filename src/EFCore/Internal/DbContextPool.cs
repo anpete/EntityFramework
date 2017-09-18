@@ -91,8 +91,6 @@ namespace Microsoft.EntityFrameworkCore.Internal
 
                 ((IDbContextPoolable)context).Resurrect(_configurationSnapshot);
 
-                Console.WriteLine($"Acquired context {context.ContextId} from pool. (Thread: {Thread.CurrentThread.ManagedThreadId})");
-
                 return context;
             }
 
@@ -117,13 +115,16 @@ namespace Microsoft.EntityFrameworkCore.Internal
         /// </summary>
         public virtual bool Return([NotNull] TContext context)
         {
+            if (_pool.Contains(context))
+            {
+                Console.WriteLine();
+            }
+
             if (Interlocked.Increment(ref _count) <= _maxSize)
             {
                 ((IDbContextPoolable)context).ResetState();
 
                 _pool.Enqueue(context);
-                
-                Console.WriteLine($"Returned context {context.ContextId} to the pool. (Thread: {Thread.CurrentThread.ManagedThreadId})");
 
                 return true;
             }

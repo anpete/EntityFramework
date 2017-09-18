@@ -263,7 +263,7 @@ namespace Microsoft.EntityFrameworkCore
                         .GetRequiredService<IServiceScopeFactory>()
                         .CreateScope();
 
-                    Console.WriteLine($"Acquired _serviceScope: ({_serviceScope.GetHashCode()})");
+                    //Console.WriteLine($"Acquired _serviceScope: ({_serviceScope.GetHashCode()})");
 
                     var scopedServiceProvider = _serviceScope.ServiceProvider;
 
@@ -500,9 +500,14 @@ namespace Microsoft.EntityFrameworkCore
                 _changeTracker?.QueryTrackingBehavior,
                 _database?.AutoTransactionsEnabled);
 
+        [ThreadStatic]
+        private bool _leased;
+
         void IDbContextPoolable.Resurrect(DbContextPoolConfigurationSnapshot configurationSnapshot)
         {
-            _disposed = false;
+            Debug.Assert(_disposed);
+
+            _leased = true;
 
             if (configurationSnapshot.AutoDetectChangesEnabled != null)
             {
@@ -522,7 +527,12 @@ namespace Microsoft.EntityFrameworkCore
 
         void IDbContextPoolable.ResetState()
         {
-            var resettableServices = _contextServices?.InternalServiceProvider?.GetService<IEnumerable<IResettableService>>()?.ToList();
+            Debug.Assert(_disposed);
+
+            var resettableServices 
+                = _contextServices?.InternalServiceProvider
+                    ?.GetService<IEnumerable<IResettableService>>()?.ToList();
+
             if (resettableServices != null)
             {
                 foreach (var service in resettableServices)
@@ -531,7 +541,7 @@ namespace Microsoft.EntityFrameworkCore
                 }
             }
 
-            _disposed = true;
+            _leased = false;
         }
 
         /// <summary>
@@ -541,22 +551,32 @@ namespace Microsoft.EntityFrameworkCore
         {
             if (!_disposed)
             {
-                if (_dbContextPool == null
-                    || !_dbContextPool.Return(this))
+                if (_dbContextPool == null)
                 {
-                    _disposed = true;
-
-                    _dbContextDependencies?.StateManager.Unsubscribe();
-
-                    _serviceScope?.Dispose();
-                    Console.WriteLine($"_serviceScope.Dispose() ({_serviceScope?.GetHashCode()}) (Thread: {Thread.CurrentThread.ManagedThreadId})");
-
-                    _dbContextDependencies = null;
-                    _changeTracker = null;
-                    _database = null;
-                    _dbContextPool = null;
+                    DisposeCore();
+                }
+                else if (_leased)
+                {
+                    if (!_dbContextPool.Return(this))
+                    {
+                        DisposeCore();
+                    }
                 }
             }
+        }
+
+        private void DisposeCore()
+        {
+            _dbContextDependencies?.StateManager.Unsubscribe();
+
+            _serviceScope?.Dispose();
+            
+            _dbContextDependencies = null;
+            _changeTracker = null;
+            _database = null;
+            _dbContextPool = null;
+            
+            _disposed = true;
         }
 
         /// <summary>

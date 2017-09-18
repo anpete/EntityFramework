@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics;
 
 namespace ConsoleApp1
 {
@@ -41,33 +42,31 @@ namespace ConsoleApp1
                 .BuildServiceProvider();
 
             var scope0 = services.CreateScope();
-            Console.WriteLine($"Acquired _serviceScope: ({scope0.GetHashCode()})");
+            //Console.WriteLine($"Acquired _serviceScope: ({scope0.GetHashCode()})");
 
             try
             {
-                Console.WriteLine($"scope0.GetService<IMyDbContext>() (Thread: {Thread.CurrentThread.ManagedThreadId})");
+                //Console.WriteLine($"scope0.GetService<IMyDbContext>() (Thread: {Thread.CurrentThread.ManagedThreadId})");
                 var context = (DbContext)scope0.ServiceProvider.GetService<IMyDbContext>();
 
-                Console.WriteLine($"Deleting database. (Thread: {Thread.CurrentThread.ManagedThreadId})");
+                //Console.WriteLine($"Deleting database. (Thread: {Thread.CurrentThread.ManagedThreadId})");
                 context.Database.EnsureDeleted();
 
-                Console.WriteLine($"Creating database. (Thread: {Thread.CurrentThread.ManagedThreadId})");
+                //Console.WriteLine($"Creating database. (Thread: {Thread.CurrentThread.ManagedThreadId})");
                 context.Database.EnsureCreated();
             }
             finally
             {
-                Console.WriteLine($"scope0.Dispose() ({scope0.GetHashCode()}) (Thread: {Thread.CurrentThread.ManagedThreadId})");
+                //.WriteLine($"scope0.Dispose() ({scope0.GetHashCode()}) (Thread: {Thread.CurrentThread.ManagedThreadId})");
                 scope0.Dispose();
             }
 
-            Parallel.For(0, 50, s =>
+            Parallel.For(0, 1000, s =>
             {
                 var scope = services.CreateScope();
-                Console.WriteLine($"Acquired _serviceScope: ({scope.GetHashCode()})");
 
                 try
                 {
-                    Console.WriteLine($"scope.GetService<IMyDbContext>() (Thread: {Thread.CurrentThread.ManagedThreadId})");
                     var context = scope.ServiceProvider.GetService<IMyDbContext>();
 
                     context.Foos.Add(new Foo());
@@ -78,7 +77,6 @@ namespace ConsoleApp1
                 }
                 finally
                 {
-                    Console.WriteLine($"scope.Dispose() ({scope.GetHashCode()}) (Thread: {Thread.CurrentThread.ManagedThreadId})");
                     scope.Dispose();
                 }
             });
