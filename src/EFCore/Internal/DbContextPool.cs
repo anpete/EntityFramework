@@ -91,6 +91,8 @@ namespace Microsoft.EntityFrameworkCore.Internal
 
                 ((IDbContextPoolable)context).Resurrect(_configurationSnapshot);
 
+                Console.WriteLine($"Acquired context {context.ContextId} from pool. (Thread: {Thread.CurrentThread.ManagedThreadId})");
+
                 return context;
             }
 
@@ -103,6 +105,8 @@ namespace Microsoft.EntityFrameworkCore.Internal
                     c => c.SnapshotConfiguration());
 
             ((IDbContextPoolable)context).SetPool(this);
+            
+            Console.WriteLine($"Created context {context.ContextId}. (Thread: {Thread.CurrentThread.ManagedThreadId})");
 
             return context;
         }
@@ -118,6 +122,8 @@ namespace Microsoft.EntityFrameworkCore.Internal
                 ((IDbContextPoolable)context).ResetState();
 
                 _pool.Enqueue(context);
+                
+                Console.WriteLine($"Returned context {context.ContextId} to the pool. (Thread: {Thread.CurrentThread.ManagedThreadId})");
 
                 return true;
             }
@@ -125,6 +131,8 @@ namespace Microsoft.EntityFrameworkCore.Internal
             Interlocked.Decrement(ref _count);
 
             Debug.Assert(_maxSize == 0 || _pool.Count <= _maxSize);
+
+            Console.WriteLine($"Abandoned context {context.ContextId}. (Thread: {Thread.CurrentThread.ManagedThreadId})");
 
             return false;
         }

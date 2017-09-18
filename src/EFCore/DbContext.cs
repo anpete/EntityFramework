@@ -64,6 +64,13 @@ namespace Microsoft.EntityFrameworkCore
         private bool _initializing;
         private bool _disposed;
 
+        private static int _contextCount;
+
+        /// <summary>
+        /// Blah
+        /// </summary>
+        public readonly int ContextId;
+
         /// <summary>
         ///     <para>
         ///         Initializes a new instance of the <see cref="DbContext" /> class. The
@@ -87,6 +94,8 @@ namespace Microsoft.EntityFrameworkCore
         public DbContext([NotNull] DbContextOptions options)
         {
             Check.NotNull(options, nameof(options));
+
+            ContextId = Interlocked.Increment(ref _contextCount);
 
             if (!options.ContextType.GetTypeInfo().IsAssignableFrom(GetType().GetTypeInfo()))
             {
@@ -253,6 +262,8 @@ namespace Microsoft.EntityFrameworkCore
                     _serviceScope = ServiceProviderCache.Instance.GetOrAdd(options, providerRequired: true)
                         .GetRequiredService<IServiceScopeFactory>()
                         .CreateScope();
+
+                    Console.WriteLine($"Acquired _serviceScope: ({_serviceScope.GetHashCode()})");
 
                     var scopedServiceProvider = _serviceScope.ServiceProvider;
 
@@ -528,16 +539,18 @@ namespace Microsoft.EntityFrameworkCore
         /// </summary>
         public virtual void Dispose()
         {
-            if (_dbContextPool == null
-                || !_dbContextPool.Return(this))
+            if (!_disposed)
             {
-                if (!_disposed)
+                if (_dbContextPool == null
+                    || !_dbContextPool.Return(this))
                 {
                     _disposed = true;
 
                     _dbContextDependencies?.StateManager.Unsubscribe();
 
                     _serviceScope?.Dispose();
+                    Console.WriteLine($"_serviceScope.Dispose() ({_serviceScope?.GetHashCode()}) (Thread: {Thread.CurrentThread.ManagedThreadId})");
+
                     _dbContextDependencies = null;
                     _changeTracker = null;
                     _database = null;
