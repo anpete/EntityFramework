@@ -17,6 +17,7 @@ using Microsoft.EntityFrameworkCore.Query.ResultOperators.Internal;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.StreamedData;
+using System.Diagnostics;
 
 namespace Microsoft.EntityFrameworkCore.Query.Internal
 {
@@ -134,6 +135,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     continue;
                 }
 
+                Debug.Assert(!querySourceReferenceExpression.Type.IsGrouping());
+
                 var includeLoadTree
                     = includeLoadTrees
                         .SingleOrDefault(
@@ -221,7 +224,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             if (entity != null)
             {
                 var fixupTask = fixup(queryContext, entity, included, cancellationToken);
-                if (AppContext.TryGetSwitch("Microsoft.EntityFrameworkCore.Issue9038", out var isEnabled) && isEnabled
+
+                if (AppContext.TryGetSwitch("Microsoft.EntityFrameworkCore.Issue9038", out var isEnabled) 
+                    && isEnabled
                     || fixupTask != null)
                 {
                     await fixupTask;

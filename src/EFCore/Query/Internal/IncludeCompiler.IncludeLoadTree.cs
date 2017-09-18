@@ -34,7 +34,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 if (querySourceReferenceExpression.ReferencedQuerySource is GroupJoinClause groupJoinClause)
                 {
-                    // GJs expand to 'from e in [g] select e' so we can rewrite the projector
+                    // We expand GJs to: 'from e in [g] select e' so we can rewrite the projector
 
                     var joinClause = groupJoinClause.JoinClause;
 
