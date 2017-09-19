@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Extensions.Internal;
 using Microsoft.EntityFrameworkCore.Internal;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
+using System.Linq;
+using Remotion.Linq;
+using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 {
@@ -18,6 +21,7 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
     {
         private IQuerySource _targetQuerySource;
         private QuerySourceReferenceExpression _originQuerySourceReferenceExpression;
+        private QueryModel _originGroupByQueryModel;
 
         private bool _reachable;
 
@@ -38,6 +42,12 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
 
             return _reachable ? _originQuerySourceReferenceExpression : null;
         }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual QueryModel OriginGroupByQueryModel => _originGroupByQueryModel;
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -88,6 +98,21 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
             }
 
             return expression;
+        }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        protected override Expression VisitSubQuery(SubQueryExpression subQueryExpression)
+        {
+            _originGroupByQueryModel
+                = subQueryExpression.QueryModel.ResultOperators
+                    .Any(ro => ro is GroupResultOperator)
+                    ? subQueryExpression.QueryModel
+                    : _originGroupByQueryModel;
+
+            return base.VisitSubQuery(subQueryExpression);
         }
 
         /// <summary>

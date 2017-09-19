@@ -79,7 +79,6 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             {
                 includeLoadTree.Compile(
                     _queryCompilationContext,
-                    queryModel,
                     trackingQuery,
                     asyncQuery,
                     ref _collectionIncludeId);
@@ -135,6 +134,19 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     continue;
                 }
 
+                if (querySourceReferenceExpression.Type.IsGrouping())
+                {
+                    Debug.Assert(querySourceTracingExpressionVisitor.OriginGroupByQueryModel != null);
+
+                    querySourceReferenceExpression
+                        = querySourceTracingExpressionVisitor
+                            .FindResultQuerySourceReferenceExpression(
+                                querySourceTracingExpressionVisitor.OriginGroupByQueryModel.GetOutputExpression(),
+                                includeResultOperator.QuerySource);
+
+                    queryModel = querySourceTracingExpressionVisitor.OriginGroupByQueryModel;
+                }
+
                 Debug.Assert(!querySourceReferenceExpression.Type.IsGrouping());
 
                 var includeLoadTree
@@ -145,7 +157,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 if (includeLoadTree == null)
                 {
-                    includeLoadTrees.Add(includeLoadTree = new IncludeLoadTree(querySourceReferenceExpression));
+                    includeLoadTrees.Add(
+                        includeLoadTree = new IncludeLoadTree(querySourceReferenceExpression, queryModel));
                 }
 
                 includeLoadTree.AddLoadPath(navigationPath);

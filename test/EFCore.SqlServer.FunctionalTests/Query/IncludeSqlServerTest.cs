@@ -17,6 +17,11 @@ namespace Microsoft.EntityFrameworkCore.Query
             fixture.TestSqlLoggerFactory.SetTestOutputHelper(testOutputHelper);
         }
 
+        public override void Join_Include_reference_GroupBy_Select(bool useString)
+        {
+            base.Join_Include_reference_GroupBy_Select(useString);
+        }
+
         public override void Include_list(bool useString)
         {
             base.Include_list(useString);

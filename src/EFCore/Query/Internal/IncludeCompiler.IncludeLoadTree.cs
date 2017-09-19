@@ -13,8 +13,16 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
     {
         private sealed class IncludeLoadTree : IncludeLoadTreeNodeBase
         {
-            public IncludeLoadTree(QuerySourceReferenceExpression querySourceReferenceExpression)
-                => QuerySourceReferenceExpression = querySourceReferenceExpression;
+            private QueryModel _queryModel;
+
+            public IncludeLoadTree(
+                QuerySourceReferenceExpression querySourceReferenceExpression,
+                QueryModel queryModel)
+            {
+                QuerySourceReferenceExpression = querySourceReferenceExpression;
+
+                _queryModel = queryModel;
+            }
 
             public QuerySourceReferenceExpression QuerySourceReferenceExpression { get; }
 
@@ -25,7 +33,6 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
             public void Compile(
                 QueryCompilationContext queryCompilationContext,
-                QueryModel queryModel,
                 bool trackingQuery,
                 bool asyncQuery,
                 ref int collectionIncludeId)
@@ -49,14 +56,14 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                             new SelectClause(querySourceReferenceExpression));
 
                     ApplyIncludeExpressionsToQueryModel(
-                        queryModel, QuerySourceReferenceExpression, new SubQueryExpression(subQueryModel));
+                        _queryModel, QuerySourceReferenceExpression, new SubQueryExpression(subQueryModel));
 
-                    queryModel = subQueryModel;
+                    _queryModel = subQueryModel;
                 }
 
                 Compile(
                     queryCompilationContext,
-                    queryModel,
+                    _queryModel,
                     trackingQuery,
                     asyncQuery,
                     ref collectionIncludeId,
