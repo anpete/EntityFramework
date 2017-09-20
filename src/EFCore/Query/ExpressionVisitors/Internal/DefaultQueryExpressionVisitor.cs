@@ -67,7 +67,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal
         protected override Expression VisitParameter(ParameterExpression node)
         {
             if (node.Name
-                .StartsWith(CompiledQueryCache.CompiledQueryParameterPrefix, StringComparison.Ordinal))
+                .StartsWith(CompiledQueryCache.CompiledQueryParameterPrefix, StringComparison.Ordinal)
+                && node.Name.Length > CompiledQueryCache.CompiledQueryParameterPrefix.Length)
             {
                 return Expression.Call(
                     GetParameterValueMethodInfo.MakeGenericMethod(node.Type),

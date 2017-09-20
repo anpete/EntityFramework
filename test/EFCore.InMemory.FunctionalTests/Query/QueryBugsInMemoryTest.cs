@@ -14,6 +14,52 @@ namespace Microsoft.EntityFrameworkCore.Query
 {
     public class QueryBugsInMemoryTest : IClassFixture<InMemoryFixture>
     {
+        #region Bug9849
+
+        [Fact]
+        public void Include_throw_when_empty_9849()
+        {
+            using (CreateScratch<DatabaseContext>(_ => { }))
+            {
+                using (var context = new DatabaseContext())
+                {
+                    var shouldBeEmpty = context.VehicleInspections.Include(_f => _f.Motors).ToList();
+
+                }
+            }
+        }
+
+        public class DatabaseContext : DbContext
+        {
+            protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+                => optionsBuilder.UseInMemoryDatabase(DatabaseName);
+
+            protected override void OnModelCreating(ModelBuilder modelBuilder)
+            {
+                var builder = modelBuilder.Entity<VehicleInspection>();
+
+                builder.HasMany(i => i.Motors).WithOne(a => a.Inspection).HasForeignKey(i => i.VehicleInspectionId);
+            }
+
+            public DbSet<VehicleInspection> VehicleInspections { get; set; }
+            public DbSet<Motor> Motors { get; set; }
+        }
+
+        public class VehicleInspection
+        {
+            public long Id { get; set; }
+            public ICollection<Motor> Motors { get; set; } = new HashSet<Motor>();
+        }
+
+        public class Motor
+        {
+            public long Id { get; set; }
+            public long VehicleInspectionId { get; set; }
+            public VehicleInspection Inspection { get; set; }
+        }
+
+        #endregion
+
         #region Bug3595
 
         [Fact]

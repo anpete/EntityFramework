@@ -378,7 +378,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 var joinClause
                     = new JoinClause(
-                        "_" + parentQuerySource.ItemName,
+                        parentQueryModel.GetNewName(parentQuerySource.ItemName),
                         typeof(AnonymousObject),
                         subQueryExpression,
                         CreateKeyAccessExpression(
