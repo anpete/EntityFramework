@@ -3,6 +3,7 @@
 
 using System;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.Internal;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,6 +11,8 @@ namespace Microsoft.EntityFrameworkCore.TestUtilities
 {
     public class InMemoryTestStore : TestStore
     {
+        private static readonly InMemoryDatabaseRoot _inMemoryDatabaseRoot = new InMemoryDatabaseRoot();
+
         public InMemoryTestStore(string name = null, bool shared = true)
             : base(name, shared)
         {
@@ -41,7 +44,7 @@ namespace Microsoft.EntityFrameworkCore.TestUtilities
                 : serviceProvider.GetRequiredService<TestStoreIndex>();
 
         public override DbContextOptionsBuilder AddProviderOptions(DbContextOptionsBuilder builder)
-            => builder.UseInMemoryDatabase(Name);
+            => builder.UseInMemoryDatabase(Name, _inMemoryDatabaseRoot);
 
         public override void Clean(DbContext context)
         {

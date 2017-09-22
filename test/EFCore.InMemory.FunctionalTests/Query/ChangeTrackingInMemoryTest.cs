@@ -13,10 +13,5 @@ namespace Microsoft.EntityFrameworkCore.Query
         {
             TestLoggerFactory.TestOutputHelper = testOutputHelper;
         }
-
-        public override void AsTracking_switches_tracking_on_when_off_in_options()
-        {
-            base.AsTracking_switches_tracking_on_when_off_in_options();
-        }
     }
 }
