@@ -15,7 +15,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
-            //TestLoggerFactory.TestOutputHelper = testOutputHelper;
+            TestLoggerFactory.TestOutputHelper = testOutputHelper;
         }
 
         [Fact]
@@ -53,6 +53,12 @@ namespace Microsoft.EntityFrameworkCore.Query
         public override void Select_Distinct_GroupBy()
         {
             base.Select_Distinct_GroupBy();
+        }
+
+        [Fact]
+        public override void Select_Where_Navigation()
+        {
+            base.Select_Where_Navigation();
         }
     }
 }

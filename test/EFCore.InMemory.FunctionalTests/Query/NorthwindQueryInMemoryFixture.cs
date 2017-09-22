@@ -1,4 +1,6 @@
-using System;
+// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
 using System.Linq;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.TestModels.Northwind;
@@ -11,48 +13,44 @@ namespace Microsoft.EntityFrameworkCore.Query
     {
         protected override ITestStoreFactory TestStoreFactory => InMemoryTestStoreFactory.Instance;
 
-        protected override Type ContextType => typeof(NorthwindInMemoryContext);
-
-        private class NorthwindInMemoryContext : NorthwindContext
+        protected override void OnModelCreating(ModelBuilder modelBuilder, DbContext context)
         {
-            public NorthwindInMemoryContext(DbContextOptions options)
-                : base(options)
-            {
-            }
+            base.OnModelCreating(modelBuilder, context);
 
-            protected override void OnModelCreating(ModelBuilder modelBuilder)
-            {
-                base.OnModelCreating(modelBuilder);
+            modelBuilder.View<CustomerView>()
+                .ToQuery(
+                    db => db.Set<Customer>()
+                        .Select(
+                            c => new CustomerView
+                            {
+                                Address = c.Address,
+                                City = c.City,
+                                CompanyName = c.CompanyName,
+                                ContactName = c.ContactName,
+                                ContactTitle = c.ContactTitle
+                            }));
 
-                modelBuilder.View<CustomerView>()
-                    .ToQuery(context => context.Set<Customer>()
-                        .Select(c => new CustomerView
-                        {
-                            Address = c.Address,
-                            City = c.City,
-                            CompanyName = c.CompanyName,
-                            ContactName = c.ContactName,
-                            ContactTitle = c.ContactTitle
-                        }));
+            modelBuilder.View<OrderView>()
+                .ToQuery(
+                    db => db.Set<Order>()
+                        .Include(o => o.Customer)
+                        .Select(
+                            o => new OrderView
+                            {
+                                CustomerID = o.CustomerID
+                            }));
 
-
-                modelBuilder.View<OrderView>()
-                    .ToQuery(context => context.Set<Order>()
-                        .Select(o => new OrderView
-                        {
-                            CustomerID = o.CustomerID
-                        }));
-
-                modelBuilder.View<ProductView>()
-                    .ToQuery(context => context.Set<Product>()
+            modelBuilder.View<ProductView>()
+                .ToQuery(
+                    db => db.Set<Product>()
                         .Where(p => !p.Discontinued)
-                        .Select(p => new ProductView
-                        {
-                            ProductID = p.ProductID,
-                            ProductName = p.ProductName,
-                            CategoryName = "Food"
-                        }));
-            }
+                        .Select(
+                            p => new ProductView
+                            {
+                                ProductID = p.ProductID,
+                                ProductName = p.ProductName,
+                                CategoryName = "Food"
+                            }));
         }
     }
 }
