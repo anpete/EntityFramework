@@ -217,10 +217,12 @@ namespace Microsoft.EntityFrameworkCore.Query
         {
             using (var context = CreateContext())
             {
-                var animalViews = context.View<AnimalView>().OrderBy(a => a.Species).ToList();
+                var animalViews = context.View<AnimalView>().ToList();
 
-                Assert.Equal(1, animalViews.Count);
+                Assert.Equal(2, animalViews.Count);
                 Assert.IsType<KiwiView>(animalViews[0]);
+                Assert.IsType<EagleView>(animalViews[1]);
+                Assert.NotEmpty(((EagleView)animalViews[1]).Prey);
             }
         }
 

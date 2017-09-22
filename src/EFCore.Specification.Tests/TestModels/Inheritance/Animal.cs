@@ -12,7 +12,6 @@ namespace Microsoft.EntityFrameworkCore.TestModels.Inheritance
 
     public abstract class AnimalView
     {
-        public string Species { get; set; }
         public string Name { get; set; }
         public int CountryId { get; set; }
     }

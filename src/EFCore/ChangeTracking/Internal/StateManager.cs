@@ -162,6 +162,7 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
                 {
                     throw new InvalidOperationException(CoreStrings.ViewTypeNotValid(entityType.DisplayName()));
                 }
+
                 entry = _internalEntityEntryFactory.Create(this, entityType, entity);
 
                 _entityReferenceMap[entity] = entry;
