@@ -33,11 +33,12 @@ namespace Microsoft.EntityFrameworkCore.Query
             modelBuilder.View<OrderView>()
                 .ToQuery(
                     db => db.Set<Order>()
-                        .Include(o => o.Customer)
+                        //.Include(o => o.Customer)
                         .Select(
                             o => new OrderView
                             {
-                                CustomerID = o.CustomerID
+                                CustomerID = o.CustomerID,
+                                Customer = o.Customer,
                             }));
 
             modelBuilder.View<ProductView>()
