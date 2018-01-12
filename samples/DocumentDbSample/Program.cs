@@ -1,10 +1,11 @@
+// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
 using System;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Extensions;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace DocumentDbSample
 {
@@ -12,115 +13,111 @@ namespace DocumentDbSample
     {
         public static void Main(string[] args)
         {
-            using (var db = new BloggingContext())
+            var blogId = 1;
+            var postId = 1;
+
+            using (var cosmosDb = new BloggingContext())
             {
                 // Recreate database
-                db.Database.EnsureDeleted();
-                db.Database.EnsureCreated();
 
-                Console.WriteLine(((Model)db.Model).ToDebugString());
+                cosmosDb.Database.EnsureDeleted();
+                cosmosDb.Database.EnsureCreated();
 
-                var blogId = 1;
-                var postId = 1;
+                Console.WriteLine("Database created.");
 
-                // Seed database
-                db.Blogs.AddRange(
+                // Add some data...
+
+                cosmosDb.Blogs.AddRange(
                     new Blog
                     {
                         BlogId = blogId++,
                         Url = "http://blogs.msdn.com/adonet",
                         Posts = new List<Post>
                         {
-                            new Post{ PostId = postId++, Title = "One", Content = "Random"},
-                            new Post{ PostId = postId++, Title = "Two", Content = "Random"}
+                            new Post
+                            {
+                                PostId = postId++,
+                                Title = "Welcome to this blog!"
+                            },
+                            new Post
+                            {
+                                PostId = postId++,
+                                Title = "Getting Started with ADO.NET"
+                            }
                         }
                     },
                     new Blog
                     {
                         BlogId = blogId++,
-                        Url = "http://blogs.msdn.com/adonet",
-                        Posts = new List<Post>
-                        {
-                            new Post{ PostId = postId++, Title = "One", Content = "Random"},
-                            new Post{ PostId = postId++, Title = "Two", Content = "Random"}
-                        }
+                        Url = "http://blogs.msdn.com/aspnet"
                     },
                     new Blog
                     {
                         BlogId = blogId++,
-                        Url = "http://blogs.msdn.com/adonet",
-                        Posts = new List<Post>
-                        {
-                            new Post{ PostId = postId++, Title = "One", Content = "Random"},
-                            new Post{ PostId = postId++, Title = "Two", Content = "Random"}
-                        }
+                        Url = "http://blogs.msdn.com/dotnet"
                     },
                     new SpecialBlog
                     {
-                        BlogId = blogId++,
-                        Url = "SpecialBlog"
+                        BlogId = blogId,
+                        Url = "http://blogs.msdn.com/special"
                     });
-                var count = db.SaveChanges();
-                Console.WriteLine("{0} records saved to database", count);
-                Console.WriteLine();
+
+                var count = cosmosDb.SaveChanges();
+
+                Console.WriteLine($"Saved {count} records to Cosmos DB", count);
             }
 
-            using (var db = new BloggingContext())
+            using (var cosmosDb = new BloggingContext())
             {
-                // Run queries
-                Console.WriteLine("All blogs in database:");
-                foreach (var blog in db.Blogs.Include(e => e.Posts))
+                Console.WriteLine("Executing query for all blogs...");
+
+                foreach (var blog in cosmosDb.Blogs)
                 {
-                    Console.WriteLine(" - {0}", blog.Url);
-                    Console.WriteLine(blog.GetType());
-                    Console.WriteLine(" - Posts", blog.Url);
-                    foreach (var post in blog.Posts)
-                    {
-                        Console.WriteLine("   - {0}", post.Title);
-                    }
+                    Console.WriteLine($" - {blog.Url}");
                 }
-            }
 
-            using (var db = new BloggingContext())
-            {
-                var secondBlog = db.Blogs.Include(e => e.Posts).FirstOrDefault(e => e.BlogId == 2);
-                secondBlog.Url = "CustomUrl";
-                secondBlog.Posts.Clear();
-                secondBlog.Posts.Add(new Post { PostId = 7, Title = "Modified" });
-                var count = db.SaveChanges();
-                Console.WriteLine("{0} records saved to database", count);
-                Console.WriteLine();
-            }
+                Console.WriteLine("Loading posts for blog 1...");
 
-            Console.WriteLine("Program finished.");
+                var blog1 = cosmosDb.Blogs.Single(b => b.BlogId == 1);
+
+                cosmosDb.Entry(blog1).Collection(b => b.Posts).Load();
+
+                foreach (var post in blog1.Posts)
+                {
+                    Console.WriteLine($" - {post.Title}");
+                }
+
+                Console.Write("Add post to blog 1...");
+
+                blog1.Posts.Add(
+                    new Post
+                    {
+                        PostId = postId,
+                        Title = "A new post!"
+                    });
+
+                cosmosDb.SaveChanges();
+
+                Console.WriteLine("done");
+            }
         }
     }
 
-
     public class BloggingContext : DbContext
     {
-        private static ILoggerFactory LoggerFactory => new LoggerFactory().AddConsole(LogLevel.Trace);
-
-        // Declare DBSets
         public DbSet<Blog> Blogs { get; set; }
         public DbSet<SpecialBlog> SpecialBlogs { get; set; }
         public DbSet<Post> Posts { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            // Select 1 provider
             optionsBuilder
                 .UseDocumentDb(
                     "https://localhost:8081",
                     "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
                     "SampleApp")
-                .EnableSensitiveDataLogging()
-                .UseLoggerFactory(LoggerFactory);
-        }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            // Configure model
+                .EnableSensitiveDataLogging();
+            //.UseLoggerFactory(new LoggerFactory().AddConsole(LogLevel.Information));
         }
     }
 
@@ -142,8 +139,5 @@ namespace DocumentDbSample
         public int PostId { get; set; }
         public string Title { get; set; }
         public string Content { get; set; }
-
-        public int BlogId { get; set; }
-        public Blog Blog { get; set; }
     }
 }
