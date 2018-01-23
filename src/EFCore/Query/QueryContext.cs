@@ -20,7 +20,6 @@ namespace Microsoft.EntityFrameworkCore.Query
     public class QueryContext : IDisposable, IParameterValues
     {
         private readonly Func<IQueryBuffer> _queryBufferFactory;
-
         private readonly IDictionary<string, object> _parameterValues = new Dictionary<string, object>();
 
         private IQueryBuffer _queryBuffer;

@@ -583,6 +583,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             {
                 kv.Value.Enumerator?.Dispose();
             }
+
+            _queryIdentityMap.QueryFinished();
         }
     }
 }

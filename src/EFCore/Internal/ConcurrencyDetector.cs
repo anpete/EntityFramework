@@ -14,6 +14,8 @@ namespace Microsoft.EntityFrameworkCore.Internal
     /// </summary>
     public class ConcurrencyDetector : IConcurrencyDetector, IDisposable
     {
+        private static readonly AsyncLocal<bool> _suspended = new AsyncLocal<bool>();
+
         private readonly IDisposable _disposer;
 
         private SemaphoreSlim _semaphore = new SemaphoreSlim(1);
@@ -32,9 +34,18 @@ namespace Microsoft.EntityFrameworkCore.Internal
         /// </summary>
         public virtual IDisposable EnterCriticalSection()
         {
-            if (Interlocked.CompareExchange(ref _inCriticalSection, 1, 0) == 1)
+            if (!_suspended.Value)
             {
-                throw new InvalidOperationException(CoreStrings.ConcurrentMethodInvocation);
+                if (Interlocked.CompareExchange(ref _inCriticalSection, 1, 0) == 1)
+                {
+                    throw new InvalidOperationException(CoreStrings.ConcurrentMethodInvocation);
+                }
+
+                _suspended.Value = true;
+            }
+            else
+            {
+                _inCriticalSection++;
             }
 
             return _disposer;
@@ -42,9 +53,17 @@ namespace Microsoft.EntityFrameworkCore.Internal
 
         private void ExitCriticalSection()
         {
-            Debug.Assert(_inCriticalSection == 1, "Expected to be in a critical section");
+            var inCriticalSection = --_inCriticalSection;
 
-            _inCriticalSection = 0;
+            Debug.Assert(inCriticalSection >= 0, "Expected to be in a critical section");
+
+            if (inCriticalSection == 0)
+            {
+                Debug.Assert(_suspended.Value, "Expected to be suspended");
+
+                _suspended.Value = false;
+                _inCriticalSection = 0;
+            }
         }
 
         /// <summary>
@@ -53,8 +72,11 @@ namespace Microsoft.EntityFrameworkCore.Internal
         /// </summary>
         public virtual async Task<IDisposable> EnterCriticalSectionAsync(CancellationToken cancellationToken)
         {
-            await _semaphore.WaitAsync(cancellationToken);
-
+            if (!_suspended.Value)
+            {
+                await _semaphore.WaitAsync(cancellationToken);
+            }
+            
             return new AsyncDisposer(EnterCriticalSection(), this);
         }
 

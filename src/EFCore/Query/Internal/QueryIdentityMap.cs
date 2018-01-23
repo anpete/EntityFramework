@@ -36,7 +36,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public ConditionalWeakTable<object, object> _valueBuffers;
+        public ConditionalWeakTable<object, object> _valueBuffers = new ConditionalWeakTable<object, object>();
 
         private int _queryCount;
 
@@ -48,6 +48,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         {
             if (_queryCount++ == 0)
             {
+                _identityMaps = null;
+                _identityMap0 = null;
+                _identityMap1 = null;
                 _valueBuffers = new ConditionalWeakTable<object, object>();
             }
         }
@@ -60,13 +63,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         {
             Debug.Assert(_queryCount > 0);
 
-            if (--_queryCount == 0)
-            {
-                _identityMap0 = null;
-                _identityMap1 = null;
-                _identityMaps.Clear();
-                _valueBuffers = null;
-            }
+            _queryCount--;
         }
     }
 }

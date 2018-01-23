@@ -164,7 +164,7 @@ namespace Microsoft.EntityFrameworkCore
             {
                 context.Products.Add(new Product());
 
-                context.GetService<IConcurrencyDetector>().EnterCriticalSection();
+                await Task.Run(() => context.GetService<IConcurrencyDetector>().EnterCriticalSection());
 
                 Exception ex = await Assert.ThrowsAsync<InvalidOperationException>(() => test(context));
 

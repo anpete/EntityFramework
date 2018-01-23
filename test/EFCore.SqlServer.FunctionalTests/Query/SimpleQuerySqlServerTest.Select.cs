@@ -14,6 +14,11 @@ namespace Microsoft.EntityFrameworkCore.Query
 FROM [Orders] AS [o]");
         }
 
+        public override void Select_nested_projection_opaque_second_query()
+        {
+            base.Select_nested_projection_opaque_second_query();
+        }
+
         public override void Projection_when_arithmetic_expressions()
         {
             base.Projection_when_arithmetic_expressions();

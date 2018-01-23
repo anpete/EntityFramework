@@ -297,7 +297,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             {
                 queryModel.TransformExpressions(Visit);
 
-                return _requiresBuffering;
+                return true;//_requiresBuffering;
             }
 
             public override Expression Visit(Expression expression)
