@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -22,25 +21,25 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
     {
         private readonly QueryContextDependencies _dependencies;
 
-        private IWeakReferenceIdentityMap _identityMap0;
-        private IWeakReferenceIdentityMap _identityMap1;
-        private Dictionary<IKey, IWeakReferenceIdentityMap> _identityMaps;
-
-        private readonly ConditionalWeakTable<object, object> _valueBuffers
-            = new ConditionalWeakTable<object, object>();
-
         private readonly Dictionary<int, IDisposable> _includedCollections
             = new Dictionary<int, IDisposable>(); // IDisposable as IEnumerable/IAsyncEnumerable
 
-        private Dictionary<int, (IDisposable Enumerator, MaterializedAnonymousObject PreviousOriginKey)> _correlatedCollectionMetadata
-            = new Dictionary<int, (IDisposable, MaterializedAnonymousObject)>();
+        private readonly Dictionary<int, (IDisposable Enumerator, MaterializedAnonymousObject PreviousOriginKey)>
+            _correlatedCollectionMetadata = new Dictionary<int, (IDisposable, MaterializedAnonymousObject)>();
+
+        private readonly QueryIdentityMap _queryIdentityMap;
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public QueryBuffer([NotNull] QueryContextDependencies dependencies)
-            => _dependencies = dependencies;
+        {
+            _dependencies = dependencies;
+            _queryIdentityMap = dependencies.QueryIdentityMap;
+
+            _queryIdentityMap.QueryStarted();
+        }
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -86,7 +85,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     identityMap.Add(entityLoadInfo.ValueBuffer, entity);
                 }
 
-                _valueBuffers.Add(entity, entityLoadInfo.ForType(entity.GetType()));
+                _queryIdentityMap._valueBuffers.Add(entity, entityLoadInfo.ForType(entity.GetType()));
             }
 
             return entity;
@@ -105,7 +104,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 return entry[property];
             }
 
-            var found = _valueBuffers.TryGetValue(entity, out var boxedValueBuffer);
+            var found = _queryIdentityMap._valueBuffers.TryGetValue(entity, out var boxedValueBuffer);
 
             Debug.Assert(found);
 
@@ -120,7 +119,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         /// </summary>
         public virtual void StartTracking(object entity, EntityTrackingInfo entityTrackingInfo)
         {
-            if (!_valueBuffers.TryGetValue(entity, out var boxedValueBuffer))
+            if (!_queryIdentityMap._valueBuffers.TryGetValue(entity, out var boxedValueBuffer))
             {
                 boxedValueBuffer = ValueBuffer.Empty;
             }
@@ -134,7 +133,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         /// </summary>
         public virtual void StartTracking(object entity, IEntityType entityType)
         {
-            if (!_valueBuffers.TryGetValue(entity, out var boxedValueBuffer))
+            if (!_queryIdentityMap._valueBuffers.TryGetValue(entity, out var boxedValueBuffer))
             {
                 boxedValueBuffer = ValueBuffer.Empty;
             }
@@ -209,7 +208,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 if (joinPredicate == null)
                 {
-                    if (_valueBuffers.TryGetValue(enumerator.Current, out var relatedValueBuffer))
+                    if (_queryIdentityMap._valueBuffers.TryGetValue(enumerator.Current, out var relatedValueBuffer))
                     {
                         shouldInclude = keyComparer.ShouldInclude((ValueBuffer)relatedValueBuffer);
                     }
@@ -346,7 +345,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 if (joinPredicate == null)
                 {
-                    if (_valueBuffers.TryGetValue(asyncEnumerator.Current, out var relatedValueBuffer))
+                    if (_queryIdentityMap._valueBuffers.TryGetValue(asyncEnumerator.Current, out var relatedValueBuffer))
                     {
                         shouldInclude = keyComparer.ShouldInclude((ValueBuffer)relatedValueBuffer);
                     }
@@ -423,7 +422,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         {
             var identityMap = GetOrCreateIdentityMap(navigation.ForeignKey.PrincipalKey);
 
-            if (!_valueBuffers.TryGetValue(entity, out var boxedValueBuffer))
+            if (!_queryIdentityMap._valueBuffers.TryGetValue(entity, out var boxedValueBuffer))
             {
                 var entry = _dependencies.StateManager.TryGetEntry(entity);
 
@@ -437,40 +436,40 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
         private IWeakReferenceIdentityMap GetOrCreateIdentityMap(IKey key)
         {
-            if (_identityMap0 == null)
+            if (_queryIdentityMap._identityMap0 == null)
             {
-                _identityMap0 = key.GetWeakReferenceIdentityMapFactory()();
+                _queryIdentityMap._identityMap0 = key.GetWeakReferenceIdentityMapFactory()();
 
-                return _identityMap0;
+                return _queryIdentityMap._identityMap0;
             }
 
-            if (_identityMap0.Key == key)
+            if (_queryIdentityMap._identityMap0.Key == key)
             {
-                return _identityMap0;
+                return _queryIdentityMap._identityMap0;
             }
 
-            if (_identityMap1 == null)
+            if (_queryIdentityMap._identityMap1 == null)
             {
-                _identityMap1 = key.GetWeakReferenceIdentityMapFactory()();
+                _queryIdentityMap._identityMap1 = key.GetWeakReferenceIdentityMapFactory()();
 
-                return _identityMap1;
+                return _queryIdentityMap._identityMap1;
             }
 
-            if (_identityMap1.Key == key)
+            if (_queryIdentityMap._identityMap1.Key == key)
             {
-                return _identityMap1;
+                return _queryIdentityMap._identityMap1;
             }
 
-            if (_identityMaps == null)
+            if (_queryIdentityMap._identityMaps == null)
             {
-                _identityMaps = new Dictionary<IKey, IWeakReferenceIdentityMap>();
+                _queryIdentityMap._identityMaps = new Dictionary<IKey, IWeakReferenceIdentityMap>();
             }
 
-            if (!_identityMaps.TryGetValue(key, out var identityMap))
+            if (!_queryIdentityMap._identityMaps.TryGetValue(key, out var identityMap))
             {
                 identityMap = key.GetWeakReferenceIdentityMapFactory()();
 
-                _identityMaps[key] = identityMap;
+                _queryIdentityMap._identityMaps[key] = identityMap;
             }
 
             return identityMap;
@@ -487,7 +486,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             MaterializedAnonymousObject outerKey,
             bool tracking,
             Func<IEnumerable<Tuple<TInner, MaterializedAnonymousObject, MaterializedAnonymousObject>>> correlatedCollectionFactory,
-            Func<MaterializedAnonymousObject, MaterializedAnonymousObject, bool> correlationPredicate) where TCollection : ICollection<TInner>
+            Func<MaterializedAnonymousObject, MaterializedAnonymousObject, bool> correlationPredicate)
+            where TCollection : ICollection<TInner>
         {
             IDisposable untypedEnumerator = null;
             IEnumerator<Tuple<TInner, MaterializedAnonymousObject, MaterializedAnonymousObject>> enumerator = null;

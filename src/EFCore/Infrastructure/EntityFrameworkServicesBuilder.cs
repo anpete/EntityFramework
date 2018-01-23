@@ -117,6 +117,7 @@ namespace Microsoft.EntityFrameworkCore.Infrastructure
                 { typeof(IResultOperatorHandler), new ServiceCharacteristics(ServiceLifetime.Scoped) },
                 { typeof(IModel), new ServiceCharacteristics(ServiceLifetime.Scoped) },
                 { typeof(ICurrentDbContext), new ServiceCharacteristics(ServiceLifetime.Scoped) },
+                { typeof(QueryIdentityMap), new ServiceCharacteristics(ServiceLifetime.Scoped) },
                 { typeof(IDbContextDependencies), new ServiceCharacteristics(ServiceLifetime.Scoped) },
                 { typeof(IDbContextOptions), new ServiceCharacteristics(ServiceLifetime.Scoped) },
                 { typeof(IDatabase), new ServiceCharacteristics(ServiceLifetime.Scoped) },
@@ -252,6 +253,7 @@ namespace Microsoft.EntityFrameworkCore.Infrastructure
             TryAdd(p => GetContextServices(p).Model);
             TryAdd(p => GetContextServices(p).CurrentContext);
             TryAdd(p => GetContextServices(p).ContextOptions);
+            TryAdd<QueryIdentityMap, QueryIdentityMap>();
             TryAdd<IEntityStateListener, INavigationFixer>(p => p.GetService<INavigationFixer>());
             TryAdd<INavigationListener, INavigationFixer>(p => p.GetService<INavigationFixer>());
             TryAdd<IKeyListener, INavigationFixer>(p => p.GetService<INavigationFixer>());

@@ -5,6 +5,7 @@ using System.Linq;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Query
@@ -47,19 +48,27 @@ namespace Microsoft.EntityFrameworkCore.Query
         /// </summary>
         public QueryContextDependencies(
             [NotNull] ICurrentDbContext currentContext,
-            [NotNull] IConcurrencyDetector concurrencyDetector)
+            [NotNull] IConcurrencyDetector concurrencyDetector,
+            [NotNull] QueryIdentityMap queryIdentityMap)
         {
             Check.NotNull(currentContext, nameof(currentContext));
             Check.NotNull(concurrencyDetector, nameof(concurrencyDetector));
+            Check.NotNull(queryIdentityMap, nameof(queryIdentityMap));
 
             CurrentDbContext = currentContext;
             ConcurrencyDetector = concurrencyDetector;
+            QueryIdentityMap = queryIdentityMap;
         }
 
         /// <summary>
         ///     The cache being used to store value generator instances.
         /// </summary>
         public ICurrentDbContext CurrentDbContext { get; }
+
+        /// <summary>
+        ///     Gets the query identity map.
+        /// </summary>
+        public QueryIdentityMap QueryIdentityMap { get; }
 
         /// <summary>
         ///     Gets the change detector.
@@ -87,7 +96,7 @@ namespace Microsoft.EntityFrameworkCore.Query
         /// <param name="currentDbContext"> A replacement for the current dependency of this type. </param>
         /// <returns> A new parameter object with the given service replaced. </returns>
         public QueryContextDependencies With([NotNull] ICurrentDbContext currentDbContext)
-            => new QueryContextDependencies(currentDbContext, ConcurrencyDetector);
+            => new QueryContextDependencies(currentDbContext, ConcurrencyDetector, QueryIdentityMap);
 
         /// <summary>
         ///     Clones this dependency parameter object with one service replaced.
@@ -95,6 +104,6 @@ namespace Microsoft.EntityFrameworkCore.Query
         /// <param name="concurrencyDetector"> A replacement for the current dependency of this type. </param>
         /// <returns> A new parameter object with the given service replaced. </returns>
         public QueryContextDependencies With([NotNull] IConcurrencyDetector concurrencyDetector)
-            => new QueryContextDependencies(CurrentDbContext, concurrencyDetector);
+            => new QueryContextDependencies(CurrentDbContext, concurrencyDetector, QueryIdentityMap);
     }
 }
