@@ -45,23 +45,27 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             = typeof(EntityMaterializerSource).GetTypeInfo()
                 .GetDeclaredMethod(nameof(TryReadValue));
 
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static TValue TryReadValue<TValue>(
+        public static TValue TryReadValue<TValue>(
             in ValueBuffer valueBuffer,
             int index,
             IPropertyBase property = null)
         {
-            var untypedValue = valueBuffer[index];
-            try
-            {
-                return (TValue)untypedValue;
-            }
-            catch (Exception e)
-            {
-                ThrowReadValueException<TValue>(e, untypedValue, property);
-            }
-
-            return default;
+            // var untypedValue = valueBuffer[index];
+            // try
+            // {
+                return (TValue)valueBuffer[index];
+            // }
+            // catch (Exception e)
+            // {
+            //     ThrowReadValueException<TValue>(e, untypedValue, property);
+            // }
+            //
+            // return default;
         }
 
         /// <summary>
