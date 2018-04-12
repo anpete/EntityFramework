@@ -113,20 +113,24 @@ namespace Microsoft.EntityFrameworkCore.Query
             ///     True if the object is a <see cref="CompiledQueryCacheKey" /> and is for the same query, otherwise false.
             /// </returns>
             public override bool Equals(object obj)
-            {
-                if (!(obj is CompiledQueryCacheKey))
-                {
-                    return false;
-                }
+                => obj is CompiledQueryCacheKey other
+                   && Equals(other);
 
-                var other = (CompiledQueryCacheKey)obj;
-
-                return ReferenceEquals(_model, other._model)
-                       && _queryTrackingBehavior == other._queryTrackingBehavior
-                       && _async == other._async
-                       && _richDataErrorHandling == other._richDataErrorHandling
-                       && ExpressionEqualityComparer.Instance.Equals(_query, other._query);
-            }
+            /// <summary>
+            ///     Determines if this key is equivalent to a given object (i.e. if they are keys for the same query).
+            /// </summary>
+            /// <param name="other">
+            ///     The object to compare this key to.
+            /// </param>
+            /// <returns>
+            ///     True if the object is a <see cref="CompiledQueryCacheKey" /> and is for the same query, otherwise false.
+            /// </returns>
+            public bool Equals(in CompiledQueryCacheKey other)
+                => ReferenceEquals(_model, other._model)
+                   && _queryTrackingBehavior == other._queryTrackingBehavior
+                   && _async == other._async
+                   && _richDataErrorHandling == other._richDataErrorHandling
+                   && ExpressionEqualityComparer.Instance.Equals(_query, other._query);
 
             /// <summary>
             ///     Gets the hash code for the key.

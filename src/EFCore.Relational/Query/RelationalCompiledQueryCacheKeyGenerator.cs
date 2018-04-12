@@ -76,12 +76,16 @@ namespace Microsoft.EntityFrameworkCore.Query
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
             public override bool Equals(object obj)
-                => obj is RelationalCompiledQueryCacheKey key
-                   && Equals(key);
+                => obj is RelationalCompiledQueryCacheKey other
+                   && Equals(other);
 
-            private bool Equals(RelationalCompiledQueryCacheKey other)
-                => _compiledQueryCacheKey.Equals(other._compiledQueryCacheKey)
-                   && _useRelationalNulls == other._useRelationalNulls;
+            /// <summary>
+            ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+            ///     directly from your code. This API may change or be removed in future releases.
+            /// </summary>
+            public bool Equals(in RelationalCompiledQueryCacheKey other)
+                => _useRelationalNulls == other._useRelationalNulls
+                   && _compiledQueryCacheKey.Equals(other._compiledQueryCacheKey);
 
             /// <summary>
             ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
