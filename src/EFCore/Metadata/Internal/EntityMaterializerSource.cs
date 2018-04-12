@@ -50,22 +50,22 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static TValue TryReadValue<TValue>(
+        private static TValue TryReadValue<TValue>(
             in ValueBuffer valueBuffer,
             int index,
             IPropertyBase property = null)
         {
-            // var untypedValue = valueBuffer[index];
-            // try
-            // {
+            var untypedValue = valueBuffer[index];
+            try
+            {
                 return (TValue)valueBuffer[index];
-            // }
-            // catch (Exception e)
-            // {
-            //     ThrowReadValueException<TValue>(e, untypedValue, property);
-            // }
-            //
-            // return default;
+            }
+            catch (Exception e)
+            {
+                ThrowReadValueException<TValue>(e, untypedValue, property);
+            }
+
+            return default;
         }
 
         /// <summary>
