@@ -3,6 +3,7 @@
 
 using System.Linq.Expressions;
 using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Utilities;
@@ -52,12 +53,15 @@ namespace Microsoft.EntityFrameworkCore.Query
         /// <param name="query"> The query to get the cache key for. </param>
         /// <param name="async"> A value indicating whether the query will be executed asynchronously. </param>
         /// <returns> The cache key. </returns>
-        protected CompiledQueryCacheKey GenerateCacheKeyCore([NotNull] Expression query, bool async)
+        protected CompiledQueryCacheKey GenerateCacheKeyCore(
+            [NotNull] Expression query, bool async)
             => new CompiledQueryCacheKey(
                 Check.NotNull(query, nameof(query)),
                 Dependencies.Model,
                 Dependencies.Context.Context.ChangeTracker.QueryTrackingBehavior,
-                async);
+                async,
+                Dependencies.ContextOptions.FindExtension<CoreOptionsExtension>()
+                    ?.IsRichDataErrorHandingEnabled ?? false);
 
         /// <summary>
         ///     <para>
@@ -75,6 +79,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             private readonly IModel _model;
             private readonly QueryTrackingBehavior _queryTrackingBehavior;
             private readonly bool _async;
+            private readonly bool _richDataErrorHandling;
 
             /// <summary>
             ///     Initializes a new instance of the <see cref="CompiledQueryCacheKey" /> class.
@@ -83,16 +88,19 @@ namespace Microsoft.EntityFrameworkCore.Query
             /// <param name="model"> The model that queries is written against. </param>
             /// <param name="queryTrackingBehavior"> The tracking behavior for results of the query. </param>
             /// <param name="async"> A value indicating whether the query will be executed asynchronously. </param>
+            /// <param name="richDataErrorHandling"> A value indicating whether rich data error handling is enabled. </param>
             public CompiledQueryCacheKey(
                 [NotNull] Expression query,
                 [NotNull] IModel model,
                 QueryTrackingBehavior queryTrackingBehavior,
-                bool async)
+                bool async,
+                bool richDataErrorHandling)
             {
                 _query = query;
                 _model = model;
                 _queryTrackingBehavior = queryTrackingBehavior;
                 _async = async;
+                _richDataErrorHandling = richDataErrorHandling;
             }
 
             /// <summary>
@@ -106,8 +114,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             /// </returns>
             public override bool Equals(object obj)
             {
-                if (obj is null
-                    || !(obj is CompiledQueryCacheKey))
+                if (!(obj is CompiledQueryCacheKey))
                 {
                     return false;
                 }
@@ -117,6 +124,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                 return ReferenceEquals(_model, other._model)
                        && _queryTrackingBehavior == other._queryTrackingBehavior
                        && _async == other._async
+                       && _richDataErrorHandling == other._richDataErrorHandling
                        && ExpressionEqualityComparer.Instance.Equals(_query, other._query);
             }
 
@@ -134,6 +142,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                     hashCode = (hashCode * 397) ^ _model.GetHashCode();
                     hashCode = (hashCode * 397) ^ (int)_queryTrackingBehavior;
                     hashCode = (hashCode * 397) ^ _async.GetHashCode();
+                    hashCode = (hashCode * 397) ^ _richDataErrorHandling.GetHashCode();
                     return hashCode;
                 }
             }

@@ -45,7 +45,6 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             = typeof(EntityMaterializerSource).GetTypeInfo()
                 .GetDeclaredMethod(nameof(TryReadValue));
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static TValue TryReadValue<TValue>(
             in ValueBuffer valueBuffer,
             int index,
@@ -64,6 +63,19 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
             return default;
         }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public static readonly MethodInfo TryReadValueFastMethod
+            = typeof(EntityMaterializerSource).GetTypeInfo()
+                .GetDeclaredMethod(nameof(TryReadValue));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static TValue TryReadValueFast<TValue>(
+            in ValueBuffer valueBuffer, int index)
+            => (TValue)valueBuffer[index];
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
