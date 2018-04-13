@@ -48,7 +48,6 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
         /// <param name="relationalTypeMapper"> The relational type mapper. </param>
         /// <param name="typeMappingSource"> The type mapper. </param>
         /// <param name="logger"> The logger. </param>
-        /// <param name="contextOptions"> Options for the DbContext. </param> 
         public QuerySqlGeneratorDependencies(
             [NotNull] IRelationalCommandBuilderFactory commandBuilderFactory,
             [NotNull] ISqlGenerationHelper sqlGenerationHelper,

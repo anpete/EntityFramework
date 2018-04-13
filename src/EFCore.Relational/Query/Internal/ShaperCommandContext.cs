@@ -144,19 +144,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             => NonCapturingLazyInitializer
                 .EnsureInitialized(
                     ref _valueBufferFactory,
-                    new FactoryAndReader(ValueBufferFactoryFactory, dataReader),
-                    s => QuerySqlGeneratorFactory().CreateValueBufferFactory(s.Factory, s.Reader));
+                    (ValueBufferFactoryFactory, dataReader),
+                    s => QuerySqlGeneratorFactory()
+                        .CreateValueBufferFactory(s.ValueBufferFactoryFactory, s.dataReader, true));
 
-        private readonly struct FactoryAndReader
-        {
-            public readonly IRelationalValueBufferFactoryFactory Factory;
-            public readonly DbDataReader Reader;
-
-            public FactoryAndReader(IRelationalValueBufferFactoryFactory factory, DbDataReader reader)
-            {
-                Factory = factory;
-                Reader = reader;
-            }
-        }
+        
     }
 }
