@@ -47,11 +47,9 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Query.Internal
             }
 
             public override bool Equals(object obj)
-            {
-                return obj is SqlServerCompiledQueryCacheKey other
-                       && _useRowNumberOffset == other._useRowNumberOffset
-                       && _relationalCompiledQueryCacheKey.Equals(other._relationalCompiledQueryCacheKey);
-            }
+                => obj is SqlServerCompiledQueryCacheKey other
+                   && _useRowNumberOffset == other._useRowNumberOffset
+                   && _relationalCompiledQueryCacheKey.Equals(other._relationalCompiledQueryCacheKey);
 
             public override int GetHashCode()
             {

@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -125,6 +126,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             /// <returns>
             ///     True if the object is a <see cref="CompiledQueryCacheKey" /> and is for the same query, otherwise false.
             /// </returns>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool Equals(in CompiledQueryCacheKey other)
                 => ReferenceEquals(_model, other._model)
                    && _queryTrackingBehavior == other._queryTrackingBehavior

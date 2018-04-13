@@ -8,6 +8,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Query.Expressions;
 using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
@@ -155,7 +156,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
             Check.NotNull(relationalValueBufferFactoryFactory, nameof(relationalValueBufferFactoryFactory));
 
             return relationalValueBufferFactoryFactory
-                .Create(SelectExpression.GetMappedProjectionTypes().ToArray());
+                .Create(
+                    SelectExpression.GetMappedProjectionTypes().ToArray(),
+                    Dependencies.ContextOptions.FindExtension<CoreOptionsExtension>()?.IsRichDataErrorHandingEnabled ?? false);
         }
 
         /// <summary>

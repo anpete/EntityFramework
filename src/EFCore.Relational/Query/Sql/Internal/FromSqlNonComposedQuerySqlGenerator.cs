@@ -6,6 +6,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Query.Expressions;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -106,7 +107,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql.Internal
                 }
             }
 
-            return relationalValueBufferFactoryFactory.Create(types);
+            return relationalValueBufferFactoryFactory
+                .Create(
+                    types,
+                    Dependencies.ContextOptions.FindExtension<CoreOptionsExtension>()?.IsRichDataErrorHandingEnabled ?? false);
         }
     }
 }

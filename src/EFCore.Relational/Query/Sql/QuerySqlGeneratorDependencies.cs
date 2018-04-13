@@ -4,6 +4,7 @@
 using System;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Utilities;
 
@@ -46,7 +47,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
         /// <param name="parameterNameGeneratorFactory"> The parameter name generator factory. </param>
         /// <param name="relationalTypeMapper"> The relational type mapper. </param>
         /// <param name="typeMappingSource"> The type mapper. </param>
-        /// <param name="logger"> The logger. </param> 
+        /// <param name="logger"> The logger. </param>
+        /// <param name="contextOptions"> Options for the DbContext. </param> 
         public QuerySqlGeneratorDependencies(
             [NotNull] IRelationalCommandBuilderFactory commandBuilderFactory,
             [NotNull] ISqlGenerationHelper sqlGenerationHelper,
@@ -55,7 +57,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
             [NotNull] IRelationalTypeMapper relationalTypeMapper,
 #pragma warning restore 618
             [NotNull] IRelationalTypeMappingSource typeMappingSource, 
-            [NotNull] IDiagnosticsLogger<DbLoggerCategory.Query> logger)
+            [NotNull] IDiagnosticsLogger<DbLoggerCategory.Query> logger,
+            [NotNull] IDbContextOptions contextOptions)
         {
             Check.NotNull(commandBuilderFactory, nameof(commandBuilderFactory));
             Check.NotNull(sqlGenerationHelper, nameof(sqlGenerationHelper));
@@ -63,6 +66,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
             Check.NotNull(relationalTypeMapper, nameof(relationalTypeMapper));
             Check.NotNull(typeMappingSource, nameof(typeMappingSource));
             Check.NotNull(logger, nameof(logger)); 
+            Check.NotNull(contextOptions, nameof(contextOptions)); 
 
             CommandBuilderFactory = commandBuilderFactory;
             SqlGenerationHelper = sqlGenerationHelper;
@@ -71,7 +75,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
             RelationalTypeMapper = relationalTypeMapper;
 #pragma warning restore 618
             TypeMappingSource = typeMappingSource;
-            Logger = logger; 
+            Logger = logger;
+            ContextOptions = contextOptions;
         }
 
         /// <summary>
@@ -103,7 +108,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
         /// <summary> 
         ///     The logger. 
         /// </summary> 
-        public IDiagnosticsLogger<DbLoggerCategory.Query> Logger { get; } 
+        public IDiagnosticsLogger<DbLoggerCategory.Query> Logger { get; }
+
+        /// <summary> 
+        ///     The DbContext options. 
+        /// </summary> 
+        public IDbContextOptions ContextOptions { get; } 
 
         /// <summary>
         ///     Clones this dependency parameter object with one service replaced.
@@ -119,7 +129,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
                 RelationalTypeMapper,
 #pragma warning restore 618
                 TypeMappingSource, 
-                Logger);
+                Logger,
+                ContextOptions);
 
         /// <summary>
         ///     Clones this dependency parameter object with one service replaced.
@@ -135,7 +146,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
                 RelationalTypeMapper,
 #pragma warning restore 618
                 TypeMappingSource, 
-                Logger);
+                Logger,
+                ContextOptions);
 
         /// <summary>
         ///     Clones this dependency parameter object with one service replaced.
@@ -151,7 +163,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
                 RelationalTypeMapper,
 #pragma warning restore 618
                 TypeMappingSource, 
-                Logger);
+                Logger,
+                ContextOptions);
 
         /// <summary>
         ///     Clones this dependency parameter object with one service replaced.
@@ -166,7 +179,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
                 ParameterNameGeneratorFactory,
                 relationalTypeMapper,
                 TypeMappingSource, 
-                Logger);
+                Logger,
+                ContextOptions);
 
         /// <summary>
         ///     Clones this dependency parameter object with one service replaced.
@@ -182,7 +196,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
                 RelationalTypeMapper,
 #pragma warning restore 618
                 typeMappingSource, 
-                Logger);
+                Logger,
+                ContextOptions);
 
         /// <summary> 
         ///     Clones this dependency parameter object with one service replaced. 
@@ -198,6 +213,24 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
                 RelationalTypeMapper, 
 #pragma warning restore 618 
                 TypeMappingSource, 
-                logger); 
+                logger,
+                ContextOptions);
+
+        /// <summary> 
+        ///     Clones this dependency parameter object with one service replaced. 
+        /// </summary> 
+        /// <param name="contextOptions"> A replacement for the current dependency of this type. </param> 
+        /// <returns> A new parameter object with the given service replaced. </returns> 
+        public QuerySqlGeneratorDependencies With([NotNull] IDbContextOptions contextOptions) 
+            => new QuerySqlGeneratorDependencies( 
+                CommandBuilderFactory, 
+                SqlGenerationHelper, 
+                ParameterNameGeneratorFactory, 
+#pragma warning disable 618 
+                RelationalTypeMapper, 
+#pragma warning restore 618 
+                TypeMappingSource, 
+                Logger,
+                contextOptions); 
     }
 }

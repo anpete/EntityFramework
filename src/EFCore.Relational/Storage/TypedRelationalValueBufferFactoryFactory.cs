@@ -70,10 +70,8 @@ namespace Microsoft.EntityFrameworkCore.Storage
             public IReadOnlyList<TypeMaterializationInfo> TypeMaterializationInfo { get; }
 
             public override bool Equals(object obj)
-                => obj is CacheKey key && Equals(key);
-
-            private bool Equals(CacheKey other)
-                => TypeMaterializationInfo.SequenceEqual(other.TypeMaterializationInfo);
+                => obj is CacheKey key
+                   && TypeMaterializationInfo.SequenceEqual(key.TypeMaterializationInfo);
 
             public override int GetHashCode()
                 => TypeMaterializationInfo.Aggregate(0, (t, v) => (t * 397) ^ v.GetHashCode());
@@ -104,30 +102,39 @@ namespace Microsoft.EntityFrameworkCore.Storage
 
             var mappingSource = Dependencies.TypeMappingSource;
 
-            return Create(valueTypes.Select(
-                (t, i) => new TypeMaterializationInfo(t, null, mappingSource, indexMap?[i] ?? -1)).ToList());
+            return Create(
+                valueTypes
+                    .Select((t, i) => new TypeMaterializationInfo(t, null, mappingSource, indexMap?[i] ?? -1))
+                    .ToList(),
+                richDataErrorHandling: true);
         }
 
         /// <summary>
         ///     Creates a new <see cref="IRelationalValueBufferFactory" />.
         /// </summary>
         /// <param name="types"> Types and mapping for the values to be read. </param>
+        /// <param name="richDataErrorHandling"> Generate rich data error handling support. </param>
         /// <returns> The newly created <see cref="IRelationalValueBufferFactoryFactory" />. </returns>
-        public virtual IRelationalValueBufferFactory Create(IReadOnlyList<TypeMaterializationInfo> types)
+        public virtual IRelationalValueBufferFactory Create(
+            IReadOnlyList<TypeMaterializationInfo> types, bool richDataErrorHandling)
         {
             Check.NotNull(types, nameof(types));
 
             return _cache.GetOrAdd(
-                    new CacheKey(types),
-                    k => new TypedRelationalValueBufferFactory(Dependencies, CreateArrayInitializer(k)));
+                new CacheKey(types),
+                k => new TypedRelationalValueBufferFactory(
+                    Dependencies,
+                    CreateArrayInitializer(k, richDataErrorHandling)));
         }
 
         /// <summary>
         ///     Creates value buffer assignment expressions for the the given type information.
         /// </summary>
         /// <param name="types"> Types and mapping for the values to be read. </param>
+        /// <param name="richDataErrorHandling"> Generate rich data error handling support. </param>
         /// <returns> The value buffer assignment expressions. </returns>
-        public virtual IReadOnlyList<Expression> CreateAssignmentExpressions(IReadOnlyList<TypeMaterializationInfo> types)
+        public virtual IReadOnlyList<Expression> CreateAssignmentExpressions(
+            IReadOnlyList<TypeMaterializationInfo> types, bool richDataErrorHandling)
         {
             Check.NotNull(types, nameof(types));
 
@@ -138,12 +145,13 @@ namespace Microsoft.EntityFrameworkCore.Storage
                             DataReaderParameter,
                             Expression.Constant(mi.Index == -1 ? i : mi.Index),
                             mi,
-                            box: false)).ToArray();
+                            richDataErrorHandling,
+                            box: false))
+                .ToArray();
         }
 
-        private static Func<DbDataReader, object[]> CreateArrayInitializer(CacheKey cacheKey)
-        {
-            return Expression.Lambda<Func<DbDataReader, object[]>>(
+        private static Func<DbDataReader, object[]> CreateArrayInitializer(CacheKey cacheKey, bool richDataErrorHandling)
+            => Expression.Lambda<Func<DbDataReader, object[]>>(
                     Expression.NewArrayInit(
                         typeof(object),
                         cacheKey.TypeMaterializationInfo
@@ -152,15 +160,16 @@ namespace Microsoft.EntityFrameworkCore.Storage
                                     CreateGetValueExpression(
                                         DataReaderParameter,
                                         Expression.Constant(mi.Index == -1 ? i : mi.Index),
-                                        mi))),
+                                        mi,
+                                        richDataErrorHandling))),
                     DataReaderParameter)
                 .Compile();
-        }
 
         private static Expression CreateGetValueExpression(
             Expression dataReaderExpression,
             Expression indexExpression,
             TypeMaterializationInfo materializationInfo,
+            bool richDataErrorHandling,
             bool box = true)
         {
             var getMethod = materializationInfo.Mapping.GetDataReaderMethod();
