@@ -147,18 +147,21 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql
         /// </summary>
         /// <param name="relationalValueBufferFactoryFactory"> The relational value buffer factory. </param>
         /// <param name="dataReader"> The data reader. </param>
+        /// <param name="richDataErrorHandling"> Generate rich data error handling support. </param>
         /// <returns>
         ///     The new value buffer factory.
         /// </returns>
         public virtual IRelationalValueBufferFactory CreateValueBufferFactory(
-            IRelationalValueBufferFactoryFactory relationalValueBufferFactoryFactory, DbDataReader dataReader)
+            IRelationalValueBufferFactoryFactory relationalValueBufferFactoryFactory,
+            DbDataReader dataReader,
+            bool richDataErrorHandling)
         {
             Check.NotNull(relationalValueBufferFactoryFactory, nameof(relationalValueBufferFactoryFactory));
 
             return relationalValueBufferFactoryFactory
                 .Create(
                     SelectExpression.GetMappedProjectionTypes().ToArray(),
-                    Dependencies.ContextOptions.FindExtension<CoreOptionsExtension>()?.IsRichDataErrorHandingEnabled ?? false);
+                    richDataErrorHandling);
         }
 
         /// <summary>

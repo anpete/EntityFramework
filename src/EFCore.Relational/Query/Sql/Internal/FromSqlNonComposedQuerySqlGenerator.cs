@@ -62,7 +62,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql.Internal
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public override IRelationalValueBufferFactory CreateValueBufferFactory(
-            IRelationalValueBufferFactoryFactory relationalValueBufferFactoryFactory, DbDataReader dataReader)
+            IRelationalValueBufferFactoryFactory relationalValueBufferFactoryFactory,
+            DbDataReader dataReader,
+            bool richDataErrorHandling)
         {
             Check.NotNull(relationalValueBufferFactoryFactory, nameof(relationalValueBufferFactoryFactory));
             Check.NotNull(dataReader, nameof(dataReader));
@@ -107,10 +109,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Sql.Internal
                 }
             }
 
-            return relationalValueBufferFactoryFactory
-                .Create(
-                    types,
-                    Dependencies.ContextOptions.FindExtension<CoreOptionsExtension>()?.IsRichDataErrorHandingEnabled ?? false);
+            return relationalValueBufferFactoryFactory.Create(types, richDataErrorHandling);
         }
     }
 }
