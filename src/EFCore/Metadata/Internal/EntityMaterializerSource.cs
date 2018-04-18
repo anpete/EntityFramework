@@ -45,36 +45,28 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             = typeof(EntityMaterializerSource).GetTypeInfo()
                 .GetDeclaredMethod(nameof(TryReadValue));
 
-        private static TValue TryReadValue<TValue>(
-            in ValueBuffer valueBuffer,
-            int index,
-            IPropertyBase property = null)
-        {
-            var untypedValue = valueBuffer[index];
-
-            try
-            {
-                return (TValue)untypedValue;
-            }
-            catch (Exception e)
-            {
-                ThrowReadValueException<TValue>(e, untypedValue, property);
-            }
-
-            return default;
-        }
-
-        /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public static readonly MethodInfo TryReadValueFastMethod
-            = typeof(EntityMaterializerSource).GetTypeInfo()
-                .GetDeclaredMethod(nameof(TryReadValue));
+        // private static TValue TryReadValue<TValue>(
+        //     in ValueBuffer valueBuffer,
+        //     int index,
+        //     IPropertyBase property = null)
+        // {
+        //     var untypedValue = valueBuffer[index];
+        //
+        //     try
+        //     {
+        //         return (TValue)untypedValue;
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         ThrowReadValueException<TValue>(e, untypedValue, property);
+        //     }
+        //
+        //     return default;
+        // }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static TValue TryReadValueFast<TValue>(
-            in ValueBuffer valueBuffer, int index)
+        private static TValue TryReadValue<TValue>(
+            in ValueBuffer valueBuffer, int index, IPropertyBase property = null)
             => (TValue)valueBuffer[index];
 
         /// <summary>
