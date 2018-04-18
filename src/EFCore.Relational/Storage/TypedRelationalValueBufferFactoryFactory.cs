@@ -205,22 +205,25 @@ namespace Microsoft.EntityFrameworkCore.Storage
             var exceptionParameter
                 = Expression.Parameter(typeof(Exception), "e");
 
-            var catchBlock
-                = Expression
-                    .Catch(
-                        exceptionParameter,
-                        Expression.Call(
-                            EntityMaterializerSource
-                                .ThrowReadValueExceptionMethod
-                                .MakeGenericMethod(expression.Type),
+            if (richDataErrorHandling)
+            {
+                var catchBlock
+                    = Expression
+                        .Catch(
                             exceptionParameter,
                             Expression.Call(
-                                dataReaderExpression,
-                                _getFieldValueMethod.MakeGenericMethod(typeof(object)),
-                                indexExpression),
-                            Expression.Constant(materializationInfo.Property, typeof(IPropertyBase))));
+                                EntityMaterializerSource
+                                    .ThrowReadValueExceptionMethod
+                                    .MakeGenericMethod(expression.Type),
+                                exceptionParameter,
+                                Expression.Call(
+                                    dataReaderExpression,
+                                    _getFieldValueMethod.MakeGenericMethod(typeof(object)),
+                                    indexExpression),
+                                Expression.Constant(materializationInfo.Property, typeof(IPropertyBase))));
 
-            expression = Expression.TryCatch(expression, catchBlock);
+                expression = Expression.TryCatch(expression, catchBlock);
+            }
 
             if (box && expression.Type.GetTypeInfo().IsValueType)
             {
